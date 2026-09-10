@@ -614,14 +614,14 @@
       });
     });
 
-    const heroZoomBtn = document.querySelector('.hero-zoom-btn');
-    const heroBannerImg = document.querySelector('.hero-banner-img');
-    if (heroZoomBtn && heroBannerImg) {
-      heroZoomBtn.addEventListener('click', () => {
-        const src = heroBannerImg.getAttribute('src');
-        if (src) openLightbox(src, heroBannerImg.getAttribute('alt') || 'Banner');
+    document.querySelectorAll('.hero-zoom-btn').forEach((btn) => {
+      const wrapper = btn.closest('.hero-banner-wrapper');
+      const img = wrapper ? wrapper.querySelector('.hero-banner-img') : document.querySelector('.hero-banner-img');
+      btn.addEventListener('click', () => {
+        const src = img?.getAttribute('src');
+        if (src) openLightbox(src, img.getAttribute('alt') || 'Banner');
       });
-    }
+    });
   }
 
   // ==================== COSTUME SWITCHER ====================

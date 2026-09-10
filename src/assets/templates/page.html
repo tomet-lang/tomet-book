@@ -7,7 +7,7 @@
   <nav class="book-rail-nav" id="book-rail-nav" data-pagefind-ignore aria-label="ナビゲーションバー">
     <!-- Brand / Home Header -->
     <div class="rail-brand">
-      <a href="/wiki" class="rail-brand-link" id="btn-rail-home" title="{{ site_title }} ホームへ">
+      <a href="/wiki" class="rail-tab rail-tab-title" id="btn-rail-home" title="{{ site_title }} ホームへ">
         <span class="rail-letters rail-letters-brand">
           {% for ch in rail_letters %}
           <span>{{ ch }}</span>
@@ -18,16 +18,8 @@
 
     <!-- Navigation / Tools -->
     <div class="rail-tools">
-      <button type="button" class="rail-tool-btn rail-tab-toc is-active" id="btn-rail-toc" title="目次を開閉" aria-label="目次を開閉">
-        <svg class="rail-tool-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <line x1="8" y1="6" x2="20" y2="6"></line>
-          <line x1="8" y1="12" x2="20" y2="12"></line>
-          <line x1="8" y1="18" x2="20" y2="18"></line>
-          <line x1="3" y1="6" x2="3.01" y2="6"></line>
-          <line x1="3" y1="12" x2="3.01" y2="12"></line>
-          <line x1="3" y1="18" x2="3.01" y2="18"></line>
-        </svg>
-        <span class="rail-tool-text">
+      <button type="button" class="rail-tab rail-tab-toc is-active" id="btn-rail-toc" title="目次を開閉" aria-label="目次を開閉">
+        <span class="rail-letters rail-letters-toc">
           <span>目</span>
           <span>次</span>
         </span>
@@ -151,7 +143,7 @@
               <div class="hero-title-row">
                 <h1 class="content-title" data-pagefind-meta="title" data-pagefind-weight="10">{{ page_title }}</h1>
                 {% if kind %}
-                <span class="kind-tag" data-pagefind-filter="kind">{{ kind }}</span>
+                <span class="kind-tag kind-{{ kind }}" data-pagefind-filter="kind">{{ kind }}</span>
                 {% endif %}
               </div>
               {% if hero_chips and hero_chips | length > 0 %}
@@ -172,7 +164,7 @@
           <div class="title-row" style="display: flex; align-items: baseline; gap: 10px;">
             <h1 class="content-title" data-pagefind-meta="title" data-pagefind-weight="10">{{ page_title }}</h1>
             {% if kind %}
-            <span class="kind-tag" data-pagefind-filter="kind">{{ kind }}</span>
+            <span class="kind-tag kind-{{ kind }}" data-pagefind-filter="kind">{{ kind }}</span>
             {% endif %}
           </div>
         </header>
@@ -188,22 +180,150 @@
 </div>
 
 <!-- ==================== 2. CLASSIC VIEW (縦スクロール) ==================== -->
-<div class="classic-view" data-pagefind-body>
-  <header class="site-header" data-pagefind-ignore>
-    <div class="site-header-inner">
-      <a href="/wiki" class="site-title">{{ site_title }}</a>
-    </div>
-  </header>
+<div class="classic-view" id="wiki-classic-view" data-pagefind-ignore>
+  <nav class="breadcrumb">
+    <a href="/wiki">← Home</a>{% if section %} / <span class="breadcrumb-section">{{ section }}</span>{% endif %} / <span>{{ page_title }}</span>
+  </nav>
 
-  <header class="article-header" style="margin-bottom: 20px;">
-    <h1 style="font-size: 2rem; margin: 0 0 8px 0;">{{ page_title }}</h1>
-    {% if section %}
-    <div style="font-size: 0.85rem; color: var(--text-muted);">分類: {{ section }}</div>
+  {% if banner_url %}
+  <div
+    class="hero-section"
+    {% if primary_color %}style="border-bottom: 3px solid #{{ primary_color }};"{% endif %}
+  >
+    <div class="hero-banner-wrapper">
+      <img
+        src="{{ banner_url }}"
+        alt="{{ page_title }} バナー"
+        class="hero-banner-img"
+        {% if banner_y %}style="object-position: center {{ banner_y }}%;"{% endif %}
+        loading="eager"
+      />
+      <button type="button" class="hero-zoom-btn" title="バナーを拡大表示">拡大</button>
+    </div>
+
+    <div class="hero-content">
+      {% if icon %}
+      <div
+        class="hero-avatar"
+        {% if primary_color %}style="box-shadow: 0 4px 16px #{{ primary_color }}40; border-color: #{{ primary_color }};"{% endif %}
+      >
+        <span class="avatar-icon">{{ icon }}</span>
+      </div>
+      {% endif %}
+      <div class="hero-title-area">
+        <div class="hero-title-row">
+          <h1>{{ page_title }}</h1>
+          {% if kind %}
+          <span class="kind-tag kind-{{ kind }}">{{ kind }}</span>
+          {% endif %}
+        </div>
+        {% if hero_chips and hero_chips | length > 0 %}
+        <div class="hero-meta-chips">
+          {% for chip in hero_chips %}
+          <span class="hero-chip">
+            {% if chip.label %}<span class="chip-label">{{ chip.label }}: </span>{% endif %}
+            <span class="chip-val">{{ chip.value }}</span>
+          </span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <header class="article-header" {% if primary_color %}style="border-bottom: 3px solid #{{ primary_color }};"{% endif %}>
+    <div class="title-row">
+      <h1>
+        {% if icon %}<span class="title-inline-icon">{{ icon }}</span>{% endif %}
+        {{ page_title }}
+      </h1>
+      {% if kind %}
+      <span class="kind-tag kind-{{ kind }}">{{ kind }}</span>
+      {% endif %}
+    </div>
+    {% if hero_chips and hero_chips | length > 0 %}
+    <div class="hero-meta-chips" style="margin-top: 8px;">
+      {% for chip in hero_chips %}
+      <span class="hero-chip">
+        {% if chip.label %}<span class="chip-label">{{ chip.label }}: </span>{% endif %}
+        <span class="chip-val">{{ chip.value }}</span>
+      </span>
+      {% endfor %}
+    </div>
     {% endif %}
   </header>
+  {% endif %}
 
-  <article>
-    {{ body_html | safe }}
-  </article>
+  {% if has_data %}
+  <aside
+    class="infobox{% if kind %} infobox-{{ kind }}{% endif %}"
+    {% if primary_color %}style="border-top: 3px solid #{{ primary_color }};"{% endif %}
+  >
+    <div class="infobox-title">
+      {% if icon %}<span>{{ icon }}</span>{% endif %}
+      <span>{{ page_title }}</span>
+    </div>
+    {% if images and images | length > 0 %}
+    <div class="infobox-image-section">
+      <div class="infobox-image-wrapper">
+        <img
+          src="{{ images[0] }}"
+          alt="{{ page_title }}"
+          class="infobox-main-img"
+          loading="lazy"
+        />
+      </div>
+      {% if images | length > 1 %}
+      <div class="infobox-costume-switcher" role="tablist">
+        <span class="switcher-label">衣装:</span>
+        <div class="switcher-buttons">
+          {% for img in images %}
+          <button
+            type="button"
+            class="costume-btn{% if loop.first %} active{% endif %}"
+            data-img-src="{{ img }}"
+            title="衣装 {{ loop.index }}"
+          >
+            {{ loop.index }}
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% if infobox_rows and infobox_rows | length > 0 %}
+    <table class="infobox-table">
+      <tbody>
+        {% for row in infobox_rows %}
+        <tr>
+          <th class="infobox-label">{{ row.label }}</th>
+          <td class="infobox-data">{{ row.value | safe }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </aside>
+  {% endif %}
+
+  {% if toc and toc | length > 0 %}
+  <aside class="toc">
+    <h2>Table of Contents</h2>
+    <ul>
+      {% for item in toc %}
+      <li style="margin-left: {{ (item.level - 2) * 1 }}rem">
+        <a href="#{{ item.id }}">{{ item.text }}</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </aside>
+  {% endif %}
+
+  <main>
+    <article>
+      {{ body_html | safe }}
+    </article>
+  </main>
 </div>
 {% endblock %}

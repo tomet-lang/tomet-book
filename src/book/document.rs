@@ -327,6 +327,26 @@ pub fn process_tomet_document(
                 .map(|s| s.as_str())
                 .collect();
 
+            // Match Astro: if (kind && (!meta || !meta.type)) rawEntries.push(['kind', kind]);
+            if let Some(k) = &kind {
+                if !exclude_set.contains("kind")
+                    && !map.contains_key("type")
+                    && !map.contains_key("kind")
+                {
+                    let label = config
+                        .ui
+                        .infobox
+                        .labels
+                        .get("kind")
+                        .cloned()
+                        .unwrap_or_else(|| "種別".to_string());
+                    infobox_rows.push(InfoboxRowItem {
+                        label,
+                        value: k.clone(),
+                    });
+                }
+            }
+
             for (key, val) in map {
                 if exclude_set.contains(key.as_str()) {
                     continue;
@@ -341,11 +361,29 @@ pub fn process_tomet_document(
                     .unwrap_or_else(|| key.clone());
 
                 let display_val = match val {
-                    serde_json::Value::String(s) => clean_ref_target(s),
+                    serde_json::Value::String(s) => {
+                        if (key.starts_with("url.") || key == "url")
+                            && (s.starts_with("http://") || s.starts_with("https://"))
+                        {
+                            format!(r#"<a href="{s}" target="_blank" rel="noopener noreferrer">{s}</a>"#)
+                        } else {
+                            clean_ref_target(s)
+                        }
+                    }
                     serde_json::Value::Array(arr) => {
                         let parts: Vec<String> = arr
                             .iter()
-                            .filter_map(|v| v.as_str().map(clean_ref_target))
+                            .filter_map(|v| {
+                                v.as_str().map(|s| {
+                                    if (key.starts_with("url.") || key == "url")
+                                        && (s.starts_with("http://") || s.starts_with("https://"))
+                                    {
+                                        format!(r#"<a href="{s}" target="_blank" rel="noopener noreferrer">{s}</a>"#)
+                                    } else {
+                                        clean_ref_target(s)
+                                    }
+                                })
+                            })
                             .collect();
                         parts.join("、")
                     }
