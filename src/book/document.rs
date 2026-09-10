@@ -56,6 +56,53 @@ pub struct TocNode {
 
 pub type SectionTab = TocNode;
 
+/// Escape text for interpolation into HTML text nodes and double-quoted attributes.
+///
+/// Infobox values reach the template through `| safe`, so anything built by hand
+/// here has to arrive already escaped.
+fn escape_html(raw: &str) -> String {
+    let mut out = String::with_capacity(raw.len());
+    for c in raw.chars() {
+        match c {
+            '&' => out.push_str("&amp;"),
+            '<' => out.push_str("&lt;"),
+            '>' => out.push_str("&gt;"),
+            '"' => out.push_str("&quot;"),
+            '\'' => out.push_str("&#39;"),
+            _ => out.push(c),
+        }
+    }
+    out
+}
+
+/// Normalize a `@meta.colors` entry to a bare hex body (`#AABBCC` -> `aabbcc`).
+///
+/// Returns `None` for anything that is not a 3/4/6/8-digit hex color, which keeps
+/// unvetted text out of the inline `style` attributes that consume it.
+fn sanitize_color_hex(raw: &str) -> Option<String> {
+    let hex = raw.trim().trim_start_matches('#');
+    let is_hex = matches!(hex.len(), 3 | 4 | 6 | 8) && hex.chars().all(|c| c.is_ascii_hexdigit());
+    is_hex.then(|| hex.to_ascii_lowercase())
+}
+
+fn color_chip_html(raw: &str) -> String {
+    match sanitize_color_hex(raw) {
+        Some(hex) => format!(
+            r##"<span class="color-chip-wrapper" title="#{hex}"><span class="color-chip" style="background-color: #{hex};"></span><span class="color-hex">#{hex}</span></span>"##
+        ),
+        None => format!(r#"<span class="color-hex">{}</span>"#, escape_html(raw)),
+    }
+}
+
+fn external_link_html(url: &str) -> String {
+    let safe = escape_html(url);
+    format!(r#"<a href="{safe}" target="_blank" rel="noopener noreferrer">{safe}</a>"#)
+}
+
+fn is_external_url(s: &str) -> bool {
+    s.starts_with("http://") || s.starts_with("https://")
+}
+
 fn is_link_ref(raw: &str) -> bool {
     let s = raw.trim();
     (s.starts_with("@link(") && s.ends_with(')'))
@@ -162,13 +209,15 @@ fn format_meta_value_to_html(
     url_prefix: &str,
 ) -> String {
     if let Some((href, label)) = resolve_meta_link(raw_str, from_path, vault_index, url_prefix) {
+        let label = escape_html(&label);
         if href.is_empty() {
             format!(r#"<span class="tm-link tm-unresolved" title="未作成のページ">{label}</span>"#)
         } else {
+            let href = escape_html(&href);
             format!(r#"<a href="{href}" class="tm-link tm-file">{label}</a>"#)
         }
     } else {
-        clean_ref_target(raw_str)
+        escape_html(&clean_ref_target(raw_str))
     }
 }
 
@@ -204,6 +253,51 @@ fn resolve_meta_media_path(
     } else {
         format!("{clean_prefix}/{}", target.replace('\\', "/"))
     }
+}
+
+fn insert_node_into(parent: &mut TocNode, node: TocNode) {
+    if let Some(last) = parent.children.last_mut() {
+        if node.level > last.level {
+            insert_node_into(last, node);
+            return;
+        }
+    }
+    parent.children.push(node);
+}
+
+/// Fold a flat TOC into the tree the sticky-tab header renders.
+///
+/// Roots are the shallowest level present (H1 when the document has any),
+/// and every deeper heading nests under the most recent shallower one.
+fn build_section_tabs(toc: &[TocItem]) -> Vec<TocNode> {
+    let has_h1 = toc.iter().any(|item| item.level == 1);
+    let top_level = if has_h1 {
+        1
+    } else {
+        toc.iter().map(|item| item.level).min().unwrap_or(1)
+    };
+
+    let mut section_tabs: Vec<TocNode> = Vec::new();
+    for item in toc {
+        let node = TocNode {
+            id: item.id.clone(),
+            text: item.text.clone(),
+            level: item.level,
+            children: Vec::new(),
+        };
+
+        if section_tabs.is_empty() || item.level <= top_level {
+            section_tabs.push(node);
+        } else if let Some(last_root) = section_tabs.last_mut() {
+            if item.level > last_root.level {
+                insert_node_into(last_root, node);
+            } else {
+                section_tabs.push(node);
+            }
+        }
+    }
+
+    section_tabs
 }
 
 pub fn process_tomet_document(
@@ -348,42 +442,7 @@ pub fn process_tomet_document(
     }
 
     // 7b. Hierarchical section tree for horizontal accordion header
-    let has_h1 = toc.iter().any(|item| item.level == 1);
-    let top_level = if has_h1 {
-        1
-    } else {
-        toc.iter().map(|item| item.level).min().unwrap_or(1)
-    };
-
-    fn insert_node_into(parent: &mut TocNode, node: TocNode) {
-        if let Some(last) = parent.children.last_mut() {
-            if node.level > last.level {
-                insert_node_into(last, node);
-                return;
-            }
-        }
-        parent.children.push(node);
-    }
-
-    let mut section_tabs: Vec<TocNode> = Vec::new();
-    for item in &toc {
-        let node = TocNode {
-            id: item.id.clone(),
-            text: item.text.clone(),
-            level: item.level,
-            children: Vec::new(),
-        };
-
-        if section_tabs.is_empty() || item.level <= top_level {
-            section_tabs.push(node);
-        } else if let Some(last_root) = section_tabs.last_mut() {
-            if item.level > last_root.level {
-                insert_node_into(last_root, node);
-            } else {
-                section_tabs.push(node);
-            }
-        }
-    }
+    let section_tabs = build_section_tabs(&toc);
 
     // 8. Section classification (e.g. "30-39 Knowledge/01 Dev" -> "30-39 Knowledge")
     let section = Path::new(rel_path)
@@ -414,13 +473,14 @@ pub fn process_tomet_document(
         }
 
         // Primary Color
+        // Only well-formed hex reaches the template's inline `style` attributes.
         if let Some(val) = map.get("colors") {
             if let Some(arr) = val.as_array() {
                 if let Some(first) = arr.first().and_then(|v| v.as_str()) {
-                    primary_color = Some(first.trim_start_matches('#').to_string());
+                    primary_color = sanitize_color_hex(first);
                 }
             } else if let Some(s) = val.as_str() {
-                primary_color = Some(s.trim_start_matches('#').to_string());
+                primary_color = sanitize_color_hex(s);
             }
         }
 
@@ -572,12 +632,12 @@ pub fn process_tomet_document(
                 let display_val = match val {
                     serde_json::Value::String(s) => {
                         if key == "colors" {
-                            let hex = s.trim_start_matches('#');
-                            format!(r##"<div class="color-chips"><span class="color-chip-wrapper" title="#{hex}"><span class="color-chip" style="background-color: #{hex};"></span><span class="color-hex">#{hex}</span></span></div>"##)
-                        } else if (key.starts_with("url.") || key == "url")
-                            && (s.starts_with("http://") || s.starts_with("https://"))
-                        {
-                            format!(r#"<a href="{s}" target="_blank" rel="noopener noreferrer">{s}</a>"#)
+                            format!(
+                                r#"<div class="color-chips">{}</div>"#,
+                                color_chip_html(s)
+                            )
+                        } else if (key.starts_with("url.") || key == "url") && is_external_url(s) {
+                            external_link_html(s)
                         } else {
                             format_meta_value_to_html(
                                 s,
@@ -591,12 +651,7 @@ pub fn process_tomet_document(
                         if key == "colors" {
                             let chips: Vec<String> = arr
                                 .iter()
-                                .filter_map(|v| {
-                                    v.as_str().map(|s| {
-                                        let hex = s.trim_start_matches('#');
-                                        format!(r##"<span class="color-chip-wrapper" title="#{hex}"><span class="color-chip" style="background-color: #{hex};"></span><span class="color-hex">#{hex}</span></span>"##)
-                                    })
-                                })
+                                .filter_map(|v| v.as_str().map(color_chip_html))
                                 .collect();
                             format!(r#"<div class="color-chips">{}</div>"#, chips.join(""))
                         } else {
@@ -605,9 +660,9 @@ pub fn process_tomet_document(
                                 .filter_map(|v| {
                                     v.as_str().map(|s| {
                                         if (key.starts_with("url.") || key == "url")
-                                            && (s.starts_with("http://") || s.starts_with("https://"))
+                                            && is_external_url(s)
                                         {
-                                            format!(r#"<a href="{s}" target="_blank" rel="noopener noreferrer">{s}</a>"#)
+                                            external_link_html(s)
                                         } else {
                                             format_meta_value_to_html(
                                                 s,
@@ -669,4 +724,257 @@ pub fn process_tomet_document(
         section_tabs,
         body_html: html,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn index(paths: &[&str]) -> tomet_links::VaultLinkIndex {
+        tomet_links::VaultLinkIndex::from_paths(paths)
+    }
+
+    // ---- link reference parsing ----
+
+    #[test]
+    fn recognizes_link_reference_forms() {
+        assert!(is_link_ref(r#"@link(ref:"@foo")"#));
+        assert!(is_link_ref("link(ref:bar)"));
+        assert!(is_link_ref("[[foo]]"));
+        assert!(is_link_ref("[[foo|別名]]"));
+        assert!(is_link_ref("ref:baz"));
+        assert!(is_link_ref("@foo"));
+    }
+
+    #[test]
+    fn plain_values_are_not_link_references() {
+        assert!(!is_link_ref("ただのテキスト"));
+        assert!(!is_link_ref("2024-01-01"));
+        assert!(!is_link_ref("@foo @bar"));
+        assert!(!is_link_ref("a@b"));
+    }
+
+    #[test]
+    fn clean_ref_target_unwraps_every_form() {
+        assert_eq!(clean_ref_target(r#"@link(ref:"@foo")"#), "foo");
+        assert_eq!(clean_ref_target("link(ref:bar)"), "bar");
+        assert_eq!(clean_ref_target("[[foo]]"), "foo");
+        assert_eq!(clean_ref_target("ref:baz"), "baz");
+        assert_eq!(clean_ref_target("@qux"), "qux");
+        assert_eq!(clean_ref_target("  plain  "), "plain");
+    }
+
+    #[test]
+    fn clean_ref_target_prefers_the_alias() {
+        assert_eq!(clean_ref_target("[[foo|別名]]"), "別名");
+    }
+
+    #[test]
+    fn resolve_meta_link_builds_a_url_under_the_prefix() {
+        let idx = index(&["30-39 Knowledge/rust.tmt"]);
+        let (href, label) =
+            resolve_meta_link("[[rust]]", Path::new("notes/a.tmt"), &idx, "/wiki").unwrap();
+        assert_eq!(href, "/wiki/30-39 Knowledge/rust");
+        assert_eq!(label, "rust");
+    }
+
+    #[test]
+    fn resolve_meta_link_keeps_the_alias_as_the_label() {
+        let idx = index(&["30-39 Knowledge/rust.tmt"]);
+        let (href, label) =
+            resolve_meta_link("[[rust|ラスト]]", Path::new("notes/a.tmt"), &idx, "/wiki").unwrap();
+        assert_eq!(href, "/wiki/30-39 Knowledge/rust");
+        assert_eq!(label, "ラスト");
+    }
+
+    #[test]
+    fn resolve_meta_link_reports_unresolved_targets_with_an_empty_href() {
+        let idx = index(&["a.tmt"]);
+        let (href, label) =
+            resolve_meta_link("[[missing]]", Path::new("a.tmt"), &idx, "/wiki").unwrap();
+        assert!(href.is_empty());
+        assert_eq!(label, "missing");
+    }
+
+    #[test]
+    fn resolve_meta_link_ignores_non_references() {
+        let idx = index(&["a.tmt"]);
+        assert!(resolve_meta_link("ただの値", Path::new("a.tmt"), &idx, "/wiki").is_none());
+    }
+
+    #[test]
+    fn trailing_slash_on_the_url_prefix_is_not_doubled() {
+        let idx = index(&["rust.tmt"]);
+        let (href, _) =
+            resolve_meta_link("[[rust]]", Path::new("a.tmt"), &idx, "/wiki/").unwrap();
+        assert_eq!(href, "/wiki/rust");
+    }
+
+    // ---- HTML escaping ----
+
+    #[test]
+    fn escape_html_covers_the_markup_and_quote_characters() {
+        assert_eq!(
+            escape_html(r#"<b> & "x" 'y'"#),
+            "&lt;b&gt; &amp; &quot;x&quot; &#39;y&#39;"
+        );
+        assert_eq!(escape_html("日本語 plain"), "日本語 plain");
+    }
+
+    #[test]
+    fn meta_values_cannot_break_out_of_the_infobox_cell() {
+        let idx = index(&["a.tmt"]);
+        let html = format_meta_value_to_html(
+            r#"<img src=x onerror=alert(1)>"#,
+            Path::new("a.tmt"),
+            &idx,
+            "/wiki",
+        );
+        // The payload survives as inert text, but never as markup.
+        assert_eq!(html, "&lt;img src=x onerror=alert(1)&gt;");
+    }
+
+    #[test]
+    fn unresolved_link_labels_are_escaped() {
+        let idx = index(&["a.tmt"]);
+        let html = format_meta_value_to_html(
+            r#"[[missing|"><script>x</script>]]"#,
+            Path::new("a.tmt"),
+            &idx,
+            "/wiki",
+        );
+        assert!(!html.contains("<script>"));
+        assert!(html.contains("&lt;script&gt;"));
+    }
+
+    #[test]
+    fn external_links_escape_the_url_in_both_slots() {
+        let html = external_link_html(r#"https://example.com/?a=1&b="x""#);
+        assert!(html.contains(r#"href="https://example.com/?a=1&amp;b=&quot;x&quot;""#));
+        assert!(!html.contains(r#"b=""#));
+    }
+
+    // ---- color handling ----
+
+    #[test]
+    fn sanitize_color_hex_accepts_the_valid_hex_lengths() {
+        assert_eq!(sanitize_color_hex("#AABBCC").as_deref(), Some("aabbcc"));
+        assert_eq!(sanitize_color_hex("abc").as_deref(), Some("abc"));
+        assert_eq!(sanitize_color_hex(" #12345678 ").as_deref(), Some("12345678"));
+    }
+
+    #[test]
+    fn sanitize_color_hex_rejects_anything_else() {
+        assert_eq!(sanitize_color_hex("red"), None);
+        assert_eq!(sanitize_color_hex("#12345"), None);
+        assert_eq!(sanitize_color_hex(r#"fff;" onmouseover="alert(1)"#), None);
+        assert_eq!(sanitize_color_hex(""), None);
+    }
+
+    #[test]
+    fn color_chips_fall_back_to_escaped_text_for_invalid_input() {
+        let html = color_chip_html(r#"fff;" onmouseover="alert(1)"#);
+        assert!(!html.contains("onmouseover=\""));
+        assert!(!html.contains("style="));
+        assert!(html.contains("&quot;"));
+    }
+
+    #[test]
+    fn valid_colors_still_render_a_swatch() {
+        let html = color_chip_html("#A1B2C3");
+        assert!(html.contains("background-color: #a1b2c3;"));
+        assert!(html.contains(r##"title="#a1b2c3""##));
+    }
+
+    // ---- chip formatting ----
+
+    #[test]
+    fn birthday_format_shortens_an_iso_date() {
+        assert_eq!(format_chip_value("2001-04-09", Some("birthday")), "4月9日");
+        assert_eq!(
+            format_chip_value("2001-04-09T00:00:00", Some("birthday")),
+            "4月9日"
+        );
+    }
+
+    #[test]
+    fn birthday_format_leaves_unparsable_values_alone() {
+        assert_eq!(format_chip_value("春ごろ", Some("birthday")), "春ごろ");
+        assert_eq!(format_chip_value("2001-04-09", None), "2001-04-09");
+    }
+
+    // ---- section tab tree ----
+
+    fn toc(items: &[(u32, &str)]) -> Vec<TocItem> {
+        items
+            .iter()
+            .map(|(level, text)| TocItem {
+                id: text.to_lowercase(),
+                level: *level,
+                text: text.to_string(),
+            })
+            .collect()
+    }
+
+    fn shape(nodes: &[TocNode]) -> Vec<(String, Vec<String>)> {
+        nodes
+            .iter()
+            .map(|n| {
+                (
+                    n.text.clone(),
+                    n.children.iter().map(|c| c.text.clone()).collect(),
+                )
+            })
+            .collect()
+    }
+
+    #[test]
+    fn flat_headings_all_become_roots() {
+        let tabs = build_section_tabs(&toc(&[(1, "A"), (1, "B"), (1, "C")]));
+        assert_eq!(shape(&tabs), vec![
+            ("A".into(), vec![]),
+            ("B".into(), vec![]),
+            ("C".into(), vec![]),
+        ]);
+    }
+
+    #[test]
+    fn deeper_headings_nest_under_the_preceding_root() {
+        let tabs = build_section_tabs(&toc(&[
+            (1, "A"),
+            (2, "A-1"),
+            (2, "A-2"),
+            (1, "B"),
+            (2, "B-1"),
+        ]));
+        assert_eq!(shape(&tabs), vec![
+            ("A".into(), vec!["A-1".into(), "A-2".into()]),
+            ("B".into(), vec!["B-1".into()]),
+        ]);
+    }
+
+    #[test]
+    fn third_level_headings_nest_under_their_parent() {
+        let tabs = build_section_tabs(&toc(&[(1, "A"), (2, "A-1"), (3, "A-1-a"), (2, "A-2")]));
+        assert_eq!(tabs.len(), 1);
+        let a1 = &tabs[0].children[0];
+        assert_eq!(a1.text, "A-1");
+        assert_eq!(a1.children.len(), 1);
+        assert_eq!(a1.children[0].text, "A-1-a");
+        assert_eq!(tabs[0].children[1].text, "A-2");
+    }
+
+    #[test]
+    fn documents_without_h1_use_their_shallowest_level_as_roots() {
+        let tabs = build_section_tabs(&toc(&[(2, "A"), (3, "A-1"), (2, "B")]));
+        assert_eq!(shape(&tabs), vec![
+            ("A".into(), vec!["A-1".into()]),
+            ("B".into(), vec![]),
+        ]);
+    }
+
+    #[test]
+    fn an_empty_toc_yields_no_tabs() {
+        assert!(build_section_tabs(&[]).is_empty());
+    }
 }

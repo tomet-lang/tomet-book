@@ -29,6 +29,26 @@ pub const MEDIA_EXTENSIONS: &[&str] = &[
     "png", "jpg", "jpeg", "gif", "svg", "webp", "pdf", "mp4", "mp3", "webm", "avif", "ico",
 ];
 
+/// Returns true when `rel` is the excluded path `prefix` itself, or lives under it.
+///
+/// Matching happens on path-segment boundaries, so an exclude entry like `dist`
+/// drops `dist/index.tmt` but keeps `distributed.tmt` and `old/distro/x.tmt`.
+/// Multi-segment entries (`"00-09 System/01 Apps"`) are matched as a whole.
+fn is_excluded_path(rel: &str, prefix: &str) -> bool {
+    let prefix = prefix.trim_matches('/');
+    if prefix.is_empty() {
+        return false;
+    }
+
+    std::iter::once(0)
+        .chain(rel.match_indices('/').map(|(i, _)| i + 1))
+        .any(|start| {
+            rel[start..]
+                .strip_prefix(prefix)
+                .is_some_and(|tail| tail.is_empty() || tail.starts_with('/'))
+        })
+}
+
 pub fn scan_vault(src_dir: &Path, config: &BookConfig) -> Result<ScannedVault> {
     let mut doc_files = Vec::new();
     let mut media_files = Vec::new();
@@ -60,10 +80,10 @@ pub fn scan_vault(src_dir: &Path, config: &BookConfig) -> Result<ScannedVault> {
         };
         let rel_str = rel.to_string_lossy().replace('\\', "/");
 
-        // Check if path starts with excluded prefix
+        // Check if path is, or lives under, an excluded directory
         let is_excluded = exclude_prefixes
             .iter()
-            .any(|prefix| rel_str.starts_with(prefix) || rel_str.contains(&format!("/{prefix}")));
+            .any(|prefix| is_excluded_path(&rel_str, prefix));
         if is_excluded {
             continue;
         }
@@ -116,4 +136,44 @@ pub fn scan_vault(src_dir: &Path, config: &BookConfig) -> Result<ScannedVault> {
         vault_index,
         workspace_config_src,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_excluded_path;
+
+    #[test]
+    fn excludes_the_directory_itself_and_its_contents() {
+        assert!(is_excluded_path("dist", "dist"));
+        assert!(is_excluded_path("dist/wiki/index.tmt", "dist"));
+        assert!(is_excluded_path("notes/dist/a.tmt", "dist"));
+        assert!(is_excluded_path("a/b/dist", "dist"));
+    }
+
+    #[test]
+    fn does_not_match_partial_segment_names() {
+        assert!(!is_excluded_path("distributed-notes.tmt", "dist"));
+        assert!(!is_excluded_path("old/distro/x.tmt", "dist"));
+        assert!(!is_excluded_path("my-target/a.tmt", "target"));
+        assert!(!is_excluded_path("notes/targets.tmt", "target"));
+    }
+
+    #[test]
+    fn matches_multi_segment_entries_as_a_whole() {
+        let prefix = "00-09 System/01 Apps";
+        assert!(is_excluded_path("00-09 System/01 Apps/zed.tmt", prefix));
+        assert!(is_excluded_path(
+            "vault/00-09 System/01 Apps/zed.tmt",
+            prefix
+        ));
+        assert!(!is_excluded_path("00-09 System/02 Tools/zed.tmt", prefix));
+        assert!(!is_excluded_path("00-09 System/01 Appsx/zed.tmt", prefix));
+    }
+
+    #[test]
+    fn ignores_empty_and_slash_only_entries() {
+        assert!(!is_excluded_path("notes/a.tmt", ""));
+        assert!(!is_excluded_path("notes/a.tmt", "/"));
+        assert!(is_excluded_path("notes/a.tmt", "/notes/"));
+    }
 }
