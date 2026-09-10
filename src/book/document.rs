@@ -285,10 +285,17 @@ pub fn process_tomet_document(
         let cleaned = heading_number_re.replace_all(inner, "");
         let text = tag_re.replace_all(&cleaned, "").trim().to_string();
 
-        if open_level == 1 && first_h1.is_none() && !text.is_empty() {
+        let is_boilerplate = text.eq_ignore_ascii_case("related")
+            || text == "関連"
+            || text == "参考文献"
+            || text == "脚注"
+            || text.eq_ignore_ascii_case("footnotes")
+            || text.eq_ignore_ascii_case("references");
+
+        if open_level == 1 && first_h1.is_none() && !text.is_empty() && !is_boilerplate {
             first_h1 = Some(text.clone());
         }
-        if (open_level == 2 || open_level == 3) && !text.is_empty() {
+        if (open_level >= 1 && open_level <= 4) && !text.is_empty() {
             toc.push(TocItem {
                 id,
                 level: open_level,
@@ -297,7 +304,7 @@ pub fn process_tomet_document(
         }
     }
 
-    // 7. Title resolution: @meta.title -> first H1 -> file stem
+    // 7. Title resolution: @meta.title -> (if generic stem, first H1) -> file stem
     let stem = Path::new(rel_path)
         .file_stem()
         .and_then(|s| s.to_str())
@@ -309,7 +316,25 @@ pub fn process_tomet_document(
             .and_then(|v| v.as_str())
             .map(|s| s.to_string())
     });
-    let title = meta_title.or(first_h1).unwrap_or(stem);
+
+    let is_generic_stem = stem.eq_ignore_ascii_case("index")
+        || stem.eq_ignore_ascii_case("readme")
+        || stem == "Untitled";
+
+    let title = if let Some(meta_title) = meta_title {
+        meta_title
+    } else if is_generic_stem {
+        first_h1.unwrap_or(stem)
+    } else {
+        stem
+    };
+
+    // If the first TOC item is an H1 identical to the document title, omit it from TOC
+    if let Some(first) = toc.first() {
+        if first.level == 1 && first.text == title {
+            toc.remove(0);
+        }
+    }
 
     // 8. Section classification (e.g. "30-39 Knowledge/01 Dev" -> "30-39 Knowledge")
     let section = Path::new(rel_path)

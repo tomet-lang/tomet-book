@@ -176,41 +176,34 @@
 
     // 1. 目次ペインと常設左縦バーの開閉制御
     function setupNavPane() {
-      const paneNav = document.getElementById('pane-nav');
-      const paneTitle = document.getElementById('pane-nav-title');
-      const railTabs = document.querySelectorAll('.rail-tab-nav');
-      const panelViews = document.querySelectorAll('.pane-panel-view');
-      const btnCollapseNav = document.getElementById('header-collapse-nav');
-
-      if (!paneNav) return;
-
       const titles = {
         toc: '目次',
         links: 'リンク',
         graph: 'グラフ',
       };
 
-      let activePanel = 'toc';
-
       function switchPanel(panelName, expandIfCollapsed = true) {
-        activePanel = panelName;
+        const pNav = document.getElementById('pane-nav');
+        if (!pNav) return;
+        pNav.dataset.activePanel = panelName;
 
         if (expandIfCollapsed) {
-          paneNav.classList.remove('is-collapsed');
+          pNav.classList.remove('is-collapsed');
           try {
             localStorage.setItem('wiki-pane-nav-collapsed', 'false');
           } catch (e) {}
         }
 
-        railTabs.forEach((tab) => {
-          if (tab.getAttribute('data-panel') === panelName && !paneNav.classList.contains('is-collapsed')) {
+        const isCollapsed = pNav.classList.contains('is-collapsed');
+        document.querySelectorAll('.rail-tab-nav').forEach((tab) => {
+          if (tab.getAttribute('data-panel') === panelName && !isCollapsed) {
             tab.classList.add('is-active');
           } else {
             tab.classList.remove('is-active');
           }
         });
 
-        panelViews.forEach((view) => {
+        document.querySelectorAll('.pane-panel-view').forEach((view) => {
           if (view.id === `pane-panel-${panelName}`) {
             view.hidden = false;
             view.classList.add('is-active');
@@ -220,63 +213,81 @@
           }
         });
 
+        const paneTitle = document.getElementById('pane-nav-title');
         if (paneTitle && titles[panelName]) {
           paneTitle.textContent = titles[panelName];
         }
       }
 
       function collapsePane() {
-        paneNav.classList.add('is-collapsed');
-        railTabs.forEach((tab) => tab.classList.remove('is-active'));
+        const pNav = document.getElementById('pane-nav');
+        if (!pNav) return;
+        pNav.classList.add('is-collapsed');
+        document.querySelectorAll('.rail-tab-nav').forEach((tab) => tab.classList.remove('is-active'));
         try {
           localStorage.setItem('wiki-pane-nav-collapsed', 'true');
         } catch (e) {}
       }
 
-      // Restore collapsed state
-      try {
-        const isNarrow = window.innerWidth <= 900;
-        const navSetting = localStorage.getItem('wiki-pane-nav-collapsed');
-        const isCollapsed = navSetting !== null ? navSetting === 'true' : isNarrow;
-        if (isCollapsed) {
-          collapsePane();
-        } else {
-          switchPanel('toc', true);
-        }
-      } catch (e) {}
+      // Restore collapsed and active state on page load/transition
+      const pNav = document.getElementById('pane-nav');
+      if (pNav) {
+        try {
+          const isNarrow = window.innerWidth <= 900;
+          const navSetting = localStorage.getItem('wiki-pane-nav-collapsed');
+          const isCollapsed = navSetting !== null ? navSetting === 'true' : isNarrow;
+          const currentPanel = pNav.dataset.activePanel || 'toc';
+          if (isCollapsed) {
+            collapsePane();
+          } else {
+            switchPanel(currentPanel, false);
+          }
+        } catch (e) {}
+      }
 
-      if (!railTabs[0]?.dataset.bound) {
-        railTabs.forEach((tab) => {
-          tab.dataset.bound = 'true';
-          tab.addEventListener('click', (e) => {
+      // Global delegation for rail tabs and collapse buttons
+      if (!window.__navPaneDelegated) {
+        window.__navPaneDelegated = true;
+
+        document.addEventListener('click', (e) => {
+          // Rail tabs
+          const tab = e.target.closest('.rail-tab-nav');
+          if (tab) {
             e.stopPropagation();
             const panel = tab.getAttribute('data-panel');
             if (!panel) return;
+            const currentPane = document.getElementById('pane-nav');
+            if (!currentPane) return;
 
-            const isCollapsed = paneNav.classList.contains('is-collapsed');
+            const isCollapsed = currentPane.classList.contains('is-collapsed');
+            const active = currentPane.dataset.activePanel || 'toc';
+
             if (isCollapsed) {
               switchPanel(panel, true);
-            } else if (activePanel === panel) {
+            } else if (active === panel) {
               collapsePane();
             } else {
               switchPanel(panel, true);
             }
-          });
+            return;
+          }
+
+          // Header collapse button
+          const collapseBtn = e.target.closest('#header-collapse-nav');
+          if (collapseBtn) {
+            e.stopPropagation();
+            collapsePane();
+            return;
+          }
+        });
+
+        document.addEventListener('keydown', (e) => {
+          if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('#header-collapse-nav')) {
+            e.preventDefault();
+            collapsePane();
+          }
         });
       }
-
-      const handleNavCollapse = (e) => {
-        e.stopPropagation();
-        collapsePane();
-      };
-
-      btnCollapseNav?.addEventListener('click', handleNavCollapse);
-      btnCollapseNav?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          handleNavCollapse(e);
-        }
-      });
     }
 
     setupNavPane();
@@ -839,13 +850,10 @@
         const navSetting = localStorage.getItem('wiki-pane-nav-collapsed');
         const navCollapsed = navSetting !== null ? navSetting === 'true' : isNarrow;
         const newPaneNav = newDoc.getElementById('pane-nav');
-        const newBtnToc = newDoc.getElementById('btn-rail-toc');
         if (navCollapsed) {
           newPaneNav?.classList.add('is-collapsed');
-          newBtnToc?.classList.remove('is-active');
         } else {
           newPaneNav?.classList.remove('is-collapsed');
-          newBtnToc?.classList.add('is-active');
         }
 
         const dataSetting = localStorage.getItem('wiki-pane-data-collapsed');
@@ -867,7 +875,9 @@
           const currentNavPane = document.getElementById('pane-nav');
           const newNavPane = newDoc.getElementById('pane-nav');
           if (currentNavPane && newNavPane) {
+            const prevActivePanel = currentNavPane.dataset.activePanel || 'toc';
             currentNavPane.innerHTML = newNavPane.innerHTML;
+            currentNavPane.dataset.activePanel = prevActivePanel;
           }
 
           // Swap data pane if exists in newDoc, or remove if not in newDoc
@@ -1187,7 +1197,9 @@
         const currentNav = document.getElementById('pane-nav');
         const newNav = newDoc.getElementById('pane-nav');
         if (currentNav && newNav) {
+          const prevActivePanel = currentNav.dataset.activePanel || 'toc';
           currentNav.innerHTML = newNav.innerHTML;
+          currentNav.dataset.activePanel = prevActivePanel;
         }
 
         // 2. Swap data pane (infobox) if present

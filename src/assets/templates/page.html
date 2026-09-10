@@ -87,7 +87,7 @@
           <div class="toc-heading">目次</div>
           <ul class="toc-items">
             {% for item in toc %}
-            <li class="toc-item" style="margin-left: {{ (item.level - 2) * 12 }}px">
+            <li class="toc-item" style="margin-left: {{ (item.level - 1) * 10 }}px">
               <a href="#{{ item.id }}" class="book-toc-link" data-target="{{ item.id }}">{{ item.text }}</a>
             </li>
             {% endfor %}
@@ -580,7 +580,7 @@
     <h2>Table of Contents</h2>
     <ul>
       {% for item in toc %}
-      <li style="margin-left: {{ (item.level - 2) * 1 }}rem">
+      <li style="margin-left: {{ (item.level - 1) * 0.75 }}rem">
         <a href="#{{ item.id }}" class="classic-toc-link">{{ item.text }}</a>
       </li>
       {% endfor %}
