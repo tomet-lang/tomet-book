@@ -17,6 +17,17 @@ use tracing::{error, info, warn};
 use crate::book::build_book;
 use crate::config::BookConfig;
 
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(tag = "type")]
+pub enum ReloadSignal {
+    #[serde(rename = "doc")]
+    Doc { url: String },
+    #[serde(rename = "css")]
+    Css,
+    #[serde(rename = "full")]
+    Full,
+}
+
 pub async fn run_dev_server(
     src_dir: PathBuf,
     out_dir: PathBuf,
@@ -30,7 +41,7 @@ pub async fn run_dev_server(
     }
 
     // 2. Broadcast channel for reload events
-    let (tx, _rx) = broadcast::channel::<()>(16);
+    let (tx, _rx) = broadcast::channel::<ReloadSignal>(16);
     let reload_tx = Arc::new(tx);
 
     // 3. Setup file watcher
@@ -80,6 +91,7 @@ pub async fn run_dev_server(
 
                     // Analyze event paths
                     let mut is_global = false;
+                    let mut is_css_only = false;
                     let mut single_doc: Option<(PathBuf, String)> = None;
                     let mut single_media: Option<(PathBuf, String)> = None;
 
@@ -89,12 +101,16 @@ pub async fn run_dev_server(
                         let file_name = path.file_name().and_then(|s| s.to_str()).unwrap_or("");
                         if file_name == "tmtbook.toml"
                             || file_name == "default.config.tmt"
-                            || file_name.ends_with(".css")
                             || file_name.ends_with(".js")
                             || file_name.ends_with(".html")
                         {
                             is_global = true;
                             break;
+                        }
+
+                        if file_name.ends_with(".css") {
+                            is_css_only = true;
+                            continue;
                         }
 
                         let ext = path.extension().and_then(|s| s.to_str()).unwrap_or("").to_lowercase();
@@ -113,7 +129,11 @@ pub async fn run_dev_server(
                         }
                     }
 
-                    if !is_global && single_doc.is_some() && cached_scanned.is_some() && cached_renderer.is_some() {
+                    if !is_global && is_css_only && single_doc.is_none() {
+                        let _ = crate::book::assets::write_static_assets(&watch_out, &watch_src, &watch_cfg);
+                        info!("🎨 CSS changed, hot reloading stylesheets");
+                        let _ = watcher_tx.send(ReloadSignal::Css);
+                    } else if !is_global && single_doc.is_some() && cached_scanned.is_some() && cached_renderer.is_some() {
                         let (abs_path, rel_path) = single_doc.unwrap();
                         let start = Instant::now();
                         let scanned = cached_scanned.as_ref().unwrap();
@@ -128,14 +148,17 @@ pub async fn run_dev_server(
                             scanned.workspace_config_src.as_deref(),
                             renderer,
                         ) {
-                            Ok(written) => {
+                            Ok((written, doc_url)) => {
                                 info!(
-                                    "⚡ Incremental rebuild: {} in {:?} (written: {})",
+                                    "⚡ Incremental rebuild: {} in {:?} (written: {}, url: {})",
                                     rel_path,
                                     start.elapsed(),
-                                    written
+                                    written,
+                                    doc_url
                                 );
-                                let _ = watcher_tx.send(());
+                                if written {
+                                    let _ = watcher_tx.send(ReloadSignal::Doc { url: doc_url });
+                                }
                             }
                             Err(e) => {
                                 warn!("Incremental rebuild error: {e}");
@@ -145,7 +168,7 @@ pub async fn run_dev_server(
                         let (abs_path, rel_path) = single_media.unwrap();
                         let _ = crate::book::assets::sync_single_media(&watch_out, &abs_path, &rel_path);
                         info!("🖼️ Synced media: {}", rel_path);
-                        let _ = watcher_tx.send(());
+                        let _ = watcher_tx.send(ReloadSignal::Full);
                     } else {
                         info!("🔄 Global change detected, rebuilding all pages (parallel)...");
                         let start = Instant::now();
@@ -157,7 +180,7 @@ pub async fn run_dev_server(
                                 info!("Full rebuild complete in {:?}, triggering reload", start.elapsed());
                                 cached_scanned = crate::book::loader::scan_vault(&watch_src, &watch_cfg).ok();
                                 cached_renderer = crate::book::renderer::BookRenderer::new(&watch_cfg).ok();
-                                let _ = watcher_tx.send(());
+                                let _ = watcher_tx.send(ReloadSignal::Full);
                             }
                             Err(e) => {
                                 warn!("Rebuild error: {e}");
@@ -208,15 +231,13 @@ fn should_ignore_event(event: &Event, out_dir: &Path) -> bool {
     false
 }
 
-async fn handle_ws(mut socket: WebSocket, tx: Arc<broadcast::Sender<()>>) {
+async fn handle_ws(mut socket: WebSocket, tx: Arc<broadcast::Sender<ReloadSignal>>) {
     let mut rx = tx.subscribe();
-    while let Ok(()) = rx.recv().await {
-        if socket
-            .send(Message::Text("reload".to_string()))
-            .await
-            .is_err()
-        {
-            break;
+    while let Ok(signal) = rx.recv().await {
+        if let Ok(json_str) = serde_json::to_string(&signal) {
+            if socket.send(Message::Text(json_str)).await.is_err() {
+                break;
+            }
         }
     }
 }

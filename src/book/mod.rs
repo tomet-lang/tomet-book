@@ -49,7 +49,7 @@ pub fn render_single_document(
     vault_index: &tomet_links::VaultLinkIndex,
     workspace_cfg_src: Option<&str>,
     renderer: &BookRenderer,
-) -> Result<bool> {
+) -> Result<(bool, String)> {
     let source = fs::read_to_string(abs_path)?;
     let processed = process_tomet_document(
         &source,
@@ -64,7 +64,10 @@ pub fn render_single_document(
         .join("wiki")
         .join(&processed.slug)
         .join("index.html");
-    write_if_changed(&out_html_path, &html)
+    let written = write_if_changed(&out_html_path, &html)?;
+    let clean_prefix = config.build.url_prefix.trim_end_matches('/');
+    let url = format!("{clean_prefix}/{}", processed.slug);
+    Ok((written, url))
 }
 
 pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result<()> {
