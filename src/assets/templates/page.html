@@ -313,7 +313,7 @@
     <ul>
       {% for item in toc %}
       <li style="margin-left: {{ (item.level - 2) * 1 }}rem">
-        <a href="#{{ item.id }}">{{ item.text }}</a>
+        <a href="#{{ item.id }}" class="classic-toc-link">{{ item.text }}</a>
       </li>
       {% endfor %}
     </ul>

@@ -5,6 +5,8 @@
       const savedView = localStorage.getItem('wiki-view-mode');
       if (savedView === 'classic' || savedView === 'book') {
         doc.documentElement.setAttribute('data-view', savedView);
+      } else if (window.innerWidth < 768) {
+        doc.documentElement.setAttribute('data-view', 'classic');
       }
     } catch {}
   }
@@ -38,20 +40,80 @@
     const tocLinks = document.querySelectorAll('.book-toc-link');
     const scrollContainer = document.getElementById('book-content-scroll');
 
-    tocLinks.forEach((link) => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const targetId = link.getAttribute('data-target');
-        if (!targetId) return;
-        const targetEl = document.getElementById(targetId);
-        if (targetEl && scrollContainer) {
-          const top = targetEl.offsetTop - scrollContainer.offsetTop - 16;
-          scrollContainer.scrollTo({ top, behavior: 'smooth' });
-          tocLinks.forEach((l) => l.classList.remove('is-active'));
-          link.classList.add('is-active');
-        }
+    if (scrollContainer && tocLinks.length > 0) {
+      const headingTargets = Array.from(tocLinks)
+        .map((link) => {
+          const id = link.getAttribute('data-target');
+          const el = id ? document.getElementById(id) : null;
+          return el ? { id, el, link } : null;
+        })
+        .filter(Boolean);
+
+      let isClickScrolling = false;
+      let clickTimer = null;
+
+      tocLinks.forEach((link) => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const targetId = link.getAttribute('data-target');
+          if (!targetId) return;
+          const targetEl = document.getElementById(targetId);
+          if (targetEl && scrollContainer) {
+            isClickScrolling = true;
+            if (clickTimer) clearTimeout(clickTimer);
+            clickTimer = setTimeout(() => {
+              isClickScrolling = false;
+            }, 800);
+
+            const top = targetEl.offsetTop - scrollContainer.offsetTop - 16;
+            scrollContainer.scrollTo({ top, behavior: 'smooth' });
+            tocLinks.forEach((l) => l.classList.remove('is-active'));
+            link.classList.add('is-active');
+          }
+        });
       });
-    });
+
+      // ScrollSpy: auto-highlight TOC item on scroll
+      let scrollTicking = false;
+      scrollContainer.addEventListener(
+        'scroll',
+        () => {
+          if (isClickScrolling || scrollTicking) return;
+          scrollTicking = true;
+          requestAnimationFrame(() => {
+            scrollTicking = false;
+            const containerTop = scrollContainer.scrollTop + scrollContainer.offsetTop;
+            let currentId = null;
+
+            for (let i = 0; i < headingTargets.length; i++) {
+              const item = headingTargets[i];
+              if (item.el.offsetTop <= containerTop + 40) {
+                currentId = item.id;
+              } else {
+                break;
+              }
+            }
+
+            if (!currentId && headingTargets.length > 0) {
+              currentId = headingTargets[0].id;
+            }
+
+            if (currentId) {
+              headingTargets.forEach(({ id, link }) => {
+                if (id === currentId) {
+                  if (!link.classList.contains('is-active')) {
+                    tocLinks.forEach((l) => l.classList.remove('is-active'));
+                    link.classList.add('is-active');
+                    link.scrollIntoView({ block: 'nearest' });
+                  }
+                }
+              });
+            }
+          });
+        },
+        { passive: true }
+      );
+    }
 
     // 1. 目次ペインと常設左縦バーの開閉制御
     function setupNavPane() {
@@ -801,11 +863,85 @@
     });
   }
 
+  // ==================== CLASSIC VIEW INTERACTIONS ====================
+  function setupClassicViewInteraction() {
+    const classicTocLinks = document.querySelectorAll('.classic-view .toc a');
+    if (classicTocLinks.length === 0) return;
+
+    const headingTargets = Array.from(classicTocLinks)
+      .map((link) => {
+        const href = link.getAttribute('href');
+        if (!href || !href.startsWith('#')) return null;
+        const id = href.slice(1);
+        const el = document.getElementById(id);
+        return el ? { id, el, link } : null;
+      })
+      .filter(Boolean);
+
+    let isClicking = false;
+    let clickTimer = null;
+
+    classicTocLinks.forEach((link) => {
+      link.addEventListener('click', (e) => {
+        const href = link.getAttribute('href');
+        if (!href || !href.startsWith('#')) return;
+        const targetEl = document.getElementById(href.slice(1));
+        if (targetEl) {
+          e.preventDefault();
+          isClicking = true;
+          if (clickTimer) clearTimeout(clickTimer);
+          clickTimer = setTimeout(() => {
+            isClicking = false;
+          }, 800);
+          targetEl.scrollIntoView({ behavior: 'smooth' });
+          classicTocLinks.forEach((l) => l.classList.remove('is-active'));
+          link.classList.add('is-active');
+          history.pushState(null, '', href);
+        }
+      });
+    });
+
+    let ticking = false;
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (document.documentElement.getAttribute('data-view') !== 'classic' || isClicking || ticking) return;
+        ticking = true;
+        requestAnimationFrame(() => {
+          ticking = false;
+          const scrollY = window.scrollY;
+          let currentId = null;
+
+          for (let i = 0; i < headingTargets.length; i++) {
+            const item = headingTargets[i];
+            if (item.el.offsetTop <= scrollY + 80) {
+              currentId = item.id;
+            } else {
+              break;
+            }
+          }
+
+          if (currentId) {
+            headingTargets.forEach(({ id, link }) => {
+              if (id === currentId) {
+                link.classList.add('is-active');
+              } else {
+                link.classList.remove('is-active');
+              }
+            });
+          }
+        });
+      },
+      { passive: true }
+    );
+  }
+
   // ==================== INITIALIZE ====================
   function initPage() {
     syncViewMode();
     setupViewSwitcher();
     setupBookViewInteraction();
+    setupClassicViewInteraction();
     initKeyboardNavigation();
     setupSearch();
     initPagePreview();

@@ -362,7 +362,10 @@ pub fn process_tomet_document(
 
                 let display_val = match val {
                     serde_json::Value::String(s) => {
-                        if (key.starts_with("url.") || key == "url")
+                        if key == "colors" {
+                            let hex = s.trim_start_matches('#');
+                            format!(r##"<div class="color-chips"><span class="color-chip-wrapper" title="#{hex}"><span class="color-chip" style="background-color: #{hex};"></span><span class="color-hex">#{hex}</span></span></div>"##)
+                        } else if (key.starts_with("url.") || key == "url")
                             && (s.starts_with("http://") || s.starts_with("https://"))
                         {
                             format!(r#"<a href="{s}" target="_blank" rel="noopener noreferrer">{s}</a>"#)
@@ -371,21 +374,34 @@ pub fn process_tomet_document(
                         }
                     }
                     serde_json::Value::Array(arr) => {
-                        let parts: Vec<String> = arr
-                            .iter()
-                            .filter_map(|v| {
-                                v.as_str().map(|s| {
-                                    if (key.starts_with("url.") || key == "url")
-                                        && (s.starts_with("http://") || s.starts_with("https://"))
-                                    {
-                                        format!(r#"<a href="{s}" target="_blank" rel="noopener noreferrer">{s}</a>"#)
-                                    } else {
-                                        clean_ref_target(s)
-                                    }
+                        if key == "colors" {
+                            let chips: Vec<String> = arr
+                                .iter()
+                                .filter_map(|v| {
+                                    v.as_str().map(|s| {
+                                        let hex = s.trim_start_matches('#');
+                                        format!(r##"<span class="color-chip-wrapper" title="#{hex}"><span class="color-chip" style="background-color: #{hex};"></span><span class="color-hex">#{hex}</span></span>"##)
+                                    })
                                 })
-                            })
-                            .collect();
-                        parts.join("、")
+                                .collect();
+                            format!(r#"<div class="color-chips">{}</div>"#, chips.join(""))
+                        } else {
+                            let parts: Vec<String> = arr
+                                .iter()
+                                .filter_map(|v| {
+                                    v.as_str().map(|s| {
+                                        if (key.starts_with("url.") || key == "url")
+                                            && (s.starts_with("http://") || s.starts_with("https://"))
+                                        {
+                                            format!(r#"<a href="{s}" target="_blank" rel="noopener noreferrer">{s}</a>"#)
+                                        } else {
+                                            clean_ref_target(s)
+                                        }
+                                    })
+                                })
+                                .collect();
+                            parts.join("、")
+                        }
                     }
                     serde_json::Value::Number(n) => n.to_string(),
                     serde_json::Value::Bool(b) => {

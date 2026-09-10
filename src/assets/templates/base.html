@@ -9,6 +9,8 @@
         const savedView = localStorage.getItem('wiki-view-mode');
         if (savedView === 'classic' || savedView === 'book') {
           document.documentElement.setAttribute('data-view', savedView);
+        } else if (window.innerWidth < 768) {
+          document.documentElement.setAttribute('data-view', 'classic');
         }
       } catch {}
     </script>

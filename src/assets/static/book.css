@@ -815,6 +815,7 @@ html[data-view="classic"] .classic-view {
   font-size: 1.05rem;
   font-weight: bold;
   text-align: center;
+  border-top: 3px solid var(--link);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
@@ -1039,6 +1040,7 @@ html[data-view="classic"] .classic-view {
   width: 280px;
   max-width: 100%;
   margin: 0 0 16px 24px;
+  border-top: 3px solid var(--link);
 }
 @media (max-width: 768px) {
   .classic-view .infobox {
@@ -1079,6 +1081,10 @@ html[data-view="classic"] .classic-view {
   text-decoration: none;
 }
 .toc a:hover {
+  text-decoration: underline;
+}
+.toc a.is-active {
+  font-weight: bold;
   text-decoration: underline;
 }
 

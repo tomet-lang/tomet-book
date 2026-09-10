@@ -112,7 +112,8 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
 
     // 7. Write root /index.html with redirect to /wiki
     let redirect_html = format!(
-        r#"<!doctype html><title>Redirecting to: {prefix}</title><meta http-equiv="refresh" content="0;url={prefix}"><link rel="canonical" href="{prefix}"><body><a href="{prefix}">Redirecting to {prefix}</a></body>"#,
+        r#"<!doctype html><html lang="{lang}" data-pagefind-ignore><head><meta charset="utf-8"><title>Redirecting to: {prefix}</title><meta http-equiv="refresh" content="0;url={prefix}"><link rel="canonical" href="{prefix}"></head><body><a href="{prefix}">Redirecting to {prefix}</a></body></html>"#,
+        lang = config.book.lang,
         prefix = config.build.url_prefix
     );
     fs::write(out_dir.join("index.html"), redirect_html)?;

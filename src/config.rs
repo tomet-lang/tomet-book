@@ -137,7 +137,6 @@ fn default_exclude_keys() -> Vec<String> {
         "banner-y".to_string(),
         "images".to_string(),
         "icon".to_string(),
-        "colors".to_string(),
     ]
 }
 
