@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use std::net::IpAddr;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -20,6 +21,10 @@ pub enum Commands {
         /// Output directory for static site
         #[arg(short = 'd', short_alias = 'o', long, alias = "out-dir")]
         dest: Option<PathBuf>,
+
+        /// Fail the build if any document could not be rendered
+        #[arg(long)]
+        strict: bool,
     },
 
     /// Run the local development server with LiveReload
@@ -32,6 +37,10 @@ pub enum Commands {
         /// Output directory for static site
         #[arg(short = 'd', short_alias = 'o', long, alias = "out-dir")]
         dest: Option<PathBuf>,
+
+        /// Address to bind the server on. Use 0.0.0.0 to expose it to your network
+        #[arg(long, default_value = "127.0.0.1")]
+        host: IpAddr,
 
         /// Port to bind the server on
         #[arg(short, long, default_value_t = 3000)]

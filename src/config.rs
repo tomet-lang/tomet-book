@@ -210,6 +210,31 @@ fn default_asset_prefix() -> String {
     "/vault".to_string()
 }
 
+impl BuildConfig {
+    /// `url_prefix` without a trailing slash, for building page hrefs (`/wiki`).
+    pub fn clean_url_prefix(&self) -> &str {
+        self.url_prefix.trim_end_matches('/')
+    }
+
+    /// `asset_prefix` without a trailing slash, for building media hrefs (`/vault`).
+    pub fn clean_asset_prefix(&self) -> &str {
+        self.asset_prefix.trim_end_matches('/')
+    }
+
+    /// Where rendered pages go, relative to the destination root.
+    ///
+    /// Derived from `url_prefix` so the files always land where the links point;
+    /// an empty result means the pages sit at the destination root.
+    pub fn wiki_out_rel(&self) -> &str {
+        self.url_prefix.trim_matches('/')
+    }
+
+    /// Where vault media goes, relative to the destination root.
+    pub fn asset_out_rel(&self) -> &str {
+        self.asset_prefix.trim_matches('/')
+    }
+}
+
 impl Default for BuildConfig {
     fn default() -> Self {
         Self {
@@ -244,5 +269,56 @@ impl BookConfig {
         } else {
             Ok(BookConfig::default())
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn prefixes(url: &str, asset: &str) -> BuildConfig {
+        BuildConfig {
+            url_prefix: url.to_string(),
+            asset_prefix: asset.to_string(),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn output_dirs_are_derived_from_the_configured_prefixes() {
+        let cfg = prefixes("/docs", "/media");
+        assert_eq!(cfg.wiki_out_rel(), "docs");
+        assert_eq!(cfg.asset_out_rel(), "media");
+        assert_eq!(cfg.clean_url_prefix(), "/docs");
+        assert_eq!(cfg.clean_asset_prefix(), "/media");
+    }
+
+    #[test]
+    fn the_defaults_still_land_in_wiki_and_vault() {
+        let cfg = BuildConfig::default();
+        assert_eq!(cfg.wiki_out_rel(), "wiki");
+        assert_eq!(cfg.asset_out_rel(), "vault");
+    }
+
+    #[test]
+    fn surrounding_slashes_are_normalized() {
+        let cfg = prefixes("/docs/", "media/");
+        assert_eq!(cfg.wiki_out_rel(), "docs");
+        assert_eq!(cfg.asset_out_rel(), "media");
+        assert_eq!(cfg.clean_url_prefix(), "/docs");
+    }
+
+    #[test]
+    fn nested_prefixes_keep_their_depth() {
+        let cfg = prefixes("/en/wiki", "/en/vault");
+        assert_eq!(cfg.wiki_out_rel(), "en/wiki");
+        assert_eq!(cfg.asset_out_rel(), "en/vault");
+    }
+
+    #[test]
+    fn a_root_prefix_means_the_destination_root() {
+        let cfg = prefixes("/", "/");
+        assert_eq!(cfg.wiki_out_rel(), "");
+        assert_eq!(cfg.clean_url_prefix(), "");
     }
 }

@@ -29,6 +29,7 @@ mkShell rec {
     cargo-nextest
 
     #[ Misc ]
+    just
     pkg-config
   ];
 

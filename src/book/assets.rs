@@ -10,11 +10,13 @@ pub fn write_static_assets(out_dir: &Path, src_dir: &Path, config: &BookConfig) 
 
     // 1. Write embedded book.css
     let css_content = include_str!("../assets/static/book.css");
-    fs::write(out_dir.join("book.css"), css_content).context("Failed to write book.css")?;
+    super::write_if_changed(&out_dir.join("book.css"), css_content)
+        .context("Failed to write book.css")?;
 
     // 2. Write embedded book.js
     let js_content = include_str!("../assets/static/book.js");
-    fs::write(out_dir.join("book.js"), js_content).context("Failed to write book.js")?;
+    super::write_if_changed(&out_dir.join("book.js"), js_content)
+        .context("Failed to write book.js")?;
 
     // 3. Copy user's custom CSS if specified and exists
     for css_rel in &config.ui.custom_css {
@@ -61,8 +63,13 @@ fn is_same_media(src_path: &Path, dest_path: &Path) -> bool {
     false
 }
 
-pub fn sync_single_media(out_dir: &Path, abs_path: &Path, rel_path: &str) -> Result<()> {
-    let target_vault = out_dir.join("vault");
+pub fn sync_single_media(
+    out_dir: &Path,
+    abs_path: &Path,
+    rel_path: &str,
+    config: &BookConfig,
+) -> Result<()> {
+    let target_vault = out_dir.join(config.build.asset_out_rel());
     let dest = target_vault.join(rel_path);
 
     if dest.exists() {
@@ -82,8 +89,12 @@ pub fn sync_single_media(out_dir: &Path, abs_path: &Path, rel_path: &str) -> Res
     Ok(())
 }
 
-pub fn copy_vault_media(out_dir: &Path, media_files: &[MediaFileInfo]) -> Result<usize> {
-    let target_vault = out_dir.join("vault");
+pub fn copy_vault_media(
+    out_dir: &Path,
+    media_files: &[MediaFileInfo],
+    config: &BookConfig,
+) -> Result<usize> {
+    let target_vault = out_dir.join(config.build.asset_out_rel());
     fs::create_dir_all(&target_vault)?;
 
     let mut count = 0;

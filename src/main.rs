@@ -23,23 +23,38 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Build { dir, dest } => {
+        Commands::Build { dir, dest, strict } => {
             let config = BookConfig::load_from_dir(&dir)?;
             let src_dir = dir
                 .canonicalize()
                 .context("Failed to find source directory")?;
             let out_dir = dest.unwrap_or_else(|| src_dir.join(&config.book.dest));
 
-            book::build_book(&src_dir, &out_dir, &config)?;
+            let report = book::build_book(&src_dir, &out_dir, &config)?;
+
+            if strict && !report.failures.is_empty() {
+                for failure in &report.failures {
+                    eprintln!("  {}: {}", failure.rel_path, failure.error);
+                }
+                anyhow::bail!(
+                    "{} document(s) failed to build (--strict)",
+                    report.failures.len()
+                );
+            }
         }
-        Commands::Serve { dir, dest, port } => {
+        Commands::Serve {
+            dir,
+            dest,
+            host,
+            port,
+        } => {
             let config = BookConfig::load_from_dir(&dir)?;
             let src_dir = dir
                 .canonicalize()
                 .context("Failed to find source directory")?;
             let out_dir = dest.unwrap_or_else(|| src_dir.join(&config.book.dest));
 
-            serve::run_dev_server(src_dir, out_dir, config, port).await?;
+            serve::run_dev_server(src_dir, out_dir, config, host, port).await?;
         }
         Commands::Init { dir, title } => {
             let target_file = dir.join("tmtbook.toml");

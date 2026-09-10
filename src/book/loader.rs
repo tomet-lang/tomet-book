@@ -34,7 +34,7 @@ pub const MEDIA_EXTENSIONS: &[&str] = &[
 /// Matching happens on path-segment boundaries, so an exclude entry like `dist`
 /// drops `dist/index.tmt` but keeps `distributed.tmt` and `old/distro/x.tmt`.
 /// Multi-segment entries (`"00-09 System/01 Apps"`) are matched as a whole.
-fn is_excluded_path(rel: &str, prefix: &str) -> bool {
+pub fn is_excluded_path(rel: &str, prefix: &str) -> bool {
     let prefix = prefix.trim_matches('/');
     if prefix.is_empty() {
         return false;
@@ -49,12 +49,10 @@ fn is_excluded_path(rel: &str, prefix: &str) -> bool {
         })
 }
 
-pub fn scan_vault(src_dir: &Path, config: &BookConfig) -> Result<ScannedVault> {
-    let mut doc_files = Vec::new();
-    let mut media_files = Vec::new();
-    let mut all_rel_paths = Vec::new();
-
-    let mut exclude_prefixes: Vec<String> = config
+/// The paths a scan skips: the configured `build.exclude` entries plus the
+/// destination directory, so a build never eats its own output.
+pub fn exclude_prefixes(config: &BookConfig) -> Vec<String> {
+    let mut prefixes: Vec<String> = config
         .build
         .exclude
         .iter()
@@ -62,10 +60,32 @@ pub fn scan_vault(src_dir: &Path, config: &BookConfig) -> Result<ScannedVault> {
         .collect();
 
     let dest_str = config.book.dest.to_string_lossy().replace('\\', "/");
-    if !dest_str.is_empty() && !exclude_prefixes.contains(&dest_str) {
-        exclude_prefixes.push(dest_str);
+    if !dest_str.is_empty() && !prefixes.contains(&dest_str) {
+        prefixes.push(dest_str);
     }
 
+    prefixes
+}
+
+/// True when a vault-relative path is excluded by config, or is hidden.
+///
+/// Shared with the dev server so the watcher and the scanner agree on what
+/// belongs to the book.
+pub fn is_ignored_rel(rel_str: &str, exclude_prefixes: &[String]) -> bool {
+    if rel_str.starts_with('.') || rel_str.contains("/.") {
+        return true;
+    }
+    exclude_prefixes
+        .iter()
+        .any(|prefix| is_excluded_path(rel_str, prefix))
+}
+
+pub fn scan_vault(src_dir: &Path, config: &BookConfig) -> Result<ScannedVault> {
+    let mut doc_files = Vec::new();
+    let mut media_files = Vec::new();
+    let mut all_rel_paths = Vec::new();
+
+    let exclude_prefixes = exclude_prefixes(config);
     let media_ext_set: HashSet<&str> = MEDIA_EXTENSIONS.iter().copied().collect();
 
     for entry in WalkDir::new(src_dir).into_iter().filter_map(|e| e.ok()) {
@@ -80,16 +100,7 @@ pub fn scan_vault(src_dir: &Path, config: &BookConfig) -> Result<ScannedVault> {
         };
         let rel_str = rel.to_string_lossy().replace('\\', "/");
 
-        // Check if path is, or lives under, an excluded directory
-        let is_excluded = exclude_prefixes
-            .iter()
-            .any(|prefix| is_excluded_path(&rel_str, prefix));
-        if is_excluded {
-            continue;
-        }
-
-        // Hidden files/directories
-        if rel_str.starts_with('.') || rel_str.contains("/.") {
+        if is_ignored_rel(&rel_str, &exclude_prefixes) {
             continue;
         }
 
@@ -175,5 +186,36 @@ mod tests {
         assert!(!is_excluded_path("notes/a.tmt", ""));
         assert!(!is_excluded_path("notes/a.tmt", "/"));
         assert!(is_excluded_path("notes/a.tmt", "/notes/"));
+    }
+}
+
+#[cfg(test)]
+mod ignore_tests {
+    use super::is_ignored_rel;
+
+    fn excludes() -> Vec<String> {
+        vec!["dist".to_string(), "00-09 System/01 Apps".to_string()]
+    }
+
+    #[test]
+    fn hidden_paths_are_ignored() {
+        assert!(is_ignored_rel(".git/config", &excludes()));
+        assert!(is_ignored_rel("notes/.obsidian/app.json", &excludes()));
+        assert!(!is_ignored_rel("notes/a.tmt", &excludes()));
+    }
+
+    #[test]
+    fn configured_excludes_are_ignored() {
+        assert!(is_ignored_rel("dist/wiki/index.html", &excludes()));
+        assert!(is_ignored_rel("00-09 System/01 Apps/zed.tmt", &excludes()));
+    }
+
+    #[test]
+    fn lookalike_names_survive() {
+        assert!(!is_ignored_rel("distributed.tmt", &excludes()));
+        assert!(!is_ignored_rel(
+            "00-09 System/02 Tools/zed.tmt",
+            &excludes()
+        ));
     }
 }

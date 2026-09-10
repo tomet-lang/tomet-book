@@ -1,9 +1,39 @@
 use anyhow::Result;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::path::Path;
+use std::sync::LazyLock;
 
 use crate::config::BookConfig;
+
+/// Suffixes that mark a file as a Tomet document.
+pub const DOC_EXTENSIONS: &[&str] = &[".tmt", ".tm"];
+
+// Compiled once: `process_tomet_document` runs per file, in parallel, so
+// rebuilding these on every call was pure overhead.
+static HEADING_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"<h([1-6])\b([^>]*)>([\s\S]*?)</h([1-6])>"#).unwrap());
+static ID_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"id="([^"]*)""#).unwrap());
+static HEADING_NUMBER_RE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r#"<span class="(?:tmt|tm)-heading-number">[^<]*</span>"#).unwrap()
+});
+static TAG_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"<[^>]+>"#).unwrap());
+static ISO_DATE_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"^(\d{4})-(\d{2})-(\d{2})"#).unwrap());
+
+/// Strip a single Tomet document extension: `foo/bar.tmt` -> `foo/bar`.
+///
+/// Uses `strip_suffix` rather than `trim_end_matches`, which would chew through
+/// repeated suffixes and turn `notes.tmt.tmt` into `notes`.
+pub fn strip_doc_extension(path: &str) -> &str {
+    for ext in DOC_EXTENSIONS {
+        if let Some(stem) = path.strip_suffix(ext) {
+            return stem;
+        }
+    }
+    path
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct TocItem {
@@ -190,11 +220,7 @@ fn resolve_meta_link(
         });
 
     if let Some(path) = resolved {
-        let slug = path
-            .to_string_lossy()
-            .trim_end_matches(".tmt")
-            .trim_end_matches(".tm")
-            .replace('\\', "/");
+        let slug = strip_doc_extension(&path.to_string_lossy().replace('\\', "/")).to_string();
         let href = format!("{clean_url_prefix}/{slug}");
         Some((href, display_label))
     } else {
@@ -223,8 +249,7 @@ fn format_meta_value_to_html(
 
 fn format_chip_value(val: &str, format: Option<&str>) -> String {
     if format == Some("birthday") {
-        let re = regex::Regex::new(r#"^(\d{4})-(\d{2})-(\d{2})"#).unwrap();
-        if let Some(caps) = re.captures(val) {
+        if let Some(caps) = ISO_DATE_RE.captures(val) {
             let m: u32 = caps[2].parse().unwrap_or(0);
             let d: u32 = caps[3].parse().unwrap_or(0);
             return format!("{m}月{d}日");
@@ -249,7 +274,10 @@ fn resolve_meta_media_path(
     let clean_prefix = asset_prefix.trim_end_matches('/');
 
     if let Some(resolved) = vault_index.resolve_ref(&target, Some(from_path)) {
-        format!("{clean_prefix}/{}", resolved.to_string_lossy().replace('\\', "/"))
+        format!(
+            "{clean_prefix}/{}",
+            resolved.to_string_lossy().replace('\\', "/")
+        )
     } else {
         format!("{clean_prefix}/{}", target.replace('\\', "/"))
     }
@@ -337,8 +365,8 @@ pub fn process_tomet_document(
     // 3. Resolve links
     let from_path = Path::new(rel_path);
     let mode = tomet_transform::TargetMode::WebSlug {
-        url_prefix: config.build.url_prefix.clone(),
-        asset_prefix: config.build.asset_prefix.clone(),
+        url_prefix: config.build.clean_url_prefix().to_string(),
+        asset_prefix: config.build.clean_asset_prefix().to_string(),
     };
     tomet_transform::resolve_document_links(
         &mut doc,
@@ -368,13 +396,7 @@ pub fn process_tomet_document(
     let mut first_h1: Option<String> = None;
     let mut toc = Vec::new();
 
-    let heading_re = regex::Regex::new(r#"<h([1-6])\b([^>]*)>([\s\S]*?)</h([1-6])>"#).unwrap();
-    let id_re = regex::Regex::new(r#"id="([^"]*)""#).unwrap();
-    let heading_number_re =
-        regex::Regex::new(r#"<span class="(?:tmt|tm)-heading-number">[^<]*</span>"#).unwrap();
-    let tag_re = regex::Regex::new(r#"<[^>]+>"#).unwrap();
-
-    for cap in heading_re.captures_iter(&html) {
+    for cap in HEADING_RE.captures_iter(&html) {
         let open_level: u32 = cap[1].parse().unwrap_or(1);
         let close_level: u32 = cap[4].parse().unwrap_or(1);
         if open_level != close_level {
@@ -383,12 +405,12 @@ pub fn process_tomet_document(
         let attrs = &cap[2];
         let inner = &cap[3];
 
-        let id = id_re
+        let id = ID_RE
             .captures(attrs)
             .map(|c| c[1].to_string())
             .unwrap_or_default();
-        let cleaned = heading_number_re.replace_all(inner, "");
-        let text = tag_re.replace_all(&cleaned, "").trim().to_string();
+        let cleaned = HEADING_NUMBER_RE.replace_all(inner, "");
+        let text = TAG_RE.replace_all(&cleaned, "").trim().to_string();
 
         let is_boilerplate = text.eq_ignore_ascii_case("related")
             || text == "関連"
@@ -452,10 +474,7 @@ pub fn process_tomet_document(
         .map(|s| s.to_string());
 
     // 9. Slug calculation: "foo/bar.tmt" -> "foo/bar"
-    let slug = rel_path
-        .trim_end_matches(".tmt")
-        .trim_end_matches(".tm")
-        .replace('\\', "/");
+    let slug = strip_doc_extension(&rel_path.replace('\\', "/")).to_string();
 
     // 10. Meta properties (colors, icon, banner, etc.)
     let mut primary_color: Option<String> = None;
@@ -491,7 +510,7 @@ pub fn process_tomet_document(
                     b,
                     from_path,
                     vault_index,
-                    &config.build.asset_prefix,
+                    config.build.clean_asset_prefix(),
                 ));
             }
         }
@@ -511,7 +530,7 @@ pub fn process_tomet_document(
                             s,
                             from_path,
                             vault_index,
-                            &config.build.asset_prefix,
+                            config.build.clean_asset_prefix(),
                         ));
                     }
                 }
@@ -520,7 +539,7 @@ pub fn process_tomet_document(
                     s,
                     from_path,
                     vault_index,
-                    &config.build.asset_prefix,
+                    config.build.clean_asset_prefix(),
                 ));
             }
         }
@@ -530,9 +549,12 @@ pub fn process_tomet_document(
             if let Some(val) = map.get(&chip_cfg.key) {
                 match val {
                     serde_json::Value::String(s) => {
-                        let (href, display) = if let Some((h, l)) =
-                            resolve_meta_link(s, from_path, vault_index, &config.build.url_prefix)
-                        {
+                        let (href, display) = if let Some((h, l)) = resolve_meta_link(
+                            s,
+                            from_path,
+                            vault_index,
+                            config.build.clean_url_prefix(),
+                        ) {
                             (if h.is_empty() { None } else { Some(h) }, l)
                         } else {
                             (None, clean_ref_target(s))
@@ -555,7 +577,7 @@ pub fn process_tomet_document(
                                     s,
                                     from_path,
                                     vault_index,
-                                    &config.build.url_prefix,
+                                    config.build.clean_url_prefix(),
                                 ) {
                                     (if h.is_empty() { None } else { Some(h) }, l)
                                 } else {
@@ -632,10 +654,7 @@ pub fn process_tomet_document(
                 let display_val = match val {
                     serde_json::Value::String(s) => {
                         if key == "colors" {
-                            format!(
-                                r#"<div class="color-chips">{}</div>"#,
-                                color_chip_html(s)
-                            )
+                            format!(r#"<div class="color-chips">{}</div>"#, color_chip_html(s))
                         } else if (key.starts_with("url.") || key == "url") && is_external_url(s) {
                             external_link_html(s)
                         } else {
@@ -643,7 +662,7 @@ pub fn process_tomet_document(
                                 s,
                                 from_path,
                                 vault_index,
-                                &config.build.url_prefix,
+                                config.build.clean_url_prefix(),
                             )
                         }
                     }
@@ -668,7 +687,7 @@ pub fn process_tomet_document(
                                                 s,
                                                 from_path,
                                                 vault_index,
-                                                &config.build.url_prefix,
+                                                config.build.clean_url_prefix(),
                                             )
                                         }
                                     })
@@ -805,8 +824,7 @@ mod tests {
     #[test]
     fn trailing_slash_on_the_url_prefix_is_not_doubled() {
         let idx = index(&["rust.tmt"]);
-        let (href, _) =
-            resolve_meta_link("[[rust]]", Path::new("a.tmt"), &idx, "/wiki/").unwrap();
+        let (href, _) = resolve_meta_link("[[rust]]", Path::new("a.tmt"), &idx, "/wiki/").unwrap();
         assert_eq!(href, "/wiki/rust");
     }
 
@@ -860,7 +878,10 @@ mod tests {
     fn sanitize_color_hex_accepts_the_valid_hex_lengths() {
         assert_eq!(sanitize_color_hex("#AABBCC").as_deref(), Some("aabbcc"));
         assert_eq!(sanitize_color_hex("abc").as_deref(), Some("abc"));
-        assert_eq!(sanitize_color_hex(" #12345678 ").as_deref(), Some("12345678"));
+        assert_eq!(
+            sanitize_color_hex(" #12345678 ").as_deref(),
+            Some("12345678")
+        );
     }
 
     #[test]
@@ -931,11 +952,14 @@ mod tests {
     #[test]
     fn flat_headings_all_become_roots() {
         let tabs = build_section_tabs(&toc(&[(1, "A"), (1, "B"), (1, "C")]));
-        assert_eq!(shape(&tabs), vec![
-            ("A".into(), vec![]),
-            ("B".into(), vec![]),
-            ("C".into(), vec![]),
-        ]);
+        assert_eq!(
+            shape(&tabs),
+            vec![
+                ("A".into(), vec![]),
+                ("B".into(), vec![]),
+                ("C".into(), vec![]),
+            ]
+        );
     }
 
     #[test]
@@ -947,10 +971,13 @@ mod tests {
             (1, "B"),
             (2, "B-1"),
         ]));
-        assert_eq!(shape(&tabs), vec![
-            ("A".into(), vec!["A-1".into(), "A-2".into()]),
-            ("B".into(), vec!["B-1".into()]),
-        ]);
+        assert_eq!(
+            shape(&tabs),
+            vec![
+                ("A".into(), vec!["A-1".into(), "A-2".into()]),
+                ("B".into(), vec!["B-1".into()]),
+            ]
+        );
     }
 
     #[test]
@@ -967,14 +994,36 @@ mod tests {
     #[test]
     fn documents_without_h1_use_their_shallowest_level_as_roots() {
         let tabs = build_section_tabs(&toc(&[(2, "A"), (3, "A-1"), (2, "B")]));
-        assert_eq!(shape(&tabs), vec![
-            ("A".into(), vec!["A-1".into()]),
-            ("B".into(), vec![]),
-        ]);
+        assert_eq!(
+            shape(&tabs),
+            vec![("A".into(), vec!["A-1".into()]), ("B".into(), vec![]),]
+        );
     }
 
     #[test]
     fn an_empty_toc_yields_no_tabs() {
         assert!(build_section_tabs(&[]).is_empty());
+    }
+}
+
+#[cfg(test)]
+mod extension_tests {
+    use super::strip_doc_extension;
+
+    #[test]
+    fn strips_a_single_document_extension() {
+        assert_eq!(strip_doc_extension("foo/bar.tmt"), "foo/bar");
+        assert_eq!(strip_doc_extension("foo/bar.tm"), "foo/bar");
+    }
+
+    #[test]
+    fn does_not_chew_through_repeated_suffixes() {
+        assert_eq!(strip_doc_extension("notes.tmt.tmt"), "notes.tmt");
+    }
+
+    #[test]
+    fn leaves_other_names_alone() {
+        assert_eq!(strip_doc_extension("image.png"), "image.png");
+        assert_eq!(strip_doc_extension("plain"), "plain");
     }
 }
