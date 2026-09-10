@@ -25,7 +25,17 @@
   </head>
   <body class="is-fluid">
     <div class="container is-fluid">
-      <div class="floating-controls" data-pagefind-ignore>
+      <div class="floating-controls" id="floating-controls" data-pagefind-ignore>
+        <div class="floating-drag-handle" id="floating-drag-handle" title="ドラッグして移動" aria-label="ドラッグして移動">
+          <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" aria-hidden="true">
+            <circle cx="2.5" cy="2" r="1.5" />
+            <circle cx="7.5" cy="2" r="1.5" />
+            <circle cx="2.5" cy="7" r="1.5" />
+            <circle cx="7.5" cy="7" r="1.5" />
+            <circle cx="2.5" cy="12" r="1.5" />
+            <circle cx="7.5" cy="12" r="1.5" />
+          </svg>
+        </div>
         <div class="search-container">
           <div class="search-input-wrapper">
             <input
