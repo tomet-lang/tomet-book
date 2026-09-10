@@ -14,7 +14,7 @@
     crane.url = "github:ipetkov/crane";
 
     #[ Dev ]
-    tomet.url = "git+https://github.com/tomet-lang/tomet.git";
+    tomet.url = "git+https://github.com/tomet-lang/tomet";
   };
 
   outputs = inputs: import ./nix inputs;

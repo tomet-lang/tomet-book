@@ -28,11 +28,11 @@ flake-parts.lib.mkFlake { inherit inputs; } {
         fenix = inputs.fenix.packages.${pkgs.stdenv.hostPlatform.system};
 
         tmtbook = pkgs.callPackage ./pkgs/tmtbook.nix { inherit craneLib; };
-        tomet = inputs.tomet.packages.${pkgs.system}.tomet;
+        tomet = inputs.tomet.packages.${pkgs.stdenv.hostPlatform.system}.tomet;
       };
 
       treefmt = import ./formatter.nix {
-        tomet = inputs.tomet.packages.${pkgs.system}.tomet;
+        tomet = inputs.tomet.packages.${pkgs.stdenv.hostPlatform.system}.tomet;
       };
     };
 }

@@ -52,7 +52,10 @@ pub async fn run_dev_server(
         };
 
         if let Err(e) = watcher.watch(&watch_src, RecursiveMode::Recursive) {
-            error!("Failed to watch source directory {}: {e}", watch_src.display());
+            error!(
+                "Failed to watch source directory {}: {e}",
+                watch_src.display()
+            );
             return;
         }
 
@@ -128,7 +131,11 @@ fn should_ignore_event(event: &Event, out_dir: &Path) -> bool {
 async fn handle_ws(mut socket: WebSocket, tx: Arc<broadcast::Sender<()>>) {
     let mut rx = tx.subscribe();
     while let Ok(()) = rx.recv().await {
-        if socket.send(Message::Text("reload".to_string())).await.is_err() {
+        if socket
+            .send(Message::Text("reload".to_string()))
+            .await
+            .is_err()
+        {
             break;
         }
     }

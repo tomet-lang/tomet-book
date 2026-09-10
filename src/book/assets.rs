@@ -10,13 +10,11 @@ pub fn write_static_assets(out_dir: &Path, src_dir: &Path, config: &BookConfig) 
 
     // 1. Write embedded book.css
     let css_content = include_str!("../assets/static/book.css");
-    fs::write(out_dir.join("book.css"), css_content)
-        .context("Failed to write book.css")?;
+    fs::write(out_dir.join("book.css"), css_content).context("Failed to write book.css")?;
 
     // 2. Write embedded book.js
     let js_content = include_str!("../assets/static/book.js");
-    fs::write(out_dir.join("book.js"), js_content)
-        .context("Failed to write book.js")?;
+    fs::write(out_dir.join("book.js"), js_content).context("Failed to write book.js")?;
 
     // 3. Copy user's custom CSS if specified and exists
     for css_rel in &config.ui.custom_css {

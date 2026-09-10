@@ -504,11 +504,11 @@
         "rev": "c7ed9b17dadab484600d1187cdc71ef45508320f",
         "revCount": 235,
         "type": "git",
-        "url": "https://github.com/tomet-lang/tomet.git"
+        "url": "https://github.com/tomet-lang/tomet"
       },
       "original": {
         "type": "git",
-        "url": "https://github.com/tomet-lang/tomet.git"
+        "url": "https://github.com/tomet-lang/tomet"
       }
     },
     "tomet_2": {

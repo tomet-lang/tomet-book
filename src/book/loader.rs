@@ -56,9 +56,9 @@ pub fn scan_vault(src_dir: &Path, config: &BookConfig) -> Result<ScannedVault> {
         let rel_str = rel.to_string_lossy().replace('\\', "/");
 
         // Check if path starts with excluded prefix
-        let is_excluded = exclude_prefixes.iter().any(|prefix| {
-            rel_str.starts_with(prefix) || rel_str.contains(&format!("/{prefix}"))
-        });
+        let is_excluded = exclude_prefixes
+            .iter()
+            .any(|prefix| rel_str.starts_with(prefix) || rel_str.contains(&format!("/{prefix}")));
         if is_excluded {
             continue;
         }

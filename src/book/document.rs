@@ -100,7 +100,11 @@ pub fn process_tomet_document(
     tomet_transform::resolve_document_links(
         &mut doc,
         Some(from_path),
-        |target, from| vault_index.resolve_ref(target, from).map(|p| p.to_path_buf()),
+        |target, from| {
+            vault_index
+                .resolve_ref(target, from)
+                .map(|p| p.to_path_buf())
+        },
         &mode,
     );
 
@@ -123,7 +127,8 @@ pub fn process_tomet_document(
 
     let heading_re = regex::Regex::new(r#"<h([1-6])\b([^>]*)>([\s\S]*?)</h([1-6])>"#).unwrap();
     let id_re = regex::Regex::new(r#"id="([^"]*)""#).unwrap();
-    let heading_number_re = regex::Regex::new(r#"<span class="(?:tmt|tm)-heading-number">[^<]*</span>"#).unwrap();
+    let heading_number_re =
+        regex::Regex::new(r#"<span class="(?:tmt|tm)-heading-number">[^<]*</span>"#).unwrap();
     let tag_re = regex::Regex::new(r#"<[^>]+>"#).unwrap();
 
     for cap in heading_re.captures_iter(&html) {

@@ -25,14 +25,18 @@ async fn main() -> Result<()> {
     match cli.command {
         Commands::Build { dir, dest } => {
             let config = BookConfig::load_from_dir(&dir)?;
-            let src_dir = dir.canonicalize().context("Failed to find source directory")?;
+            let src_dir = dir
+                .canonicalize()
+                .context("Failed to find source directory")?;
             let out_dir = dest.unwrap_or_else(|| src_dir.join(&config.book.dest));
 
             book::build_book(&src_dir, &out_dir, &config)?;
         }
         Commands::Serve { dir, dest, port } => {
             let config = BookConfig::load_from_dir(&dir)?;
-            let src_dir = dir.canonicalize().context("Failed to find source directory")?;
+            let src_dir = dir
+                .canonicalize()
+                .context("Failed to find source directory")?;
             let out_dir = dest.unwrap_or_else(|| src_dir.join(&config.book.dest));
 
             serve::run_dev_server(src_dir, out_dir, config, port).await?;

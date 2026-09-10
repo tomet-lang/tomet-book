@@ -1,7 +1,5 @@
 {
-  inputs,
   pkgs,
-  stdenv,
   mkShell,
   fenix,
 

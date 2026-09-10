@@ -18,11 +18,14 @@ use pagefind::run_pagefind;
 use renderer::{BookRenderer, EntrySummary, SectionSummary};
 
 pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result<()> {
-    info!("Building book from {} to {}", src_dir.display(), out_dir.display());
+    info!(
+        "Building book from {} to {}",
+        src_dir.display(),
+        out_dir.display()
+    );
 
     // 1. Scan Vault
-    let scanned = scan_vault(src_dir, config)
-        .context("Failed to scan vault")?;
+    let scanned = scan_vault(src_dir, config).context("Failed to scan vault")?;
     info!(
         "Found {} documents and {} media files",
         scanned.doc_files.len(),
@@ -30,12 +33,11 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
     );
 
     // 2. Write static assets (book.css, book.js, custom.css)
-    write_static_assets(out_dir, src_dir, config)
-        .context("Failed to write static assets")?;
+    write_static_assets(out_dir, src_dir, config).context("Failed to write static assets")?;
 
     // 3. Copy/Link media to dist/vault/
-    let copied_media = copy_vault_media(out_dir, &scanned.media_files)
-        .context("Failed to copy vault media")?;
+    let copied_media =
+        copy_vault_media(out_dir, &scanned.media_files).context("Failed to copy vault media")?;
     info!("Linked/copied {} media assets", copied_media);
 
     // 4. Initialize MiniJinja renderer
