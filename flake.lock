@@ -498,11 +498,11 @@
         "twrit": "twrit"
       },
       "locked": {
-        "lastModified": 1788998870,
-        "narHash": "sha256-crxdTzkftJ+RaKPVtOKbfuzgEmw7Tyegeu/0Vc5CEio=",
+        "lastModified": 1789081072,
+        "narHash": "sha256-gYeCDuWPkis5IU3iKTFNcxuE4lJw19xhQsfLT9KNCpk=",
         "ref": "refs/heads/main",
-        "rev": "c7ed9b17dadab484600d1187cdc71ef45508320f",
-        "revCount": 235,
+        "rev": "4fa1b7389a32c68f95c1a5e05cb631c45e55d9cd",
+        "revCount": 236,
         "type": "git",
         "url": "https://github.com/tomet-lang/tomet"
       },
