@@ -126,11 +126,11 @@ fn plan_events(
                     plan.docs
                         .push((path.clone(), rel.to_string_lossy().replace('\\', "/")));
                 }
-            } else if crate::book::loader::MEDIA_EXTENSIONS.contains(&ext.as_str()) {
-                if let Some(rel) = rel.filter(|_| seen_media.insert(path.clone())) {
-                    plan.media
-                        .push((path.clone(), rel.to_string_lossy().replace('\\', "/")));
-                }
+            } else if crate::book::loader::MEDIA_EXTENSIONS.contains(&ext.as_str())
+                && let Some(rel) = rel.filter(|_| seen_media.insert(path.clone()))
+            {
+                plan.media
+                    .push((path.clone(), rel.to_string_lossy().replace('\\', "/")));
             }
         }
     }
@@ -251,13 +251,16 @@ pub async fn run_dev_server(
                 match build_book(&watch_src, &watch_out, &dev_cfg) {
                     Ok(report) => {
                         info!(
-                            "Full rebuild complete in {:?} ({} pages, {} failed), triggering reload",
+                            "Full rebuild complete in {:?} ({} pages, {} written, {} pruned, {} failed), triggering reload",
                             start.elapsed(),
                             report.rendered,
+                            report.written,
+                            report.pruned_pages + report.pruned_media,
                             report.failures.len()
                         );
-                        cached_scanned =
-                            crate::book::loader::scan_vault(&watch_src, &watch_cfg).ok();
+                        // The build already walked the vault; reuse that scan
+                        // rather than doing it a second time.
+                        cached_scanned = Some(report.scanned);
                         cached_renderer = crate::book::renderer::BookRenderer::new(&watch_cfg).ok();
                         let _ = watcher_tx.send(ReloadSignal::Full);
                     }
@@ -352,10 +355,10 @@ pub async fn run_dev_server(
 async fn handle_ws(mut socket: WebSocket, tx: Arc<broadcast::Sender<ReloadSignal>>) {
     let mut rx = tx.subscribe();
     while let Ok(signal) = rx.recv().await {
-        if let Ok(json_str) = serde_json::to_string(&signal) {
-            if socket.send(Message::Text(json_str)).await.is_err() {
-                break;
-            }
+        if let Ok(json_str) = serde_json::to_string(&signal)
+            && socket.send(Message::Text(json_str)).await.is_err()
+        {
+            break;
         }
     }
 }

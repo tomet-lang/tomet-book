@@ -52,12 +52,11 @@ fn is_same_media(src_path: &Path, dest_path: &Path) -> bool {
         }
     }
 
-    if src_meta.len() == dest_meta.len() {
-        if let (Ok(src_mtime), Ok(dest_mtime)) = (src_meta.modified(), dest_meta.modified()) {
-            if src_mtime == dest_mtime {
-                return true;
-            }
-        }
+    if src_meta.len() == dest_meta.len()
+        && let (Ok(src_mtime), Ok(dest_mtime)) = (src_meta.modified(), dest_meta.modified())
+        && src_mtime == dest_mtime
+    {
+        return true;
     }
 
     false
@@ -114,9 +113,9 @@ pub fn copy_vault_media(
         }
 
         // Try hardlink first; fallback to copy
-        if fs::hard_link(&media.abs_path, &dest).is_ok() {
-            count += 1;
-        } else if fs::copy(&media.abs_path, &dest).is_ok() {
+        let linked = fs::hard_link(&media.abs_path, &dest).is_ok()
+            || fs::copy(&media.abs_path, &dest).is_ok();
+        if linked {
             count += 1;
         }
     }

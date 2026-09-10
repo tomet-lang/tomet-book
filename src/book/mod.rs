@@ -5,6 +5,7 @@ pub mod pagefind;
 pub mod renderer;
 
 use anyhow::{Context, Result};
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsStr;
 use std::fs;
@@ -15,11 +16,14 @@ use walkdir::WalkDir;
 use crate::config::BookConfig;
 use assets::{copy_vault_media, write_static_assets};
 use document::process_tomet_document;
-use loader::scan_vault;
+use loader::{ScannedVault, scan_vault};
 use pagefind::run_pagefind;
 use renderer::{BookRenderer, EntrySummary, SectionSummary};
 
 use rayon::prelude::*;
+
+/// Name of the record a build leaves behind in the output directory.
+const MANIFEST_FILE: &str = ".tmtbook-manifest.json";
 
 /// A document that could not be turned into a page.
 #[derive(Debug, Clone)]
@@ -28,14 +32,42 @@ pub struct DocFailure {
     pub error: String,
 }
 
+/// What the previous build put in the output directory.
+///
+/// Lets the next build find what to delete by set difference, instead of
+/// walking the whole site looking for orphans.
+#[derive(Debug, Default, Serialize, Deserialize)]
+struct BuildManifest {
+    /// Page slugs, relative to the wiki directory.
+    pages: Vec<String>,
+    /// Media paths, relative to the asset directory.
+    media: Vec<String>,
+}
+
+impl BuildManifest {
+    fn read(out_dir: &Path) -> Option<Self> {
+        let raw = fs::read_to_string(out_dir.join(MANIFEST_FILE)).ok()?;
+        serde_json::from_str(&raw).ok()
+    }
+
+    fn write(&self, out_dir: &Path) -> Result<()> {
+        let raw = serde_json::to_string(self)?;
+        write_if_changed(&out_dir.join(MANIFEST_FILE), &raw)?;
+        Ok(())
+    }
+}
+
 /// What a build actually did, so callers can report on it or refuse to ship it.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct BuildReport {
     pub rendered: usize,
     pub written: usize,
     pub failures: Vec<DocFailure>,
     pub pruned_pages: usize,
     pub pruned_media: usize,
+    /// The vault as this build saw it, so a caller that needs it again -- the
+    /// dev server priming its incremental cache -- does not rescan.
+    pub scanned: ScannedVault,
 }
 
 enum DocOutcome {
@@ -52,16 +84,13 @@ enum DocOutcome {
 /// Write content to path only if content has actually changed or file does not exist.
 /// Returns Ok(true) if written, Ok(false) if skipped because unchanged.
 pub fn write_if_changed(path: &Path, content: &str) -> Result<bool> {
-    if path.exists() {
-        if let Ok(meta) = fs::metadata(path) {
-            if meta.len() == content.len() as u64 {
-                if let Ok(existing) = fs::read_to_string(path) {
-                    if existing == content {
-                        return Ok(false);
-                    }
-                }
-            }
-        }
+    if path.exists()
+        && let Ok(meta) = fs::metadata(path)
+        && meta.len() == content.len() as u64
+        && let Ok(existing) = fs::read_to_string(path)
+        && existing == content
+    {
+        return Ok(false);
     }
 
     if let Some(parent) = path.parent() {
@@ -99,10 +128,52 @@ pub fn render_single_document(
     Ok((written, url))
 }
 
+/// Delete the pages named by `stale_slugs`.
+///
+/// The fast path: the previous build listed what it wrote, so a rename only
+/// costs the removal itself rather than a walk of the whole site.
+fn prune_listed_pages(wiki_root: &Path, stale_slugs: &[&str]) -> usize {
+    let mut removed = 0;
+    let mut touched_dirs = false;
+
+    for slug in stale_slugs {
+        let page = wiki_root.join(slug).join("index.html");
+        if fs::remove_file(&page).is_ok() {
+            removed += 1;
+            touched_dirs = true;
+        }
+    }
+
+    if touched_dirs {
+        remove_empty_dirs(wiki_root);
+    }
+    removed
+}
+
+/// Delete the media named by `stale_rel`.
+fn prune_listed_media(vault_root: &Path, stale_rel: &[&str]) -> usize {
+    let mut removed = 0;
+    let mut touched_dirs = false;
+
+    for rel in stale_rel {
+        if fs::remove_file(vault_root.join(rel)).is_ok() {
+            removed += 1;
+            touched_dirs = true;
+        }
+    }
+
+    if touched_dirs {
+        remove_empty_dirs(vault_root);
+    }
+    removed
+}
+
 /// Delete pages under `wiki_root` whose source document no longer exists.
 ///
-/// Without this a renamed note keeps its old HTML forever, and Pagefind
-/// cheerfully indexes the orphan -- search then leads to a dead page.
+/// The fallback for when no manifest is available -- a first build against an
+/// existing output directory, or one written by a version that kept no record.
+/// Without pruning, a renamed note keeps its old HTML forever and Pagefind
+/// cheerfully indexes the orphan, so search leads to a dead page.
 fn prune_stale_pages(wiki_root: &Path, keep_slugs: &HashSet<&str>) -> usize {
     if !wiki_root.is_dir() {
         return 0;
@@ -270,7 +341,8 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
         })
         .collect();
 
-    let mut report = BuildReport::default();
+    let mut written = 0;
+    let mut failures: Vec<DocFailure> = Vec::new();
     let mut processed_entries = Vec::with_capacity(results.len());
     let mut section_counts: HashMap<String, usize> = HashMap::new();
     let mut slug_owner: HashMap<String, String> = HashMap::new();
@@ -282,10 +354,10 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
                 section,
                 slug,
                 rel_path,
-                written,
+                written: was_written,
             } => {
-                if written {
-                    report.written += 1;
+                if was_written {
+                    written += 1;
                 }
                 if let Some(sec) = section {
                     *section_counts.entry(sec).or_insert(0) += 1;
@@ -299,17 +371,15 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
             }
             DocOutcome::Failed(failure) => {
                 warn!("Skipping {}: {}", failure.rel_path, failure.error);
-                report.failures.push(failure);
+                failures.push(failure);
             }
         }
     }
-    report.rendered = processed_entries.len();
+    let rendered = processed_entries.len();
 
     info!(
-        "Rendered {} document pages ({} written, {} unchanged)",
-        report.rendered,
-        report.written,
-        report.rendered - report.written
+        "Rendered {rendered} document pages ({written} written, {} unchanged)",
+        rendered - written
     );
 
     // 6. Render the catalog page
@@ -320,51 +390,97 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
     sections.sort_by(|a, b| a.name.cmp(&b.name));
 
     let wiki_index_html = renderer.render_index(&sections, &processed_entries)?;
-    write_if_changed(&wiki_root.join("index.html"), &wiki_index_html)?;
+    let catalog_written = write_if_changed(&wiki_root.join("index.html"), &wiki_index_html)?;
 
     // 7. Write root /index.html redirecting to the book, unless the book is already there
+    let mut redirect_written = false;
     if !wiki_rel.is_empty() {
         let redirect_html = format!(
             r#"<!doctype html><html lang="{lang}" data-pagefind-ignore><head><meta charset="utf-8"><title>Redirecting to: {prefix}</title><meta http-equiv="refresh" content="0;url={prefix}"><link rel="canonical" href="{prefix}"></head><body><a href="{prefix}">Redirecting to {prefix}</a></body></html>"#,
             lang = config.book.lang,
             prefix = clean_url_prefix
         );
-        write_if_changed(&out_dir.join("index.html"), &redirect_html)?;
+        redirect_written = write_if_changed(&out_dir.join("index.html"), &redirect_html)?;
     }
 
     // 8. Drop output left behind by deleted or renamed sources
+    let previous = BuildManifest::read(out_dir);
+    let manifest = BuildManifest {
+        pages: slug_owner.keys().cloned().collect(),
+        media: scanned
+            .media_files
+            .iter()
+            .map(|m| m.rel_path.clone())
+            .collect(),
+    };
+
+    let mut pruned_pages = 0;
+    let mut pruned_media = 0;
+    let asset_rel = config.build.asset_out_rel();
+
     if wiki_rel.is_empty() {
         warn!("url_prefix is '/', so stale pages cannot be pruned safely; skipping page cleanup");
+    } else if let Some(previous) = &previous {
+        let current: HashSet<&str> = manifest.pages.iter().map(String::as_str).collect();
+        let stale: Vec<&str> = previous
+            .pages
+            .iter()
+            .map(String::as_str)
+            .filter(|slug| !current.contains(slug))
+            .collect();
+        pruned_pages = prune_listed_pages(&wiki_root, &stale);
     } else {
-        let keep_slugs: HashSet<&str> = slug_owner.keys().map(|s| s.as_str()).collect();
-        report.pruned_pages = prune_stale_pages(&wiki_root, &keep_slugs);
+        // No record of the last build: fall back to inspecting the output.
+        let keep: HashSet<&str> = manifest.pages.iter().map(String::as_str).collect();
+        pruned_pages = prune_stale_pages(&wiki_root, &keep);
     }
 
-    let asset_rel = config.build.asset_out_rel();
     if asset_rel.is_empty() {
         warn!(
             "asset_prefix is '/', so stale media cannot be pruned safely; skipping media cleanup"
         );
-    } else {
-        let keep_media: HashSet<&str> = scanned
-            .media_files
+    } else if let Some(previous) = &previous {
+        let current: HashSet<&str> = manifest.media.iter().map(String::as_str).collect();
+        let stale: Vec<&str> = previous
+            .media
             .iter()
-            .map(|m| m.rel_path.as_str())
+            .map(String::as_str)
+            .filter(|rel| !current.contains(rel))
             .collect();
-        report.pruned_media = prune_stale_media(&out_dir.join(asset_rel), &keep_media);
+        pruned_media = prune_listed_media(&out_dir.join(asset_rel), &stale);
+    } else {
+        let keep: HashSet<&str> = manifest.media.iter().map(String::as_str).collect();
+        pruned_media = prune_stale_media(&out_dir.join(asset_rel), &keep);
     }
 
-    if report.pruned_pages > 0 || report.pruned_media > 0 {
-        info!(
-            "Pruned {} stale page(s) and {} stale media file(s)",
-            report.pruned_pages, report.pruned_media
-        );
+    if pruned_pages > 0 || pruned_media > 0 {
+        info!("Pruned {pruned_pages} stale page(s) and {pruned_media} stale media file(s)");
     }
 
-    // 9. Run Pagefind search indexer if enabled
+    manifest.write(out_dir)?;
+
+    // 9. Run Pagefind, but only when the pages it would index actually moved.
+    //    Re-indexing an unchanged site is by far the most expensive thing a
+    //    build can do, and it produces the same index every time.
     if config.build.pagefind {
-        let _ = run_pagefind(out_dir);
+        let output_changed = written > 0 || catalog_written || redirect_written || pruned_pages > 0;
+        let index_missing = !out_dir.join("pagefind").is_dir();
+
+        if output_changed || index_missing {
+            let _ = run_pagefind(out_dir);
+        } else {
+            info!("No page changed, keeping the existing Pagefind index");
+        }
     }
+
+    let report = BuildReport {
+        rendered,
+        written,
+        failures,
+        pruned_pages,
+        pruned_media,
+        scanned,
+    };
 
     if report.failures.is_empty() {
         info!("Build completed successfully: {}", out_dir.display());
@@ -457,5 +573,91 @@ mod tests {
         let root = scratch("prune-missing").join("does-not-exist");
         assert_eq!(prune_stale_pages(&root, &HashSet::new()), 0);
         assert_eq!(prune_stale_media(&root, &HashSet::new()), 0);
+    }
+}
+
+#[cfg(test)]
+mod manifest_tests {
+    use super::*;
+
+    fn scratch(name: &str) -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!(
+            "tmtbook-manifest-{}-{}-{:?}",
+            name,
+            std::process::id(),
+            std::thread::current().id()
+        ));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    fn touch(path: &Path) {
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(path, "x").unwrap();
+    }
+
+    #[test]
+    fn a_manifest_round_trips() {
+        let dir = scratch("roundtrip");
+        let manifest = BuildManifest {
+            pages: vec!["a".into(), "notes/b".into()],
+            media: vec!["img/c.png".into()],
+        };
+        manifest.write(&dir).unwrap();
+
+        let read = BuildManifest::read(&dir).expect("manifest should be readable");
+        assert_eq!(read.pages, manifest.pages);
+        assert_eq!(read.media, manifest.media);
+
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_missing_or_corrupt_manifest_reads_as_none() {
+        let dir = scratch("missing");
+        assert!(BuildManifest::read(&dir).is_none());
+
+        fs::write(dir.join(MANIFEST_FILE), "not json").unwrap();
+        assert!(BuildManifest::read(&dir).is_none());
+
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn listed_pruning_removes_only_what_it_is_given() {
+        let root = scratch("listed-pages");
+        touch(&root.join("keep/index.html"));
+        touch(&root.join("notes/gone/index.html"));
+
+        assert_eq!(prune_listed_pages(&root, &["notes/gone"]), 1);
+        assert!(root.join("keep/index.html").exists());
+        assert!(!root.join("notes/gone").exists(), "emptied dir should go");
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn listed_pruning_tolerates_paths_that_are_already_gone() {
+        let root = scratch("listed-missing");
+        touch(&root.join("keep/index.html"));
+
+        assert_eq!(prune_listed_pages(&root, &["never-existed"]), 0);
+        assert!(root.join("keep/index.html").exists());
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn listed_media_pruning_removes_only_what_it_is_given() {
+        let root = scratch("listed-media");
+        touch(&root.join("img/keep.png"));
+        touch(&root.join("img/old.png"));
+
+        assert_eq!(prune_listed_media(&root, &["img/old.png"]), 1);
+        assert!(root.join("img/keep.png").exists());
+        assert!(!root.join("img/old.png").exists());
+
+        let _ = fs::remove_dir_all(&root);
     }
 }

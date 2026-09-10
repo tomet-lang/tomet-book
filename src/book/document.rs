@@ -139,9 +139,9 @@ fn is_link_ref(raw: &str) -> bool {
 fn clean_ref_target(raw: &str) -> String {
     let mut s = raw.trim();
     if s.starts_with("@link(") && s.ends_with(')') {
-        s = &s[6..s.len() - 1].trim();
+        s = s[6..s.len() - 1].trim();
     } else if s.starts_with("link(") && s.ends_with(')') {
-        s = &s[5..s.len() - 1].trim();
+        s = s[5..s.len() - 1].trim();
     } else if s.starts_with("[[") && s.ends_with("]]") {
         let inner = &s[2..s.len() - 2].trim();
         if let Some((_, a)) = inner.split_once('|') {
@@ -154,7 +154,7 @@ fn clean_ref_target(raw: &str) -> String {
         s = s["ref:".len()..].trim();
     }
     if (s.starts_with('"') && s.ends_with('"')) || (s.starts_with('\'') && s.ends_with('\'')) {
-        s = &s[1..s.len() - 1].trim();
+        s = s[1..s.len() - 1].trim();
     }
     s.trim_start_matches('@').trim().to_string()
 }
@@ -174,9 +174,9 @@ fn resolve_meta_link(
     let mut alias = None;
 
     if target.starts_with("@link(") && target.ends_with(')') {
-        target = &target[6..target.len() - 1].trim();
+        target = target[6..target.len() - 1].trim();
     } else if target.starts_with("link(") && target.ends_with(')') {
-        target = &target[5..target.len() - 1].trim();
+        target = target[5..target.len() - 1].trim();
     } else if target.starts_with("[[") && target.ends_with("]]") {
         let inner = &target[2..target.len() - 2].trim();
         if let Some((t, a)) = inner.split_once('|') {
@@ -193,7 +193,7 @@ fn resolve_meta_link(
     if (target.starts_with('"') && target.ends_with('"'))
         || (target.starts_with('\'') && target.ends_with('\''))
     {
-        target = &target[1..target.len() - 1].trim();
+        target = target[1..target.len() - 1].trim();
     }
 
     let clean_target = target.trim();
@@ -241,12 +241,12 @@ fn format_meta_value_to_html(
 }
 
 fn format_chip_value(val: &str, format: Option<&str>) -> String {
-    if format == Some("birthday") {
-        if let Some(caps) = ISO_DATE_RE.captures(val) {
-            let m: u32 = caps[2].parse().unwrap_or(0);
-            let d: u32 = caps[3].parse().unwrap_or(0);
-            return format!("{m}月{d}日");
-        }
+    if format == Some("birthday")
+        && let Some(caps) = ISO_DATE_RE.captures(val)
+    {
+        let m: u32 = caps[2].parse().unwrap_or(0);
+        let d: u32 = caps[3].parse().unwrap_or(0);
+        return format!("{m}月{d}日");
     }
     val.to_string()
 }
@@ -319,11 +319,11 @@ fn toc_from_outline(outline: &[tomet_html::HeadingInfo]) -> (Option<String>, Vec
 }
 
 fn insert_node_into(parent: &mut TocNode, node: TocNode) {
-    if let Some(last) = parent.children.last_mut() {
-        if node.level > last.level {
-            insert_node_into(last, node);
-            return;
-        }
+    if let Some(last) = parent.children.last_mut()
+        && node.level > last.level
+    {
+        insert_node_into(last, node);
+        return;
     }
     parent.children.push(node);
 }
@@ -375,21 +375,21 @@ pub fn process_tomet_document(
         .map_err(|e| anyhow::anyhow!("Failed to parse {rel_path}: {e}"))?;
 
     // 1. Inject external workspace config (e.g. default.config.tmt) if provided
-    if let Some(cfg_src) = workspace_cfg_src {
-        if let Ok(cfg_doc) = tomet_parser::parse_document(cfg_src) {
-            let mut prefix_blocks = Vec::new();
-            for block in cfg_doc.blocks {
-                if let tomet_ast::Block::Element(el) = &block {
-                    let kind = tomet_semantics::classify_std_lenient(el);
-                    if kind == tomet_semantics::ElementKind::Config || kind.as_str() == "settings" {
-                        prefix_blocks.push(block);
-                    }
+    if let Some(cfg_src) = workspace_cfg_src
+        && let Ok(cfg_doc) = tomet_parser::parse_document(cfg_src)
+    {
+        let mut prefix_blocks = Vec::new();
+        for block in cfg_doc.blocks {
+            if let tomet_ast::Block::Element(el) = &block {
+                let kind = tomet_semantics::classify_std_lenient(el);
+                if kind == tomet_semantics::ElementKind::Config || kind.as_str() == "settings" {
+                    prefix_blocks.push(block);
                 }
             }
-            if !prefix_blocks.is_empty() {
-                prefix_blocks.append(&mut doc.blocks);
-                doc.blocks = prefix_blocks;
-            }
+        }
+        if !prefix_blocks.is_empty() {
+            prefix_blocks.append(&mut doc.blocks);
+            doc.blocks = prefix_blocks;
         }
     }
 
@@ -456,10 +456,11 @@ pub fn process_tomet_document(
     };
 
     // If the first TOC item is an H1 identical to the document title, omit it from TOC
-    if let Some(first) = toc.first() {
-        if first.level == 1 && first.text == title {
-            toc.remove(0);
-        }
+    if let Some(first) = toc.first()
+        && first.level == 1
+        && first.text == title
+    {
+        toc.remove(0);
     }
 
     // 7b. Hierarchical section tree for horizontal accordion header
@@ -503,15 +504,15 @@ pub fn process_tomet_document(
         }
 
         // Banner Image
-        if let Some(val) = map.get("banner") {
-            if let Some(b) = val.as_str() {
-                banner_url = Some(resolve_meta_media_path(
-                    b,
-                    from_path,
-                    vault_index,
-                    config.build.clean_asset_prefix(),
-                ));
-            }
+        if let Some(val) = map.get("banner")
+            && let Some(b) = val.as_str()
+        {
+            banner_url = Some(resolve_meta_media_path(
+                b,
+                from_path,
+                vault_index,
+                config.build.clean_asset_prefix(),
+            ));
         }
 
         // Banner Y position (e.g. banner-y: 11)
@@ -618,23 +619,22 @@ pub fn process_tomet_document(
                 .collect();
 
             // Match Astro: if (kind && (!meta || !meta.type)) rawEntries.push(['kind', kind]);
-            if let Some(k) = &kind {
-                if !exclude_set.contains("kind")
-                    && !map.contains_key("type")
-                    && !map.contains_key("kind")
-                {
-                    let label = config
-                        .ui
-                        .infobox
-                        .labels
-                        .get("kind")
-                        .cloned()
-                        .unwrap_or_else(|| "種別".to_string());
-                    infobox_rows.push(InfoboxRowItem {
-                        label,
-                        value: k.clone(),
-                    });
-                }
+            if let Some(k) = &kind
+                && !exclude_set.contains("kind")
+                && !map.contains_key("type")
+                && !map.contains_key("kind")
+            {
+                let label = config
+                    .ui
+                    .infobox
+                    .labels
+                    .get("kind")
+                    .cloned()
+                    .unwrap_or_else(|| "種別".to_string());
+                infobox_rows.push(InfoboxRowItem {
+                    label,
+                    value: k.clone(),
+                });
             }
 
             for (key, val) in map {

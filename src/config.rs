@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct BookConfig {
     #[serde(default)]
     pub book: BookMeta,
@@ -243,16 +243,6 @@ impl Default for BuildConfig {
             url_prefix: default_url_prefix(),
             asset_prefix: default_asset_prefix(),
             config_path: None,
-        }
-    }
-}
-
-impl Default for BookConfig {
-    fn default() -> Self {
-        Self {
-            book: BookMeta::default(),
-            ui: UiConfig::default(),
-            build: BuildConfig::default(),
         }
     }
 }
