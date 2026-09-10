@@ -1,4 +1,66 @@
 (() => {
+  // ==================== THEME CONTROLLER ====================
+  function getSystemTheme() {
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light';
+  }
+
+  function getEffectiveTheme() {
+    const forced = document.documentElement.getAttribute('data-theme');
+    if (forced === 'dark' || forced === 'light') return forced;
+    return getSystemTheme();
+  }
+
+  function syncThemeIcons() {
+    const isDark = getEffectiveTheme() === 'dark';
+    const iconStr = isDark ? '☀️' : '🌙';
+    const titleStr = isDark ? 'ライトテーマに切り替え' : 'ダークテーマに切り替え';
+
+    const railBtn = document.getElementById('btn-rail-theme');
+    if (railBtn) {
+      const icon = railBtn.querySelector('.rail-theme-icon');
+      if (icon) icon.textContent = iconStr;
+      railBtn.title = titleStr;
+    }
+
+    const floatBtn = document.getElementById('btn-floating-theme');
+    if (floatBtn) {
+      const icon = floatBtn.querySelector('.theme-icon');
+      if (icon) icon.textContent = iconStr;
+      floatBtn.title = titleStr;
+    }
+  }
+
+  function toggleTheme() {
+    const current = getEffectiveTheme();
+    const nextTheme = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', nextTheme);
+    try {
+      localStorage.setItem('tmtbook-theme', nextTheme);
+    } catch {}
+    syncThemeIcons();
+  }
+
+  function setupThemeToggle() {
+    const railBtn = document.getElementById('btn-rail-theme');
+    const floatBtn = document.getElementById('btn-floating-theme');
+
+    if (railBtn) {
+      railBtn.onclick = (e) => {
+        e.preventDefault();
+        toggleTheme();
+      };
+    }
+    if (floatBtn) {
+      floatBtn.onclick = (e) => {
+        e.preventDefault();
+        toggleTheme();
+      };
+    }
+    syncThemeIcons();
+  }
+
   // ==================== VIEW MODE SWITCHER ====================
   function syncViewMode(doc = document) {
     try {
@@ -75,6 +137,42 @@
 
       // ScrollSpy: auto-highlight TOC item on scroll
       let scrollTicking = false;
+      const updateScrollSpy = () => {
+        if (isClickScrolling) return;
+        const containerRect = scrollContainer.getBoundingClientRect();
+        const topThreshold = containerRect.top + 80;
+
+        let currentId = null;
+        for (let i = 0; i < headingTargets.length; i++) {
+          const item = headingTargets[i];
+          const rect = item.el.getBoundingClientRect();
+          if (rect.top <= topThreshold) {
+            currentId = item.id;
+          } else {
+            break;
+          }
+        }
+
+        if (!currentId && headingTargets.length > 0) {
+          const firstRect = headingTargets[0].el.getBoundingClientRect();
+          if (firstRect.top <= containerRect.bottom) {
+            currentId = headingTargets[0].id;
+          }
+        }
+
+        if (currentId) {
+          headingTargets.forEach(({ id, link }) => {
+            if (id === currentId) {
+              if (!link.classList.contains('is-active')) {
+                tocLinks.forEach((l) => l.classList.remove('is-active'));
+                link.classList.add('is-active');
+                link.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+              }
+            }
+          });
+        }
+      };
+
       scrollContainer.addEventListener(
         'scroll',
         () => {
@@ -82,37 +180,13 @@
           scrollTicking = true;
           requestAnimationFrame(() => {
             scrollTicking = false;
-            const containerTop = scrollContainer.scrollTop + scrollContainer.offsetTop;
-            let currentId = null;
-
-            for (let i = 0; i < headingTargets.length; i++) {
-              const item = headingTargets[i];
-              if (item.el.offsetTop <= containerTop + 40) {
-                currentId = item.id;
-              } else {
-                break;
-              }
-            }
-
-            if (!currentId && headingTargets.length > 0) {
-              currentId = headingTargets[0].id;
-            }
-
-            if (currentId) {
-              headingTargets.forEach(({ id, link }) => {
-                if (id === currentId) {
-                  if (!link.classList.contains('is-active')) {
-                    tocLinks.forEach((l) => l.classList.remove('is-active'));
-                    link.classList.add('is-active');
-                    link.scrollIntoView({ block: 'nearest' });
-                  }
-                }
-              });
-            }
+            updateScrollSpy();
           });
         },
         { passive: true }
       );
+
+      setTimeout(updateScrollSpy, 150);
     }
 
     // 1. 目次ペインと常設左縦バーの開閉制御
@@ -909,16 +983,20 @@
         ticking = true;
         requestAnimationFrame(() => {
           ticking = false;
-          const scrollY = window.scrollY;
           let currentId = null;
 
           for (let i = 0; i < headingTargets.length; i++) {
             const item = headingTargets[i];
-            if (item.el.offsetTop <= scrollY + 80) {
+            const rect = item.el.getBoundingClientRect();
+            if (rect.top <= 100) {
               currentId = item.id;
             } else {
               break;
             }
+          }
+
+          if (!currentId && headingTargets.length > 0) {
+            currentId = headingTargets[0].id;
           }
 
           if (currentId) {
@@ -936,9 +1014,90 @@
     );
   }
 
+  // ==================== EDIT DROPDOWN & COPY TOAST ====================
+  function showToast(message) {
+    let toast = document.getElementById('tmt-global-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'tmt-global-toast';
+      toast.className = 'tmt-toast';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.add('is-show');
+    if (toast._timer) clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => {
+      toast.classList.remove('is-show');
+    }, 2500);
+  }
+
+  function setupEditDropdown() {
+    const editBtns = document.querySelectorAll('.btn-edit-open');
+    if (editBtns.length === 0) return;
+
+    editBtns.forEach((btn) => {
+      const dropdown = btn.closest('.edit-dropdown');
+      if (!dropdown) return;
+      const menu = dropdown.querySelector('.edit-dropdown-menu');
+      if (!menu) return;
+
+      btn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const isOpen = dropdown.classList.contains('is-open');
+        // Close all other open dropdowns
+        document.querySelectorAll('.edit-dropdown.is-open').forEach((d) => {
+          d.classList.remove('is-open');
+          const m = d.querySelector('.edit-dropdown-menu');
+          if (m) m.hidden = true;
+        });
+
+        if (!isOpen) {
+          dropdown.classList.add('is-open');
+          menu.hidden = false;
+        }
+      };
+    });
+
+    // Copy path buttons
+    document.querySelectorAll('.btn-copy-path').forEach((btn) => {
+      btn.onclick = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const path = btn.getAttribute('data-path');
+        if (path) {
+          try {
+            await navigator.clipboard.writeText(path);
+            showToast('📋 パスをクリップボードにコピーしました');
+          } catch {
+            showToast('❌ コピーに失敗しました');
+          }
+        }
+        const dropdown = btn.closest('.edit-dropdown');
+        if (dropdown) {
+          dropdown.classList.remove('is-open');
+          const menu = dropdown.querySelector('.edit-dropdown-menu');
+          if (menu) menu.hidden = true;
+        }
+      };
+    });
+
+    // Close on outside click
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.edit-dropdown')) {
+        document.querySelectorAll('.edit-dropdown.is-open').forEach((d) => {
+          d.classList.remove('is-open');
+          const menu = d.querySelector('.edit-dropdown-menu');
+          if (menu) menu.hidden = true;
+        });
+      }
+    });
+  }
+
   // ==================== INITIALIZE ====================
   function initPage() {
     syncViewMode();
+    setupThemeToggle();
     setupViewSwitcher();
     setupBookViewInteraction();
     setupClassicViewInteraction();
@@ -947,6 +1106,7 @@
     initPagePreview();
     initImageLightbox();
     setupCostumeSwitchers();
+    setupEditDropdown();
   }
 
   if (document.readyState === 'loading') {

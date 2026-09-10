@@ -59,6 +59,7 @@ impl<'a> BookRenderer<'a> {
             default_view => &self.config.ui.default_view,
             custom_css => &self.config.ui.custom_css,
             rail_letters => &self.rail_letters,
+            source_path => &doc.source_path,
             page_title => &doc.title,
             section => &doc.section,
             kind => &doc.kind,

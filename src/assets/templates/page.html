@@ -25,6 +25,13 @@
         </span>
       </button>
     </div>
+
+    <!-- Bottom Footer (Theme Switcher) -->
+    <div class="rail-footer">
+      <button type="button" class="rail-tab rail-tab-theme" id="btn-rail-theme" title="テーマ切り替え (ライト / ダーク)" aria-label="テーマ切り替え">
+        <span class="rail-theme-icon" id="rail-theme-icon">🌓</span>
+      </button>
+    </div>
   </nav>
 
   <div class="book-view" id="wiki-book-view">
@@ -58,6 +65,23 @@
         </ul>
       </div>
       {% endif %}
+
+      <!-- Backlinks Placeholder -->
+      <div class="pane-nav-section pane-backlinks" id="pane-backlinks-section">
+        <div class="toc-heading">バックリンク (0)</div>
+        <div class="pane-placeholder-box">
+          <span class="placeholder-text">リンクしているノートはありません</span>
+        </div>
+      </div>
+
+      <!-- Local Graph Placeholder -->
+      <div class="pane-nav-section pane-graph" id="pane-graph-section">
+        <div class="toc-heading">ローカルグラフ</div>
+        <div class="pane-placeholder-box pane-graph-box">
+          <span class="placeholder-icon">🕸️</span>
+          <span class="placeholder-text">グラフ準備中</span>
+        </div>
+      </div>
 
       <div class="pane-recent" id="pane-recent-section" hidden>
         <div class="toc-heading">最近開いたノート</div>
@@ -164,6 +188,31 @@
               </div>
               {% endif %}
             </div>
+            {% if source_path %}
+            <div class="hero-actions">
+              <div class="edit-dropdown">
+                <button type="button" class="hero-action-btn btn-edit-open" title="エディタで開く" aria-label="エディタで開く">
+                  <svg class="icon-edit" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                  </svg>
+                  <span class="btn-edit-text">編集</span>
+                  <span class="btn-edit-arrow">▾</span>
+                </button>
+                <div class="edit-dropdown-menu" hidden>
+                  <a href="vscode://file{{ source_path }}" class="edit-dropdown-item" title="VSCode で開く">
+                    <span class="item-icon">🔷</span> VSCode で開く
+                  </a>
+                  <a href="cursor://file{{ source_path }}" class="edit-dropdown-item" title="Cursor で開く">
+                    <span class="item-icon">⚡</span> Cursor で開く
+                  </a>
+                  <button type="button" class="edit-dropdown-item btn-copy-path" data-path="{{ source_path }}" title="ファイルパスをコピー">
+                    <span class="item-icon">📋</span> パスをコピー
+                  </button>
+                </div>
+              </div>
+            </div>
+            {% endif %}
           </div>
         </div>
         {% else %}
@@ -189,6 +238,31 @@
             </span>
             {% endif %}
             {% endfor %}
+          </div>
+          {% endif %}
+          {% if source_path %}
+          <div class="hero-actions">
+            <div class="edit-dropdown">
+              <button type="button" class="hero-action-btn btn-edit-open" title="エディタで開く" aria-label="エディタで開く">
+                <svg class="icon-edit" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 20h9"></path>
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                </svg>
+                <span class="btn-edit-text">編集</span>
+                <span class="btn-edit-arrow">▾</span>
+              </button>
+              <div class="edit-dropdown-menu" hidden>
+                <a href="vscode://file{{ source_path }}" class="edit-dropdown-item" title="VSCode で開く">
+                  <span class="item-icon">🔷</span> VSCode で開く
+                </a>
+                <a href="cursor://file{{ source_path }}" class="edit-dropdown-item" title="Cursor で開く">
+                  <span class="item-icon">⚡</span> Cursor で開く
+                </a>
+                <button type="button" class="edit-dropdown-item btn-copy-path" data-path="{{ source_path }}" title="ファイルパスをコピー">
+                  <span class="item-icon">📋</span> パスをコピー
+                </button>
+              </div>
+            </div>
           </div>
           {% endif %}
         </header>
@@ -259,6 +333,31 @@
         </div>
         {% endif %}
       </div>
+      {% if source_path %}
+      <div class="hero-actions">
+        <div class="edit-dropdown">
+          <button type="button" class="hero-action-btn btn-edit-open" title="エディタで開く" aria-label="エディタで開く">
+            <svg class="icon-edit" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            </svg>
+            <span class="btn-edit-text">編集</span>
+            <span class="btn-edit-arrow">▾</span>
+          </button>
+          <div class="edit-dropdown-menu" hidden>
+            <a href="vscode://file{{ source_path }}" class="edit-dropdown-item" title="VSCode で開く">
+              <span class="item-icon">🔷</span> VSCode で開く
+            </a>
+            <a href="cursor://file{{ source_path }}" class="edit-dropdown-item" title="Cursor で開く">
+              <span class="item-icon">⚡</span> Cursor で開く
+            </a>
+            <button type="button" class="edit-dropdown-item btn-copy-path" data-path="{{ source_path }}" title="ファイルパスをコピー">
+              <span class="item-icon">📋</span> パスをコピー
+            </button>
+          </div>
+        </div>
+      </div>
+      {% endif %}
     </div>
   </div>
   {% else %}
@@ -287,6 +386,31 @@
       </span>
       {% endif %}
       {% endfor %}
+    </div>
+    {% endif %}
+    {% if source_path %}
+    <div class="hero-actions">
+      <div class="edit-dropdown">
+        <button type="button" class="hero-action-btn btn-edit-open" title="エディタで開く" aria-label="エディタで開く">
+          <svg class="icon-edit" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"></path>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+          </svg>
+          <span class="btn-edit-text">編集</span>
+          <span class="btn-edit-arrow">▾</span>
+        </button>
+        <div class="edit-dropdown-menu" hidden>
+          <a href="vscode://file{{ source_path }}" class="edit-dropdown-item" title="VSCode で開く">
+            <span class="item-icon">🔷</span> VSCode で開く
+          </a>
+          <a href="cursor://file{{ source_path }}" class="edit-dropdown-item" title="Cursor で開く">
+            <span class="item-icon">⚡</span> Cursor で開く
+          </a>
+          <button type="button" class="edit-dropdown-item btn-copy-path" data-path="{{ source_path }}" title="ファイルパスをコピー">
+            <span class="item-icon">📋</span> パスをコピー
+          </button>
+        </div>
+      </div>
     </div>
     {% endif %}
   </header>

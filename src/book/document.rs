@@ -29,6 +29,7 @@ pub struct InfoboxRowItem {
 pub struct ProcessedDoc {
     pub slug: String,
     pub rel_path: String,
+    pub source_path: String,
     pub title: String,
     pub section: Option<String>,
     pub kind: Option<String>,
@@ -197,6 +198,7 @@ fn resolve_meta_media_path(
 pub fn process_tomet_document(
     source: &str,
     rel_path: &str,
+    abs_path: Option<&Path>,
     config: &BookConfig,
     vault_index: &tomet_links::VaultLinkIndex,
     workspace_cfg_src: Option<&str>,
@@ -568,10 +570,16 @@ pub fn process_tomet_document(
     }
 
     let has_data = !infobox_rows.is_empty() || banner_url.is_some() || !images.is_empty();
+    let source_path = if let Some(ap) = abs_path {
+        ap.to_string_lossy().to_string()
+    } else {
+        rel_path.to_string()
+    };
 
     Ok(ProcessedDoc {
         slug,
         rel_path: rel_path.to_string(),
+        source_path,
         title,
         section,
         kind,

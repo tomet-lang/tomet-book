@@ -54,6 +54,7 @@ pub fn render_single_document(
     let processed = process_tomet_document(
         &source,
         rel_path,
+        Some(abs_path),
         config,
         vault_index,
         workspace_cfg_src,
@@ -108,6 +109,7 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
             let processed = match process_tomet_document(
                 &source,
                 &doc_file.rel_path,
+                Some(&doc_file.abs_path),
                 config,
                 &scanned.vault_index,
                 scanned.workspace_config_src.as_deref(),
