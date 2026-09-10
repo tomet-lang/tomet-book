@@ -25,7 +25,7 @@ pub struct MediaFileInfo {
     pub rel_path: String,
 }
 
-const MEDIA_EXTENSIONS: &[&str] = &[
+pub const MEDIA_EXTENSIONS: &[&str] = &[
     "png", "jpg", "jpeg", "gif", "svg", "webp", "pdf", "mp4", "mp3", "webm", "avif", "ico",
 ];
 

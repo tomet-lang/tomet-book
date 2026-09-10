@@ -61,6 +61,10 @@ pub async fn run_dev_server(
 
         info!("Watching {} for changes...", watch_src.display());
 
+        // Cache for fast incremental rebuilds
+        let mut cached_scanned = crate::book::loader::scan_vault(&watch_src, &watch_cfg).ok();
+        let mut cached_renderer = crate::book::renderer::BookRenderer::new(&watch_cfg).ok();
+
         while let Ok(res) = n_rx.recv() {
             match res {
                 Ok(event) => {
@@ -68,20 +72,96 @@ pub async fn run_dev_server(
                         continue;
                     }
 
-                    // Debounce rapid events within 300ms
-                    if last_build.elapsed() < Duration::from_millis(300) {
+                    // Debounce rapid events within 150ms
+                    if last_build.elapsed() < Duration::from_millis(150) {
                         continue;
                     }
                     last_build = Instant::now();
 
-                    info!("Change detected, rebuilding...");
-                    match build_book(&watch_src, &watch_out, &watch_cfg) {
-                        Ok(()) => {
-                            info!("Rebuild complete, triggering reload");
-                            let _ = watcher_tx.send(());
+                    // Analyze event paths
+                    let mut is_global = false;
+                    let mut single_doc: Option<(PathBuf, String)> = None;
+                    let mut single_media: Option<(PathBuf, String)> = None;
+
+                    let is_modify_only = matches!(event.kind, notify::EventKind::Modify(_));
+
+                    for path in &event.paths {
+                        let file_name = path.file_name().and_then(|s| s.to_str()).unwrap_or("");
+                        if file_name == "tmtbook.toml"
+                            || file_name == "default.config.tmt"
+                            || file_name.ends_with(".css")
+                            || file_name.ends_with(".js")
+                            || file_name.ends_with(".html")
+                        {
+                            is_global = true;
+                            break;
                         }
-                        Err(e) => {
-                            warn!("Rebuild error: {e}");
+
+                        let ext = path.extension().and_then(|s| s.to_str()).unwrap_or("").to_lowercase();
+                        if ext == "tmt" || ext == "tm" {
+                            if is_modify_only && single_doc.is_none() && !is_global {
+                                if let Ok(rel) = path.strip_prefix(&watch_src) {
+                                    single_doc = Some((path.clone(), rel.to_string_lossy().replace('\\', "/")));
+                                }
+                            } else {
+                                is_global = true;
+                            }
+                        } else if crate::book::loader::MEDIA_EXTENSIONS.contains(&ext.as_str()) {
+                            if let Ok(rel) = path.strip_prefix(&watch_src) {
+                                single_media = Some((path.clone(), rel.to_string_lossy().replace('\\', "/")));
+                            }
+                        }
+                    }
+
+                    if !is_global && single_doc.is_some() && cached_scanned.is_some() && cached_renderer.is_some() {
+                        let (abs_path, rel_path) = single_doc.unwrap();
+                        let start = Instant::now();
+                        let scanned = cached_scanned.as_ref().unwrap();
+                        let renderer = cached_renderer.as_ref().unwrap();
+
+                        match crate::book::render_single_document(
+                            &abs_path,
+                            &rel_path,
+                            &watch_out,
+                            &watch_cfg,
+                            &scanned.vault_index,
+                            scanned.workspace_config_src.as_deref(),
+                            renderer,
+                        ) {
+                            Ok(written) => {
+                                info!(
+                                    "⚡ Incremental rebuild: {} in {:?} (written: {})",
+                                    rel_path,
+                                    start.elapsed(),
+                                    written
+                                );
+                                let _ = watcher_tx.send(());
+                            }
+                            Err(e) => {
+                                warn!("Incremental rebuild error: {e}");
+                            }
+                        }
+                    } else if !is_global && single_media.is_some() {
+                        let (abs_path, rel_path) = single_media.unwrap();
+                        let _ = crate::book::assets::sync_single_media(&watch_out, &abs_path, &rel_path);
+                        info!("🖼️ Synced media: {}", rel_path);
+                        let _ = watcher_tx.send(());
+                    } else {
+                        info!("🔄 Global change detected, rebuilding all pages (parallel)...");
+                        let start = Instant::now();
+                        let mut dev_cfg = watch_cfg.clone();
+                        dev_cfg.build.pagefind = false;
+
+                        match build_book(&watch_src, &watch_out, &dev_cfg) {
+                            Ok(()) => {
+                                info!("Full rebuild complete in {:?}, triggering reload", start.elapsed());
+                                cached_scanned = crate::book::loader::scan_vault(&watch_src, &watch_cfg).ok();
+                                cached_renderer = crate::book::renderer::BookRenderer::new(&watch_cfg).ok();
+                                let _ = watcher_tx.send(());
+                            }
+                            Err(e) => {
+                                warn!("Rebuild error: {e}");
+                            }
                         }
                     }
                 }

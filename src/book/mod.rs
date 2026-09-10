@@ -17,6 +17,55 @@ use loader::scan_vault;
 use pagefind::run_pagefind;
 use renderer::{BookRenderer, EntrySummary, SectionSummary};
 
+use rayon::prelude::*;
+
+/// Write content to path only if content has actually changed or file does not exist.
+/// Returns Ok(true) if written, Ok(false) if skipped because unchanged.
+pub fn write_if_changed(path: &Path, content: &str) -> Result<bool> {
+    if path.exists() {
+        if let Ok(meta) = fs::metadata(path) {
+            if meta.len() == content.len() as u64 {
+                if let Ok(existing) = fs::read_to_string(path) {
+                    if existing == content {
+                        return Ok(false);
+                    }
+                }
+            }
+        }
+    }
+
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    fs::write(path, content)?;
+    Ok(true)
+}
+
+pub fn render_single_document(
+    abs_path: &Path,
+    rel_path: &str,
+    out_dir: &Path,
+    config: &BookConfig,
+    vault_index: &tomet_links::VaultLinkIndex,
+    workspace_cfg_src: Option<&str>,
+    renderer: &BookRenderer,
+) -> Result<bool> {
+    let source = fs::read_to_string(abs_path)?;
+    let processed = process_tomet_document(
+        &source,
+        rel_path,
+        config,
+        vault_index,
+        workspace_cfg_src,
+    )?;
+    let html = renderer.render_page(&processed)?;
+    let out_html_path = out_dir
+        .join("wiki")
+        .join(&processed.slug)
+        .join("index.html");
+    write_if_changed(&out_html_path, &html)
+}
+
 pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result<()> {
     info!(
         "Building book from {} to {}",
@@ -43,58 +92,86 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
     // 4. Initialize MiniJinja renderer
     let renderer = BookRenderer::new(config)?;
 
-    // 5. Process and render documents
-    let mut processed_entries = Vec::new();
+    // 5. Process and render documents in parallel
+    let results: Vec<(EntrySummary, Option<String>, bool)> = scanned
+        .doc_files
+        .par_iter()
+        .filter_map(|doc_file| {
+            let source = match fs::read_to_string(&doc_file.abs_path) {
+                Ok(s) => s,
+                Err(e) => {
+                    tracing::warn!("Failed to read {}: {}", doc_file.abs_path.display(), e);
+                    return None;
+                }
+            };
+
+            let processed = match process_tomet_document(
+                &source,
+                &doc_file.rel_path,
+                config,
+                &scanned.vault_index,
+                scanned.workspace_config_src.as_deref(),
+            ) {
+                Ok(p) => p,
+                Err(e) => {
+                    tracing::warn!("Error processing {}: {}", doc_file.rel_path, e);
+                    return None;
+                }
+            };
+
+            let html = match renderer.render_page(&processed) {
+                Ok(h) => h,
+                Err(e) => {
+                    tracing::warn!("Error rendering template for {}: {}", doc_file.rel_path, e);
+                    return None;
+                }
+            };
+
+            let out_html_path = out_dir
+                .join("wiki")
+                .join(&processed.slug)
+                .join("index.html");
+
+            let written = match write_if_changed(&out_html_path, &html) {
+                Ok(w) => w,
+                Err(e) => {
+                    tracing::warn!("Failed to write {}: {}", out_html_path.display(), e);
+                    return None;
+                }
+            };
+
+            Some((
+                EntrySummary {
+                    url: format!("{}/{}", config.build.url_prefix, processed.slug),
+                    title: processed.title,
+                    section: processed.section.clone(),
+                },
+                processed.section,
+                written,
+            ))
+        })
+        .collect();
+
+    let mut written_count = 0;
+    let mut processed_entries = Vec::with_capacity(results.len());
     let mut section_counts: HashMap<String, usize> = HashMap::new();
 
-    for doc_file in &scanned.doc_files {
-        let source = match fs::read_to_string(&doc_file.abs_path) {
-            Ok(s) => s,
-            Err(e) => {
-                tracing::warn!("Failed to read {}: {}", doc_file.abs_path.display(), e);
-                continue;
-            }
-        };
-
-        let processed = match process_tomet_document(
-            &source,
-            &doc_file.rel_path,
-            config,
-            &scanned.vault_index,
-            scanned.workspace_config_src.as_deref(),
-        ) {
-            Ok(p) => p,
-            Err(e) => {
-                tracing::warn!("Error processing {}: {}", doc_file.rel_path, e);
-                continue;
-            }
-        };
-
-        if let Some(sec) = &processed.section {
-            *section_counts.entry(sec.clone()).or_insert(0) += 1;
+    for (entry, section, written) in results {
+        if written {
+            written_count += 1;
         }
-
-        let html = renderer.render_page(&processed)?;
-
-        // Output to out_dir/wiki/{slug}/index.html
-        let out_html_path = out_dir
-            .join("wiki")
-            .join(&processed.slug)
-            .join("index.html");
-
-        if let Some(parent) = out_html_path.parent() {
-            fs::create_dir_all(parent)?;
+        if let Some(sec) = section {
+            *section_counts.entry(sec).or_insert(0) += 1;
         }
-        fs::write(&out_html_path, html)?;
-
-        processed_entries.push(EntrySummary {
-            url: format!("{}/{}", config.build.url_prefix, processed.slug),
-            title: processed.title,
-            section: processed.section,
-        });
+        processed_entries.push(entry);
     }
 
-    info!("Rendered {} document pages", processed_entries.len());
+    info!(
+        "Rendered {} document pages ({} written, {} unchanged)",
+        processed_entries.len(),
+        written_count,
+        processed_entries.len() - written_count
+    );
 
     // 6. Render /wiki/index.html (Catalog page)
     let mut sections: Vec<SectionSummary> = section_counts
@@ -105,10 +182,7 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
 
     let wiki_index_html = renderer.render_index(&sections, &processed_entries)?;
     let wiki_index_path = out_dir.join("wiki").join("index.html");
-    if let Some(parent) = wiki_index_path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    fs::write(&wiki_index_path, wiki_index_html)?;
+    write_if_changed(&wiki_index_path, &wiki_index_html)?;
 
     // 7. Write root /index.html with redirect to /wiki
     let redirect_html = format!(
@@ -116,7 +190,7 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
         lang = config.book.lang,
         prefix = config.build.url_prefix
     );
-    fs::write(out_dir.join("index.html"), redirect_html)?;
+    write_if_changed(&out_dir.join("index.html"), &redirect_html)?;
 
     // 8. Run Pagefind search indexer if enabled
     if config.build.pagefind {

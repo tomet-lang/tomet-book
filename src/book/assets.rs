@@ -32,16 +32,72 @@ pub fn write_static_assets(out_dir: &Path, src_dir: &Path, config: &BookConfig) 
     Ok(())
 }
 
+#[cfg(unix)]
+use std::os::unix::fs::MetadataExt;
+
+fn is_same_media(src_path: &Path, dest_path: &Path) -> bool {
+    let Ok(src_meta) = fs::metadata(src_path) else {
+        return false;
+    };
+    let Ok(dest_meta) = fs::metadata(dest_path) else {
+        return false;
+    };
+
+    #[cfg(unix)]
+    {
+        if src_meta.dev() == dest_meta.dev() && src_meta.ino() == dest_meta.ino() {
+            return true;
+        }
+    }
+
+    if src_meta.len() == dest_meta.len() {
+        if let (Ok(src_mtime), Ok(dest_mtime)) = (src_meta.modified(), dest_meta.modified()) {
+            if src_mtime == dest_mtime {
+                return true;
+            }
+        }
+    }
+
+    false
+}
+
+pub fn sync_single_media(out_dir: &Path, abs_path: &Path, rel_path: &str) -> Result<()> {
+    let target_vault = out_dir.join("vault");
+    let dest = target_vault.join(rel_path);
+
+    if dest.exists() {
+        if is_same_media(abs_path, &dest) {
+            return Ok(());
+        }
+        let _ = fs::remove_file(&dest);
+    }
+
+    if let Some(parent) = dest.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    if fs::hard_link(abs_path, &dest).is_err() {
+        fs::copy(abs_path, &dest)?;
+    }
+    Ok(())
+}
+
 pub fn copy_vault_media(out_dir: &Path, media_files: &[MediaFileInfo]) -> Result<usize> {
     let target_vault = out_dir.join("vault");
-    if target_vault.exists() {
-        let _ = fs::remove_dir_all(&target_vault);
-    }
     fs::create_dir_all(&target_vault)?;
 
     let mut count = 0;
     for media in media_files {
         let dest = target_vault.join(&media.rel_path);
+
+        if dest.exists() {
+            if is_same_media(&media.abs_path, &dest) {
+                count += 1;
+                continue;
+            }
+            let _ = fs::remove_file(&dest);
+        }
+
         if let Some(parent) = dest.parent() {
             fs::create_dir_all(parent)?;
         }

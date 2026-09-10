@@ -24,6 +24,7 @@ tokio = { version = "1.42.0", features = ["full"] }
 axum = { version = "0.7.9", features = ["ws"] }
 tower-http = { version = "0.5.2", features = ["fs", "cors", "trace"] }
 futures = "0.3.31"
+rayon = "1.10"
 
 # Tomet ecosystem dependencies
 tomet-ast = { git = "https://github.com/tomet-lang/tomet.git" }
