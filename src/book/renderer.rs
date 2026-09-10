@@ -65,6 +65,8 @@ impl<'a> BookRenderer<'a> {
             primary_color => &doc.primary_color,
             icon => &doc.icon,
             banner_url => &doc.banner_url,
+            banner_y => doc.banner_y,
+            images => &doc.images,
             hero_chips => &doc.hero_chips,
             infobox_rows => &doc.infobox_rows,
             has_data => doc.has_data,

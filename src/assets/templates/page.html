@@ -75,6 +75,23 @@
           {% if icon %}<span>{{ icon }}</span>{% endif %}
           <span>{{ page_title }}</span>
         </div>
+        {% if images and images | length > 0 %}
+        <div class="infobox-image-section">
+          <div class="infobox-image-wrapper">
+            <img src="{{ images[0] }}" alt="{{ page_title }}" class="infobox-main-img" loading="lazy" />
+          </div>
+          {% if images | length > 1 %}
+          <div class="infobox-costume-switcher" role="tablist">
+            <span class="switcher-label">衣装:</span>
+            <div class="switcher-buttons">
+              {% for img in images %}
+              <button type="button" class="costume-btn{% if loop.first %} active{% endif %}" data-img-src="{{ img }}" title="衣装 {{ loop.index }}">{{ loop.index }}</button>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
         {% if infobox_rows and infobox_rows | length > 0 %}
         <table class="infobox-table">
           <tbody>
@@ -103,7 +120,7 @@
         <div class="book-hero-section">
           {% if banner_url %}
           <div class="hero-banner-wrapper">
-            <img src="{{ banner_url }}" alt="{{ page_title }} バナー" class="hero-banner-img" />
+            <img src="{{ banner_url }}" alt="{{ page_title }} バナー" class="hero-banner-img" {% if banner_y %}style="object-position: center {{ banner_y }}%;"{% endif %} />
             <button type="button" class="hero-zoom-btn" title="バナーを拡大表示">🔍 拡大</button>
           </div>
           {% endif %}

@@ -34,12 +34,17 @@ pub fn scan_vault(src_dir: &Path, config: &BookConfig) -> Result<ScannedVault> {
     let mut media_files = Vec::new();
     let mut all_rel_paths = Vec::new();
 
-    let exclude_prefixes: Vec<String> = config
+    let mut exclude_prefixes: Vec<String> = config
         .build
         .exclude
         .iter()
         .map(|s| s.replace('\\', "/"))
         .collect();
+
+    let dest_str = config.book.dest.to_string_lossy().replace('\\', "/");
+    if !dest_str.is_empty() && !exclude_prefixes.contains(&dest_str) {
+        exclude_prefixes.push(dest_str);
+    }
 
     let media_ext_set: HashSet<&str> = MEDIA_EXTENSIONS.iter().copied().collect();
 

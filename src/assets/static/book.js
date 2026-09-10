@@ -459,6 +459,7 @@
   const previewCache = new Map();
   let hoverTimer = null;
   let activeLink = null;
+  let isPreviewGlobalInitialized = false;
 
   function hidePreviewCard() {
     const card = document.getElementById('wiki-page-preview');
@@ -466,81 +467,112 @@
   }
 
   function initPagePreview() {
-    const card = document.getElementById('wiki-page-preview');
-    if (!card) return;
+    if (isPreviewGlobalInitialized) return;
+    isPreviewGlobalInitialized = true;
 
-    card.addEventListener('mouseenter', () => clearTimeout(hoverTimer));
-    card.addEventListener('mouseleave', hidePreviewCard);
+    // スクロール時および画面クリック時にプレビューを閉じる
+    window.addEventListener('scroll', hidePreviewCard, { capture: true, passive: true });
+    document.addEventListener('click', (e) => {
+      const card = document.getElementById('wiki-page-preview');
+      if (card && !card.contains(e.target)) {
+        hidePreviewCard();
+      }
+    });
 
-    const titleEl = card.querySelector('.preview-title');
-    const sectionEl = card.querySelector('.preview-section');
-    const bodyEl = card.querySelector('.preview-body');
-    const thumbEl = card.querySelector('.preview-thumb');
+    document.addEventListener('mouseover', (e) => {
+      const card = document.getElementById('wiki-page-preview');
+      if (!card) return;
 
-    document.querySelectorAll('article a').forEach((a) => {
-      const href = a.getAttribute('href');
+      const target = e.target.closest('a');
+      if (!target || !target.closest('article')) return;
+
+      const href = target.getAttribute('href');
       if (!href || href.startsWith('#') || href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:')) {
         return;
       }
 
-      a.addEventListener('mouseenter', () => {
+      activeLink = target;
+      clearTimeout(hoverTimer);
+
+      hoverTimer = setTimeout(async () => {
+        if (activeLink !== target) return;
+
+        let data = previewCache.get(href);
+        if (!data) {
+          try {
+            const res = await fetch(href);
+            if (!res.ok) return;
+            const text = await res.text();
+            const doc = new DOMParser().parseFromString(text, 'text/html');
+
+            const title = doc.querySelector('.content-title')?.textContent?.trim() || doc.querySelector('h1')?.textContent?.trim() || '';
+            const section = doc.querySelector('.crumb-val')?.textContent?.trim() || doc.querySelector('.breadcrumb-section')?.textContent?.trim() || '';
+            const excerpt = doc.querySelector('article p, article li, article blockquote')?.textContent?.trim() || '';
+            const imgEl = doc.querySelector('.hero-banner-img, .infobox-main-img, article img');
+            const image = imgEl?.getAttribute('src') || '';
+
+            data = { title, section, excerpt, image };
+            previewCache.set(href, data);
+          } catch (err) {
+            return;
+          }
+        }
+
+        if (activeLink !== target) return;
+        if (!data.excerpt && !data.title) return;
+
+        const titleEl = card.querySelector('.preview-title');
+        const sectionEl = card.querySelector('.preview-section');
+        const bodyEl = card.querySelector('.preview-body');
+        const thumbEl = card.querySelector('.preview-thumb');
+
+        if (titleEl) titleEl.textContent = data.title;
+        if (sectionEl) sectionEl.textContent = data.section ? `(${data.section})` : '';
+        if (bodyEl) bodyEl.textContent = data.excerpt;
+
+        if (thumbEl) {
+          if (data.image) {
+            thumbEl.src = data.image;
+            thumbEl.hidden = false;
+          } else {
+            thumbEl.src = '';
+            thumbEl.hidden = true;
+          }
+        }
+
+        const rect = target.getBoundingClientRect();
+        const cardWidth = 320;
+        let left = rect.left;
+        if (left + cardWidth > window.innerWidth - 16) {
+          left = window.innerWidth - cardWidth - 16;
+        }
+        if (left < 16) left = 16;
+
+        let top = rect.bottom + 8;
+        if (top + 140 > window.innerHeight && rect.top > 150) {
+          top = rect.top - 140;
+        }
+
+        card.style.left = `${Math.round(left)}px`;
+        card.style.top = `${Math.round(top)}px`;
+        card.hidden = false;
+      }, 250);
+    });
+
+    document.addEventListener('mouseout', (e) => {
+      const card = document.getElementById('wiki-page-preview');
+      if (!card) return;
+
+      const target = e.target.closest('a');
+      if (target && target === activeLink) {
+        activeLink = null;
         clearTimeout(hoverTimer);
-        activeLink = a;
-        hoverTimer = setTimeout(async () => {
-          if (activeLink !== a) return;
-          let data = previewCache.get(href);
-          if (!data) {
-            try {
-              const res = await fetch(href);
-              if (!res.ok) return;
-              const text = await res.text();
-              const parser = new DOMParser();
-              const doc = parser.parseFromString(text, 'text/html');
-
-              const docTitle = doc.querySelector('.content-title')?.textContent?.trim() || doc.querySelector('h1')?.textContent?.trim() || 'No Title';
-              const docSection = doc.querySelector('.crumb-val')?.textContent?.trim() || '';
-              const docBody = doc.querySelector('article p')?.textContent?.trim() || '';
-              const docImage = doc.querySelector('.hero-banner-img')?.getAttribute('src') || doc.querySelector('article img')?.getAttribute('src') || '';
-
-              data = { title: docTitle, section: docSection, excerpt: docBody, image: docImage };
-              previewCache.set(href, data);
-            } catch (e) {
-              return;
-            }
+        hoverTimer = setTimeout(() => {
+          if (!card.matches(':hover')) {
+            hidePreviewCard();
           }
-
-          if (activeLink !== a) return;
-          if (titleEl) titleEl.textContent = data.title;
-          if (sectionEl) sectionEl.textContent = data.section;
-          if (bodyEl) bodyEl.textContent = data.excerpt;
-          if (thumbEl) {
-            if (data.image) {
-              thumbEl.src = data.image;
-              thumbEl.hidden = false;
-            } else {
-              thumbEl.hidden = true;
-            }
-          }
-
-          const rect = a.getBoundingClientRect();
-          card.hidden = false;
-          let top = rect.bottom + 8;
-          let left = rect.left;
-          if (left + 320 > window.innerWidth - 16) {
-            left = window.innerWidth - 320 - 16;
-          }
-          if (top + card.offsetHeight > window.innerHeight - 16) {
-            top = rect.top - card.offsetHeight - 8;
-          }
-          card.style.top = `${Math.max(10, top)}px`;
-          card.style.left = `${Math.max(10, left)}px`;
-        }, 300);
-      });
-
-      a.addEventListener('mouseleave', () => {
-        clearTimeout(hoverTimer);
-        hoverTimer = setTimeout(hidePreviewCard, 200);
-      });
+        }, 150);
+      }
     });
   }
 
@@ -592,6 +624,26 @@
     }
   }
 
+  // ==================== COSTUME SWITCHER ====================
+  function setupCostumeSwitchers() {
+    document.querySelectorAll('.infobox-costume-switcher').forEach((switcher) => {
+      const parent = switcher.closest('.infobox');
+      if (!parent) return;
+      const img = parent.querySelector('.infobox-main-img');
+      if (!img) return;
+
+      switcher.querySelectorAll('.costume-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const src = btn.getAttribute('data-img-src');
+          if (!src) return;
+          img.src = src;
+          switcher.querySelectorAll('.costume-btn').forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+        });
+      });
+    });
+  }
+
   // ==================== VIEW TRANSITIONS ROUTER ====================
   // Intercepts in-app link clicks and performs smooth slide animations
   async function navigateTo(url, pushState = true) {
@@ -630,28 +682,71 @@
 
       const updateDOM = () => {
         document.title = newDoc.title;
-        // Swap content container
-        const currentContainer = document.querySelector('.pane-article-container') || document.querySelector('.classic-view');
-        const newContainer = newDoc.querySelector('.pane-article-container') || newDoc.querySelector('.classic-view');
 
-        // Swap data pane if exists
-        const currentDataPane = document.getElementById('pane-data');
-        const newDataPane = newDoc.getElementById('pane-data');
-        if (currentDataPane && newDataPane) {
-          currentDataPane.innerHTML = newDataPane.innerHTML;
-        }
+        const currentBookView = document.getElementById('wiki-book-view');
+        const newBookView = newDoc.getElementById('wiki-book-view');
 
-        // Swap nav pane (breadcrumbs and TOC)
-        const currentNavPane = document.getElementById('pane-nav');
-        const newNavPane = newDoc.getElementById('pane-nav');
-        if (currentNavPane && newNavPane) {
-          currentNavPane.innerHTML = newNavPane.innerHTML;
-        }
+        // Case 1: Both pages have wiki-book-view (note to note transition)
+        if (currentBookView && newBookView) {
+          // Swap nav pane (breadcrumbs and TOC)
+          const currentNavPane = document.getElementById('pane-nav');
+          const newNavPane = newDoc.getElementById('pane-nav');
+          if (currentNavPane && newNavPane) {
+            currentNavPane.innerHTML = newNavPane.innerHTML;
+          }
 
-        if (currentContainer && newContainer) {
-          currentContainer.innerHTML = newContainer.innerHTML;
+          // Swap data pane if exists in newDoc, or remove if not in newDoc
+          const currentDataPane = document.getElementById('pane-data');
+          const newDataPane = newDoc.getElementById('pane-data');
+          if (newDataPane) {
+            if (currentDataPane) {
+              currentDataPane.innerHTML = newDataPane.innerHTML;
+              currentDataPane.classList.remove('is-collapsed');
+            } else {
+              const contentPane = currentBookView.querySelector('.pane-content');
+              if (contentPane) {
+                const cloned = newDataPane.cloneNode(true);
+                currentBookView.insertBefore(cloned, contentPane);
+              }
+            }
+          } else if (currentDataPane) {
+            currentDataPane.remove();
+          }
+
+          // Swap content container
+          const currentContainer = document.querySelector('.pane-article-container');
+          const newContainer = newDoc.querySelector('.pane-article-container');
+          if (currentContainer && newContainer) {
+            currentContainer.innerHTML = newContainer.innerHTML;
+          }
+
+          // Swap classic view
+          const currentClassic = document.querySelector('.classic-view');
+          const newClassic = newDoc.querySelector('.classic-view');
+          if (currentClassic && newClassic) {
+            currentClassic.innerHTML = newClassic.innerHTML;
+          }
         } else {
-          document.body.innerHTML = newDoc.body.innerHTML;
+          // Case 2: Transitioning to/from top page (index.html) or full structural change!
+          const currentContainer = document.querySelector('.container.is-fluid');
+          const newContainer = newDoc.querySelector('.container.is-fluid');
+          if (currentContainer && newContainer) {
+            const currentFloating = currentContainer.querySelector('.floating-controls');
+            const newFloating = newContainer.querySelector('.floating-controls');
+            if (newFloating) newFloating.remove();
+
+            Array.from(currentContainer.children).forEach((child) => {
+              if (child !== currentFloating) {
+                child.remove();
+              }
+            });
+
+            Array.from(newContainer.children).forEach((child) => {
+              currentContainer.appendChild(child);
+            });
+          } else {
+            document.body.innerHTML = newDoc.body.innerHTML;
+          }
         }
 
         if (pushState) {
@@ -715,6 +810,7 @@
     setupSearch();
     initPagePreview();
     initImageLightbox();
+    setupCostumeSwitchers();
   }
 
   if (document.readyState === 'loading') {

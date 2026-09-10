@@ -34,6 +34,8 @@ pub struct ProcessedDoc {
     pub primary_color: Option<String>,
     pub icon: Option<String>,
     pub banner_url: Option<String>,
+    pub banner_y: Option<f64>,
+    pub images: Vec<String>,
     pub hero_chips: Vec<HeroChipItem>,
     pub infobox_rows: Vec<InfoboxRowItem>,
     pub has_data: bool,
@@ -56,6 +58,28 @@ fn clean_ref_target(raw: &str) -> String {
         s = &s[1..s.len() - 1].trim();
     }
     s.trim_start_matches('@').trim().to_string()
+}
+
+/// Helper to resolve media file reference in @meta (e.g. `@link(ref:+hash.png)` or `+hash.png`)
+fn resolve_meta_media_path(
+    raw: &str,
+    from_path: &Path,
+    vault_index: &tomet_links::VaultLinkIndex,
+    asset_prefix: &str,
+) -> String {
+    let s = raw.trim();
+    if s.starts_with('/') || s.starts_with("http://") || s.starts_with("https://") {
+        return s.to_string();
+    }
+
+    let target = clean_ref_target(s);
+    let clean_prefix = asset_prefix.trim_end_matches('/');
+
+    if let Some(resolved) = vault_index.resolve_ref(&target, Some(from_path)) {
+        format!("{clean_prefix}/{}", resolved.to_string_lossy().replace('\\', "/"))
+    } else {
+        format!("{clean_prefix}/{}", target.replace('\\', "/"))
+    }
 }
 
 pub fn process_tomet_document(
@@ -190,6 +214,8 @@ pub fn process_tomet_document(
     let mut primary_color: Option<String> = None;
     let mut icon: Option<String> = None;
     let mut banner_url: Option<String> = None;
+    let mut banner_y: Option<f64> = None;
+    let mut images: Vec<String> = Vec::new();
     let mut hero_chips = Vec::new();
     let mut infobox_rows = Vec::new();
 
@@ -213,12 +239,41 @@ pub fn process_tomet_document(
         // Banner Image
         if let Some(val) = map.get("banner") {
             if let Some(b) = val.as_str() {
-                // If it's relative or starts with asset prefix
-                if b.starts_with('/') {
-                    banner_url = Some(b.to_string());
-                } else {
-                    banner_url = Some(format!("{}/{}", config.build.asset_prefix, b));
+                banner_url = Some(resolve_meta_media_path(
+                    b,
+                    from_path,
+                    vault_index,
+                    &config.build.asset_prefix,
+                ));
+            }
+        }
+
+        // Banner Y position (e.g. banner-y: 11)
+        banner_y = map
+            .get("banner-y")
+            .or_else(|| map.get("banner_y"))
+            .and_then(|v| v.as_f64().or_else(|| v.as_i64().map(|n| n as f64)));
+
+        // Images for infobox (e.g. images: ["@link(ref:+...)"])
+        if let Some(val) = map.get("images") {
+            if let Some(arr) = val.as_array() {
+                for item in arr {
+                    if let Some(s) = item.as_str() {
+                        images.push(resolve_meta_media_path(
+                            s,
+                            from_path,
+                            vault_index,
+                            &config.build.asset_prefix,
+                        ));
+                    }
                 }
+            } else if let Some(s) = val.as_str() {
+                images.push(resolve_meta_media_path(
+                    s,
+                    from_path,
+                    vault_index,
+                    &config.build.asset_prefix,
+                ));
             }
         }
 
@@ -315,7 +370,7 @@ pub fn process_tomet_document(
         }
     }
 
-    let has_data = !infobox_rows.is_empty() || banner_url.is_some();
+    let has_data = !infobox_rows.is_empty() || banner_url.is_some() || !images.is_empty();
 
     Ok(ProcessedDoc {
         slug,
@@ -326,6 +381,8 @@ pub fn process_tomet_document(
         primary_color,
         icon,
         banner_url,
+        banner_y,
+        images,
         hero_chips,
         infobox_rows,
         has_data,
