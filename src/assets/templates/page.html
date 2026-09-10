@@ -2,23 +2,40 @@
 
 {% block content %}
 <!-- ==================== 1. BOOK VIEW (DEFAULT) ==================== -->
-<div class="book-view" id="wiki-book-view">
+<div class="book-shell">
   <!-- Permanent Left Rail -->
   <nav class="book-rail-nav" id="book-rail-nav" data-pagefind-ignore aria-label="ナビゲーションバー">
-    <a href="/wiki" class="rail-tab rail-tab-title" id="btn-rail-home" title="{{ site_title }} ホームへ">
-      <span class="rail-letters">
-        {% for ch in rail_letters %}
-        <span>{{ ch }}</span>
-        {% endfor %}
-      </span>
-    </a>
-    <div class="rail-divider"></div>
-    <button type="button" class="rail-tab rail-tab-toc is-active" id="btn-rail-toc" title="目次を開閉">
-      <span class="rail-letters rail-letters-toc">
-        <span>目</span><span>次</span>
-      </span>
-    </button>
+    <!-- Brand / Home Header -->
+    <div class="rail-brand">
+      <a href="/wiki" class="rail-brand-link" id="btn-rail-home" title="{{ site_title }} ホームへ">
+        <span class="rail-letters rail-letters-brand">
+          {% for ch in rail_letters %}
+          <span>{{ ch }}</span>
+          {% endfor %}
+        </span>
+      </a>
+    </div>
+
+    <!-- Navigation / Tools -->
+    <div class="rail-tools">
+      <button type="button" class="rail-tool-btn rail-tab-toc is-active" id="btn-rail-toc" title="目次を開閉" aria-label="目次を開閉">
+        <svg class="rail-tool-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="8" y1="6" x2="20" y2="6"></line>
+          <line x1="8" y1="12" x2="20" y2="12"></line>
+          <line x1="8" y1="18" x2="20" y2="18"></line>
+          <line x1="3" y1="6" x2="3.01" y2="6"></line>
+          <line x1="3" y1="12" x2="3.01" y2="12"></line>
+          <line x1="3" y1="18" x2="3.01" y2="18"></line>
+        </svg>
+        <span class="rail-tool-text">
+          <span>目</span>
+          <span>次</span>
+        </span>
+      </button>
+    </div>
   </nav>
+
+  <div class="book-view" id="wiki-book-view">
 
   <!-- Pane 1: 目次ペイン -->
   <aside class="book-pane pane-nav" id="pane-nav" data-pagefind-ignore>
@@ -121,7 +138,7 @@
           {% if banner_url %}
           <div class="hero-banner-wrapper">
             <img src="{{ banner_url }}" alt="{{ page_title }} バナー" class="hero-banner-img" {% if banner_y %}style="object-position: center {{ banner_y }}%;"{% endif %} />
-            <button type="button" class="hero-zoom-btn" title="バナーを拡大表示">🔍 拡大</button>
+            <button type="button" class="hero-zoom-btn" title="バナーを拡大表示">拡大</button>
           </div>
           {% endif %}
           <div class="hero-content" {% if primary_color %}style="border-bottom-color: #{{ primary_color }};"{% endif %}>
@@ -167,6 +184,7 @@
       </div>
     </div>
   </main>
+</div>
 </div>
 
 <!-- ==================== 2. CLASSIC VIEW (縦スクロール) ==================== -->

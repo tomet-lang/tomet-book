@@ -607,7 +607,7 @@
       if (e.key === 'Escape' && !overlay.hidden) closeLightbox();
     });
 
-    document.querySelectorAll('article img').forEach((img) => {
+    document.querySelectorAll('article img, .infobox-main-img, .hero-banner-img').forEach((img) => {
       img.addEventListener('click', () => {
         const src = img.getAttribute('src');
         if (src) openLightbox(src, img.getAttribute('alt') || '');
