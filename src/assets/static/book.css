@@ -376,7 +376,7 @@ html[data-view="classic"] .classic-view {
 }
 
 .pane-header {
-  height: 36px;
+  height: 41px;
   background: var(--surface-subtle);
   border-bottom: 1px solid var(--border);
   padding: 0 10px;
@@ -692,10 +692,10 @@ html[data-view="classic"] .classic-view {
   background: var(--surface);
   padding: 0 8px;
   overflow: visible;
-  height: 36px;
-  min-height: 36px;
+  height: 41px;
+  min-height: 41px;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   border-bottom: 1px solid var(--border);
   box-sizing: border-box;
 }
@@ -708,6 +708,9 @@ html[data-view="classic"] .classic-view {
   overflow-x: auto;
   overflow-y: visible;
   scrollbar-width: none;
+  position: relative;
+  z-index: 2;
+  margin-bottom: -1px; /* 下端の border-bottom (1px) に完全に重ねて全付箋を接地 */
 }
 .sticky-tabs-bar::-webkit-scrollbar {
   display: none;
@@ -736,7 +739,7 @@ html[data-view="classic"] .classic-view {
 .sticky-tab-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   border-radius: 4px 4px 0 0;
   border: 1.5px solid;
   background: var(--surface-subtle);
@@ -746,7 +749,8 @@ html[data-view="classic"] .classic-view {
   user-select: none;
   box-sizing: border-box;
   align-self: flex-end;
-  margin-bottom: -1px; /* ベースラインと完全に接合 (下が見えない) */
+  margin-bottom: 0; /* マージンを0に統一し、バー全体の -1px で完全に接地 (非アクティブの浮きを解消) */
+  line-height: 1;
   transition: height 0.15s ease,
               padding 0.15s ease,
               background 0.15s ease,
@@ -757,43 +761,43 @@ html[data-view="classic"] .classic-view {
 
 /* --- サイズ階層 & アクティブ時の高さ伸長 (下からひょこっと出る / 下は接地維持) --- */
 .sticky-tab-btn.level-1 {
-  height: 25px;
+  height: 29px;
   padding: 2px 10px 2px 8px;
-  font-size: 0.74rem;
+  font-size: 0.82rem;
   font-weight: 600;
 }
 .sticky-tab-btn.level-1.is-active {
-  height: 29px; /* 上方向に4px伸びる！底面は接地したまま */
+  height: 33px; /* 上方向に伸びる！底面は接地したまま */
   padding: 3px 10px 3px 8px;
-  font-size: 0.75rem;
+  font-size: 0.84rem;
   font-weight: 700;
   z-index: 10;
 }
 
 .sticky-tab-btn.level-2 {
-  height: 22px;
-  padding: 1px 8px 1px 7px;
-  font-size: 0.67rem;
+  height: 26px;
+  padding: 2px 8px 2px 7px;
+  font-size: 0.76rem;
   font-weight: 500;
 }
 .sticky-tab-btn.level-2.is-active {
-  height: 26px; /* 上方向に4px伸びる！ */
+  height: 30px; /* 上方向に伸びる！ */
   padding: 2px 8px 2px 7px;
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   font-weight: 600;
   z-index: 10;
 }
 
 .sticky-tab-btn.level-3 {
-  height: 19px;
+  height: 23px;
   padding: 1px 7px 1px 6px;
-  font-size: 0.61rem;
+  font-size: 0.70rem;
   font-weight: 500;
 }
 .sticky-tab-btn.level-3.is-active {
-  height: 23px; /* 上方向に4px伸びる！ */
+  height: 27px; /* 上方向に伸びる！ */
   padding: 2px 7px 1px 6px;
-  font-size: 0.62rem;
+  font-size: 0.72rem;
   font-weight: 600;
   z-index: 10;
 }
@@ -801,17 +805,17 @@ html[data-view="classic"] .classic-view {
 .sticky-tab-btn.level-4,
 .sticky-tab-btn.level-5,
 .sticky-tab-btn.level-6 {
-  height: 17px;
+  height: 20px;
   padding: 1px 6px 1px 5px;
-  font-size: 0.57rem;
+  font-size: 0.65rem;
   font-weight: 500;
 }
 .sticky-tab-btn.level-4.is-active,
 .sticky-tab-btn.level-5.is-active,
 .sticky-tab-btn.level-6.is-active {
-  height: 21px;
+  height: 24px;
   padding: 2px 6px 1px 5px;
-  font-size: 0.58rem;
+  font-size: 0.67rem;
   font-weight: 600;
   z-index: 10;
 }
@@ -953,13 +957,15 @@ html[data-view="classic"] .classic-view {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 160px;
+  max-width: 220px;
 }
 
 /* --- 横に展開される子ヘッダーのスロット (アクティブブランチ時にスッと開く) --- */
 .sticky-children-slot {
   display: inline-flex;
   align-items: flex-end;
+  height: 100%; /* 親と同じ高さを共有して底面アラインメントを100%一致させる */
+  align-self: flex-end;
   gap: 3px;
   max-width: 0;
   opacity: 0;
@@ -985,12 +991,12 @@ html[data-view="classic"] .classic-view {
 
 /* --- ヘッダーレベルバッジ (H1, H2, H3, ...) --- */
 .sticky-level-badge {
-  font-size: 0.56rem;
+  font-size: 0.62rem;
   font-weight: 700;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  padding: 1px 4px;
+  padding: 1px 5px;
   border-radius: 2px;
-  line-height: 1.1;
+  line-height: 1.15;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   flex-shrink: 0;
@@ -1092,8 +1098,8 @@ html[data-view="classic"] .classic-view {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
-  font-size: 0.73rem;
+  padding: 6px 12px;
+  font-size: 0.78rem;
   color: var(--text);
   text-decoration: none;
   cursor: pointer;
