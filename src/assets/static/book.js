@@ -591,6 +591,8 @@
           } else {
             switchPanel(currentPanel, false);
           }
+          // The pre-paint hint has done its job; the class is authoritative now.
+          document.documentElement.removeAttribute('data-nav-collapsed');
         } catch (e) {}
       }
 
@@ -657,6 +659,7 @@
         } else {
           pane.classList.remove('is-collapsed');
         }
+        document.documentElement.removeAttribute('data-data-collapsed');
       } catch (e) {}
 
       const handleCollapse = (e) => {

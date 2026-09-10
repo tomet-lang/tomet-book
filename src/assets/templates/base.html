@@ -16,6 +16,20 @@
         if (savedTheme === 'dark' || savedTheme === 'light') {
           document.documentElement.setAttribute('data-theme', savedTheme);
         }
+        // Decide the panes' collapsed state before the first paint. book.js
+        // applies the real classes on DOMContentLoaded and clears these, but
+        // by then the panes would already have been painted open.
+        const narrow = window.innerWidth <= 900;
+        const collapsed = (key) => {
+          const saved = localStorage.getItem(key);
+          return saved !== null ? saved === 'true' : narrow;
+        };
+        if (collapsed('wiki-pane-nav-collapsed')) {
+          document.documentElement.setAttribute('data-nav-collapsed', 'true');
+        }
+        if (collapsed('wiki-pane-data-collapsed')) {
+          document.documentElement.setAttribute('data-data-collapsed', 'true');
+        }
       } catch {}
     </script>
     <link rel="stylesheet" href="/book.css" />

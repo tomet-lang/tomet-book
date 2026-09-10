@@ -196,7 +196,7 @@ html[data-view="classic"] .view-btn-classic {
   border: 1px solid var(--border);
   color: var(--text-muted);
   padding: 4px 6px;
-  border-radius: 4px;
+  border-radius: 0;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -571,6 +571,9 @@ html[data-view="classic"] .classic-view {
               max-width 0.22s cubic-bezier(0.2, 0, 0, 1),
               opacity 0.18s ease;
 }
+/* The [data-*-collapsed] forms come from the pre-paint script in base.html
+   and are dropped by book.js once it has set the real classes. */
+[data-nav-collapsed] .pane-nav,
 .pane-nav.is-collapsed {
   width: 0 !important;
   min-width: 0 !important;
@@ -635,6 +638,7 @@ html[data-view="classic"] .classic-view {
   overflow: hidden;
   box-sizing: border-box;
 }
+[data-data-collapsed] .pane-data,
 .pane-data.is-collapsed {
   width: 36px !important;
   min-width: 36px !important;
@@ -642,14 +646,18 @@ html[data-view="classic"] .classic-view {
   flex: 0 0 36px !important;
   cursor: pointer;
 }
+[data-data-collapsed] .pane-data .pane-collapsed-bar,
 .pane-data.is-collapsed .pane-collapsed-bar {
   opacity: 1;
   pointer-events: auto;
 }
+[data-data-collapsed] .pane-data:hover .pane-collapsed-bar,
 .pane-data.is-collapsed:hover .pane-collapsed-bar {
   background: var(--surface-subtle);
   color: var(--link);
 }
+[data-data-collapsed] .pane-data .pane-scroll-data,
+[data-data-collapsed] .pane-data .pane-header,
 .pane-data.is-collapsed .pane-scroll-data,
 .pane-data.is-collapsed .pane-header {
   opacity: 0;
@@ -770,8 +778,8 @@ html[data-view="classic"] .classic-view {
   align-self: flex-end;
   margin-bottom: 0;
   line-height: 1;
+  /* height and colour only: nothing here may change the tab width */
   transition: height 0.15s ease,
-              padding 0.15s ease,
               background 0.15s ease,
               color 0.15s ease,
               box-shadow 0.15s ease;
@@ -785,10 +793,7 @@ html[data-view="classic"] .classic-view {
   font-weight: 600;
 }
 .sticky-tab-btn.level-1.is-active {
-  height: 33px; /* 上方向に伸びる！底面は接地したまま */
-  padding: 3px 10px 3px 8px;
-  font-size: 0.84rem;
-  font-weight: 700;
+  height: 33px; /* 上方向に伸びるだけ: 幅に触るものは何も変えない */
   z-index: 10;
 }
 
@@ -799,10 +804,7 @@ html[data-view="classic"] .classic-view {
   font-weight: 500;
 }
 .sticky-tab-btn.level-2.is-active {
-  height: 30px; /* 上方向に伸びる！ */
-  padding: 2px 8px 2px 7px;
-  font-size: 0.78rem;
-  font-weight: 600;
+  height: 30px;
   z-index: 10;
 }
 
@@ -813,10 +815,7 @@ html[data-view="classic"] .classic-view {
   font-weight: 500;
 }
 .sticky-tab-btn.level-3.is-active {
-  height: 27px; /* 上方向に伸びる！ */
-  padding: 2px 7px 1px 6px;
-  font-size: 0.72rem;
-  font-weight: 600;
+  height: 27px;
   z-index: 10;
 }
 
@@ -832,9 +831,6 @@ html[data-view="classic"] .classic-view {
 .sticky-tab-btn.level-5.is-active,
 .sticky-tab-btn.level-6.is-active {
   height: 24px;
-  padding: 2px 6px 1px 5px;
-  font-size: 0.67rem;
-  font-weight: 600;
   z-index: 10;
 }
 
@@ -1023,14 +1019,12 @@ html[data-view="classic"] .classic-view {
   flex-shrink: 0;
 }
 
-/* 付箋ボタン内のバッジ: 背景に薄いトーン、文字色は付箋から継承して高コントラスト */
+/* 付箋ボタン内のバッジ: 色を持たず、付箋の文字色をそのまま使う */
 .sticky-tab-btn .sticky-level-badge {
-  background: rgba(0, 0, 0, 0.08);
+  background: none;
   color: inherit;
-}
-[data-theme="dark"] .sticky-tab-btn .sticky-level-badge {
-  background: rgba(255, 255, 255, 0.14);
-  color: inherit;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 /* ポップオーバー内のバッジ */
@@ -1360,7 +1354,7 @@ a.tm-unresolved {
   background: var(--surface);
   border: 1px solid var(--border);
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 0;
   transition: all 0.15s ease;
   line-height: 1.2;
 }
@@ -1389,7 +1383,7 @@ a.tm-unresolved {
   background: var(--surface);
   border: 1px solid var(--border);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
-  border-radius: 4px;
+  border-radius: 0;
   padding: 3px 0;
   z-index: 9999;
   display: flex;
