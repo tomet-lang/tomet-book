@@ -31,9 +31,9 @@ test:
 check:
     cargo check --all-targets
 
-# Lint. Add `-- -D warnings` once the pre-existing warnings are cleared.
+# Lint. The tree is warning-free; keep it that way.
 clippy:
-    cargo clippy --all-targets
+    cargo clippy --all-targets -- -D warnings
 
 # Format every tracked file (rust, nix, toml, shell, tomet)
 fmt:
@@ -42,7 +42,10 @@ fmt:
 # Everything a CI job would run. Formatting is verified, not applied.
 ci: check test
     nix fmt -- --ci
-    cargo clippy --all-targets
+    cargo clippy --all-targets -- -D warnings
+    # The local .cargo/config.toml patch rewrites Cargo.lock behind your back
+    # (rust-analyzer alone is enough to trigger it) and that breaks `nix build`.
+    git diff --exit-code Cargo.lock
 
 #[ Run ]
 
