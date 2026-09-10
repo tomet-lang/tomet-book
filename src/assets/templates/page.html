@@ -149,10 +149,17 @@
               {% if hero_chips and hero_chips | length > 0 %}
               <div class="hero-meta-chips">
                 {% for chip in hero_chips %}
+                {% if chip.href %}
+                <a href="{{ chip.href }}" class="hero-chip hero-chip-link">
+                  {% if chip.label %}<span class="chip-label">{{ chip.label }}:</span>{% endif %}
+                  <span class="chip-val">{{ chip.value }}</span>
+                </a>
+                {% else %}
                 <span class="hero-chip">
                   {% if chip.label %}<span class="chip-label">{{ chip.label }}:</span>{% endif %}
                   <span class="chip-val">{{ chip.value }}</span>
                 </span>
+                {% endif %}
                 {% endfor %}
               </div>
               {% endif %}
@@ -167,6 +174,23 @@
             <span class="kind-tag kind-{{ kind }}" data-pagefind-filter="kind">{{ kind }}</span>
             {% endif %}
           </div>
+          {% if hero_chips and hero_chips | length > 0 %}
+          <div class="hero-meta-chips" style="margin-top: 8px;">
+            {% for chip in hero_chips %}
+            {% if chip.href %}
+            <a href="{{ chip.href }}" class="hero-chip hero-chip-link">
+              {% if chip.label %}<span class="chip-label">{{ chip.label }}:</span>{% endif %}
+              <span class="chip-val">{{ chip.value }}</span>
+            </a>
+            {% else %}
+            <span class="hero-chip">
+              {% if chip.label %}<span class="chip-label">{{ chip.label }}:</span>{% endif %}
+              <span class="chip-val">{{ chip.value }}</span>
+            </span>
+            {% endif %}
+            {% endfor %}
+          </div>
+          {% endif %}
         </header>
         {% endif %}
 
@@ -220,10 +244,17 @@
         {% if hero_chips and hero_chips | length > 0 %}
         <div class="hero-meta-chips">
           {% for chip in hero_chips %}
+          {% if chip.href %}
+          <a href="{{ chip.href }}" class="hero-chip hero-chip-link">
+            {% if chip.label %}<span class="chip-label">{{ chip.label }}: </span>{% endif %}
+            <span class="chip-val">{{ chip.value }}</span>
+          </a>
+          {% else %}
           <span class="hero-chip">
             {% if chip.label %}<span class="chip-label">{{ chip.label }}: </span>{% endif %}
             <span class="chip-val">{{ chip.value }}</span>
           </span>
+          {% endif %}
           {% endfor %}
         </div>
         {% endif %}
@@ -244,10 +275,17 @@
     {% if hero_chips and hero_chips | length > 0 %}
     <div class="hero-meta-chips" style="margin-top: 8px;">
       {% for chip in hero_chips %}
+      {% if chip.href %}
+      <a href="{{ chip.href }}" class="hero-chip hero-chip-link">
+        {% if chip.label %}<span class="chip-label">{{ chip.label }}: </span>{% endif %}
+        <span class="chip-val">{{ chip.value }}</span>
+      </a>
+      {% else %}
       <span class="hero-chip">
         {% if chip.label %}<span class="chip-label">{{ chip.label }}: </span>{% endif %}
         <span class="chip-val">{{ chip.value }}</span>
       </span>
+      {% endif %}
       {% endfor %}
     </div>
     {% endif %}

@@ -16,6 +16,7 @@ pub struct TocItem {
 pub struct HeroChipItem {
     pub label: Option<String>,
     pub value: String,
+    pub href: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -43,6 +44,15 @@ pub struct ProcessedDoc {
     pub body_html: String,
 }
 
+fn is_link_ref(raw: &str) -> bool {
+    let s = raw.trim();
+    (s.starts_with("@link(") && s.ends_with(')'))
+        || (s.starts_with("link(") && s.ends_with(')'))
+        || (s.starts_with("[[") && s.ends_with("]]"))
+        || s.starts_with("ref:")
+        || (s.starts_with('@') && s.len() > 1 && !s.contains(' ') && !s[1..].contains('@'))
+}
+
 /// Helper to clean link references like `@link(ref:"@foo")` or `ref:bar` into plain labels
 fn clean_ref_target(raw: &str) -> String {
     let mut s = raw.trim();
@@ -50,6 +60,13 @@ fn clean_ref_target(raw: &str) -> String {
         s = &s[6..s.len() - 1].trim();
     } else if s.starts_with("link(") && s.ends_with(')') {
         s = &s[5..s.len() - 1].trim();
+    } else if s.starts_with("[[") && s.ends_with("]]") {
+        let inner = &s[2..s.len() - 2].trim();
+        if let Some((_, a)) = inner.split_once('|') {
+            return a.trim().to_string();
+        } else {
+            s = inner;
+        }
     }
     if s.starts_with("ref:") {
         s = s["ref:".len()..].trim();
@@ -58,6 +75,101 @@ fn clean_ref_target(raw: &str) -> String {
         s = &s[1..s.len() - 1].trim();
     }
     s.trim_start_matches('@').trim().to_string()
+}
+
+fn resolve_meta_link(
+    raw: &str,
+    from_path: &Path,
+    vault_index: &tomet_links::VaultLinkIndex,
+    url_prefix: &str,
+) -> Option<(String, String)> {
+    let s = raw.trim();
+    if !is_link_ref(s) {
+        return None;
+    }
+
+    let mut target = s;
+    let mut alias = None;
+
+    if target.starts_with("@link(") && target.ends_with(')') {
+        target = &target[6..target.len() - 1].trim();
+    } else if target.starts_with("link(") && target.ends_with(')') {
+        target = &target[5..target.len() - 1].trim();
+    } else if target.starts_with("[[") && target.ends_with("]]") {
+        let inner = &target[2..target.len() - 2].trim();
+        if let Some((t, a)) = inner.split_once('|') {
+            target = t.trim();
+            alias = Some(a.trim().to_string());
+        } else {
+            target = inner;
+        }
+    }
+
+    if target.starts_with("ref:") {
+        target = target["ref:".len()..].trim();
+    }
+    if (target.starts_with('"') && target.ends_with('"'))
+        || (target.starts_with('\'') && target.ends_with('\''))
+    {
+        target = &target[1..target.len() - 1].trim();
+    }
+
+    let clean_target = target.trim();
+    let display_label = alias.unwrap_or_else(|| clean_ref_target(s));
+
+    let clean_url_prefix = url_prefix.trim_end_matches('/');
+
+    let resolved = vault_index
+        .resolve_ref(clean_target, Some(from_path))
+        .or_else(|| {
+            let stripped = clean_target.trim_start_matches('@');
+            if stripped != clean_target {
+                vault_index.resolve_ref(stripped, Some(from_path))
+            } else {
+                None
+            }
+        });
+
+    if let Some(path) = resolved {
+        let slug = path
+            .to_string_lossy()
+            .trim_end_matches(".tmt")
+            .trim_end_matches(".tm")
+            .replace('\\', "/");
+        let href = format!("{clean_url_prefix}/{slug}");
+        Some((href, display_label))
+    } else {
+        Some((String::new(), display_label))
+    }
+}
+
+fn format_meta_value_to_html(
+    raw_str: &str,
+    from_path: &Path,
+    vault_index: &tomet_links::VaultLinkIndex,
+    url_prefix: &str,
+) -> String {
+    if let Some((href, label)) = resolve_meta_link(raw_str, from_path, vault_index, url_prefix) {
+        if href.is_empty() {
+            format!(r#"<span class="tm-link tm-unresolved" title="未作成のページ">{label}</span>"#)
+        } else {
+            format!(r#"<a href="{href}" class="tm-link tm-file">{label}</a>"#)
+        }
+    } else {
+        clean_ref_target(raw_str)
+    }
+}
+
+fn format_chip_value(val: &str, format: Option<&str>) -> String {
+    if format == Some("birthday") {
+        let re = regex::Regex::new(r#"^(\d{4})-(\d{2})-(\d{2})"#).unwrap();
+        if let Some(caps) = re.captures(val) {
+            let m: u32 = caps[2].parse().unwrap_or(0);
+            let d: u32 = caps[3].parse().unwrap_or(0);
+            return format!("{m}月{d}日");
+        }
+    }
+    val.to_string()
 }
 
 /// Helper to resolve media file reference in @meta (e.g. `@link(ref:+hash.png)` or `+hash.png`)
@@ -280,40 +392,61 @@ pub fn process_tomet_document(
         // Hero Chips based on config.ui.hero_chips
         for chip_cfg in &config.ui.hero_chips {
             if let Some(val) = map.get(&chip_cfg.key) {
-                let text = match val {
-                    serde_json::Value::String(s) => clean_ref_target(s),
+                match val {
+                    serde_json::Value::String(s) => {
+                        let (href, display) = if let Some((h, l)) =
+                            resolve_meta_link(s, from_path, vault_index, &config.build.url_prefix)
+                        {
+                            (if h.is_empty() { None } else { Some(h) }, l)
+                        } else {
+                            (None, clean_ref_target(s))
+                        };
+
+                        if !display.is_empty() {
+                            let formatted_value =
+                                format_chip_value(&display, chip_cfg.format.as_deref());
+                            hero_chips.push(HeroChipItem {
+                                label: chip_cfg.label.clone(),
+                                value: formatted_value,
+                                href,
+                            });
+                        }
+                    }
                     serde_json::Value::Array(arr) => {
-                        let parts: Vec<String> = arr
-                            .iter()
-                            .filter_map(|v| v.as_str().map(clean_ref_target))
-                            .collect();
-                        parts.join("、")
+                        for item in arr {
+                            if let Some(s) = item.as_str() {
+                                let (href, display) = if let Some((h, l)) = resolve_meta_link(
+                                    s,
+                                    from_path,
+                                    vault_index,
+                                    &config.build.url_prefix,
+                                ) {
+                                    (if h.is_empty() { None } else { Some(h) }, l)
+                                } else {
+                                    (None, clean_ref_target(s))
+                                };
+
+                                if !display.is_empty() {
+                                    let formatted_value =
+                                        format_chip_value(&display, chip_cfg.format.as_deref());
+                                    hero_chips.push(HeroChipItem {
+                                        label: chip_cfg.label.clone(),
+                                        value: formatted_value,
+                                        href,
+                                    });
+                                }
+                            }
+                        }
                     }
-                    serde_json::Value::Number(n) => n.to_string(),
+                    serde_json::Value::Number(n) => {
+                        hero_chips.push(HeroChipItem {
+                            label: chip_cfg.label.clone(),
+                            value: n.to_string(),
+                            href: None,
+                        });
+                    }
                     _ => continue,
-                };
-
-                if text.is_empty() {
-                    continue;
                 }
-
-                let formatted_value = if chip_cfg.format.as_deref() == Some("birthday") {
-                    let re = regex::Regex::new(r#"^(\d{4})-(\d{2})-(\d{2})"#).unwrap();
-                    if let Some(caps) = re.captures(&text) {
-                        let m: u32 = caps[2].parse().unwrap_or(0);
-                        let d: u32 = caps[3].parse().unwrap_or(0);
-                        format!("{m}月{d}日")
-                    } else {
-                        text
-                    }
-                } else {
-                    text
-                };
-
-                hero_chips.push(HeroChipItem {
-                    label: chip_cfg.label.clone(),
-                    value: formatted_value,
-                });
             }
         }
 
@@ -370,7 +503,12 @@ pub fn process_tomet_document(
                         {
                             format!(r#"<a href="{s}" target="_blank" rel="noopener noreferrer">{s}</a>"#)
                         } else {
-                            clean_ref_target(s)
+                            format_meta_value_to_html(
+                                s,
+                                from_path,
+                                vault_index,
+                                &config.build.url_prefix,
+                            )
                         }
                     }
                     serde_json::Value::Array(arr) => {
@@ -395,7 +533,12 @@ pub fn process_tomet_document(
                                         {
                                             format!(r#"<a href="{s}" target="_blank" rel="noopener noreferrer">{s}</a>"#)
                                         } else {
-                                            clean_ref_target(s)
+                                            format_meta_value_to_html(
+                                                s,
+                                                from_path,
+                                                vault_index,
+                                                &config.build.url_prefix,
+                                            )
                                         }
                                     })
                                 })

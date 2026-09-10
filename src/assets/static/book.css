@@ -708,6 +708,29 @@ html[data-view="classic"] .classic-view {
 .hero-chip .chip-val {
   font-weight: 500;
 }
+a.hero-chip,
+.hero-chip.hero-chip-link {
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+a.hero-chip:hover,
+.hero-chip.hero-chip-link:hover {
+  border-color: var(--link);
+  background-color: var(--surface);
+  text-decoration: none;
+}
+a.hero-chip:hover .chip-val,
+.hero-chip.hero-chip-link:hover .chip-val {
+  color: var(--link);
+  text-decoration: underline;
+}
+
+.tm-unresolved,
+a.tm-unresolved {
+  color: var(--unresolved);
+  text-decoration: underline dashed 1px;
+}
 
 /* ==================== BREADCRUMBS & TOC ==================== */
 .nav-breadcrumbs {
