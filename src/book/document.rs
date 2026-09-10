@@ -348,13 +348,20 @@ pub fn process_tomet_document(
     // 7b. Section tabs for header navigation
     let mut section_tabs: Vec<SectionTab> = Vec::new();
 
+    let has_h1 = toc.iter().any(|item| item.level == 1);
+    let top_level = if has_h1 {
+        1
+    } else {
+        toc.iter().map(|item| item.level).min().unwrap_or(1)
+    };
+
     for item in &toc {
         let is_new_tab = match section_tabs.last() {
             None => true,
             Some(last) => {
-                if item.level == 1 {
+                if item.level <= top_level {
                     true
-                } else if item.level == 2 && last.level >= 2 {
+                } else if item.level <= last.level {
                     true
                 } else {
                     false

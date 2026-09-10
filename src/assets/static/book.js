@@ -173,37 +173,35 @@
         }
       };
 
-      scrollContainer.addEventListener(
-        'scroll',
-        () => {
-          if (isClickScrolling || scrollTicking) return;
-          scrollTicking = true;
-          requestAnimationFrame(() => {
-            scrollTicking = false;
-            updateScrollSpy();
-          });
-        },
-        { passive: true }
-      );
+      if (scrollContainer.__tmtScrollHandler) {
+        scrollContainer.removeEventListener('scroll', scrollContainer.__tmtScrollHandler);
+      }
+      const onScroll = () => {
+        if (isClickScrolling || scrollTicking) return;
+        scrollTicking = true;
+        requestAnimationFrame(() => {
+          scrollTicking = false;
+          updateScrollSpy();
+        });
+      };
+      scrollContainer.__tmtScrollHandler = onScroll;
+      scrollContainer.addEventListener('scroll', onScroll, { passive: true });
 
-      setTimeout(updateScrollSpy, 150);
+      // Immediate init
+      updateScrollSpy();
+      setTimeout(updateScrollSpy, 80);
     }
 
-    // 付箋見出し (Sticky-Tab Headings)
+    // 付箋見出し (Sticky-Tab Headings: 2階層シェルフ & ScrollSpy完全同期)
     function setupStickyTabs(scrollContainer) {
-      const tabsBar = document.getElementById('sticky-tabs-bar');
-      if (!tabsBar) return null;
+      const container = document.getElementById('sticky-tabs-bar');
+      if (!container) return null;
 
-      const tabItems = Array.from(tabsBar.querySelectorAll('.sticky-tab-item'));
+      const tabItems = Array.from(container.querySelectorAll('.sticky-tab-item'));
+      const shelf = container.querySelector('.sticky-subtabs-shelf');
+      const subGroups = Array.from(container.querySelectorAll('.sticky-subtabs-group'));
+
       if (tabItems.length === 0) return null;
-
-      function closeAllDropdowns() {
-        tabItems.forEach((item) => {
-          item.classList.remove('is-open');
-          const dd = item.querySelector('.sticky-tab-dropdown');
-          if (dd) dd.hidden = true;
-        });
-      }
 
       function scrollToHeading(id) {
         if (!id || !scrollContainer) return;
@@ -213,110 +211,99 @@
         scrollContainer.scrollTo({ top, behavior: 'smooth' });
       }
 
+      // 1. 親付箋タブのクリック
       tabItems.forEach((item) => {
         const btn = item.querySelector('.sticky-tab-btn');
-        const dropdown = item.querySelector('.sticky-tab-dropdown');
         const targetId = item.getAttribute('data-target');
-
         btn?.addEventListener('click', (e) => {
           e.stopPropagation();
-          const hasChildren = !!dropdown;
-          const isOpen = item.classList.contains('is-open');
-
-          if (hasChildren) {
-            if (isOpen) {
-              closeAllDropdowns();
-            } else {
-              closeAllDropdowns();
-              item.classList.add('is-open');
-              dropdown.hidden = false;
-            }
-          } else {
-            closeAllDropdowns();
-            scrollToHeading(targetId);
-          }
-        });
-
-        dropdown?.querySelectorAll('.sticky-dropdown-link').forEach((link) => {
-          link.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const childId = link.getAttribute('data-target');
-            closeAllDropdowns();
-            scrollToHeading(childId);
-          });
+          scrollToHeading(targetId);
         });
       });
 
-      if (!window.__stickyTabsOutsideClickBound) {
-        window.__stickyTabsOutsideClickBound = true;
-        document.addEventListener('click', (e) => {
-          if (!e.target.closest('.sticky-tab-item')) {
-            document.querySelectorAll('.sticky-tab-item.is-open').forEach((item) => {
-              item.classList.remove('is-open');
-              const dd = item.querySelector('.sticky-tab-dropdown');
-              if (dd) dd.hidden = true;
-            });
-          }
+      // 2. 子見出し付箋（サブタブ）のクリック
+      container.querySelectorAll('.sticky-subtab-btn').forEach((btn) => {
+        const targetId = btn.getAttribute('data-target');
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          scrollToHeading(targetId);
         });
-      }
+      });
 
+      // 3. スクロール時の連動更新
       return function updateStickyTabsOnScroll(currentId) {
         if (!currentId) return;
 
         let activeTabItem = null;
-        let activeChildText = null;
+        let activeChildId = null;
 
+        // currentId が親見出し自身か、いずれかの親の子見出しに該当するか探索
         for (const item of tabItems) {
           const tabTarget = item.getAttribute('data-target');
           if (tabTarget === currentId) {
             activeTabItem = item;
-            activeChildText = null;
+            activeChildId = null;
             break;
           }
 
-          const matchingChild = item.querySelector(`.sticky-dropdown-link[data-target="${currentId}"]`);
-          if (matchingChild) {
+          const parentId = item.getAttribute('data-tab-id');
+          const group = container.querySelector(`.sticky-subtabs-group[data-parent-id="${parentId}"]`);
+          if (group && group.querySelector(`.sticky-subtab-btn[data-target="${currentId}"]`)) {
             activeTabItem = item;
-            const textEl = matchingChild.querySelector('.dropdown-item-text');
-            activeChildText = textEl ? textEl.textContent.trim() : matchingChild.textContent.trim();
+            activeChildId = currentId;
             break;
           }
         }
 
-        if (activeTabItem) {
-          tabItems.forEach((item) => {
-            const subLabel = item.querySelector('.sticky-sub-active-label');
-            if (item === activeTabItem) {
-              if (!item.classList.contains('is-active')) {
-                item.classList.add('is-active');
-                item.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
-              }
-              if (subLabel) {
-                if (activeChildText) {
-                  subLabel.textContent = ` › ${activeChildText}`;
-                  subLabel.hidden = false;
-                } else {
-                  subLabel.textContent = '';
-                  subLabel.hidden = true;
-                }
-              }
-            } else {
-              item.classList.remove('is-active');
-              if (subLabel) {
-                subLabel.textContent = '';
-                subLabel.hidden = true;
-              }
-            }
+        if (!activeTabItem) return;
 
-            item.querySelectorAll('.sticky-dropdown-link').forEach((link) => {
-              if (link.getAttribute('data-target') === currentId) {
-                link.classList.add('is-active');
+        const activeTabId = activeTabItem.getAttribute('data-tab-id');
+
+        // 親付箋タブのアクティブ更新 & 水平スクロール追従
+        tabItems.forEach((item) => {
+          if (item === activeTabItem) {
+            if (!item.classList.contains('is-active')) {
+              item.classList.add('is-active');
+              item.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+            }
+          } else {
+            item.classList.remove('is-active');
+          }
+        });
+
+        // 子見出しシェルフの表示制御 (下からひょこっと出る)
+        let hasVisibleGroup = false;
+        subGroups.forEach((group) => {
+          const parentId = group.getAttribute('data-parent-id');
+          if (parentId === activeTabId) {
+            if (!group.classList.contains('is-visible')) {
+              group.classList.add('is-visible');
+            }
+            hasVisibleGroup = true;
+
+            // アクティブな子見出しのハイライト
+            group.querySelectorAll('.sticky-subtab-item').forEach((subItem) => {
+              const subTarget = subItem.getAttribute('data-target');
+              if (subTarget === activeChildId) {
+                if (!subItem.classList.contains('is-active')) {
+                  subItem.classList.add('is-active');
+                  subItem.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+                }
               } else {
-                link.classList.remove('is-active');
+                subItem.classList.remove('is-active');
               }
             });
-          });
+          } else {
+            group.classList.remove('is-visible');
+          }
+        });
+
+        if (shelf) {
+          if (hasVisibleGroup) {
+            shelf.classList.add('has-active-group');
+          } else {
+            shelf.classList.remove('has-active-group');
+          }
         }
       };
     }
@@ -1045,6 +1032,13 @@
             currentDataPane.remove();
           }
 
+          // Swap content header (sticky tabs)
+          const currentContentHeader = document.querySelector('.pane-content-header');
+          const newContentHeader = newDoc.querySelector('.pane-content-header');
+          if (currentContentHeader && newContentHeader) {
+            currentContentHeader.innerHTML = newContentHeader.innerHTML;
+          }
+
           // Swap content container
           const currentContainer = document.querySelector('.pane-article-container');
           const newContainer = newDoc.querySelector('.pane-article-container');
@@ -1363,6 +1357,13 @@
           }
         } else if (currentData) {
           currentData.remove();
+        }
+
+        // 2b. Swap content header (sticky tabs)
+        const currentContentHeader = document.querySelector('.pane-content-header');
+        const newContentHeader = newDoc.querySelector('.pane-content-header');
+        if (currentContentHeader && newContentHeader) {
+          currentContentHeader.innerHTML = newContentHeader.innerHTML;
         }
 
         // 3. Swap article container (hero + content)
