@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="{{ lang | default('ja') }}" data-view="{{ default_view | default('book') }}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% if page_title %}{{ page_title }} | {% endif %}{{ site_title }}</title>
+    <script>
+      try {
+        const savedView = localStorage.getItem('wiki-view-mode');
+        if (savedView === 'classic' || savedView === 'book') {
+          document.documentElement.setAttribute('data-view', savedView);
+        }
+      } catch {}
+    </script>
+    <link rel="stylesheet" href="/book.css" />
+    {% for css in custom_css %}
+    <link rel="stylesheet" href="{{ css }}" />
+    {% endfor %}
+  </head>
+  <body class="is-fluid">
+    <div class="container is-fluid">
+      <div class="floating-controls" data-pagefind-ignore>
+        <div class="search-container">
+          <div class="search-input-wrapper">
+            <input
+              type="search"
+              id="wiki-search-input"
+              placeholder="検索... (Ctrl+K)"
+              autocomplete="off"
+              spellcheck="false"
+            />
+          </div>
+          <div id="wiki-search-results" class="search-results" hidden></div>
+        </div>
+        <div class="view-switcher" role="group" aria-label="表示モード切替">
+          <button type="button" class="view-btn view-btn-book" id="btn-view-book" title="本モード (マルチペイン)">📖 本</button>
+          <button type="button" class="view-btn view-btn-classic" id="btn-view-classic" title="縦スクロールモード">📄 縦</button>
+        </div>
+      </div>
+
+      {% block content %}{% endblock %}
+    </div>
+
+    <!-- Hover Page Preview -->
+    <div id="wiki-page-preview" class="wiki-preview-card" hidden data-pagefind-ignore>
+      <div class="preview-header">
+        <span class="preview-title"></span>
+        <span class="preview-section"></span>
+      </div>
+      <div class="preview-content">
+        <div class="preview-body"></div>
+        <img class="preview-thumb" src="" alt="" hidden />
+      </div>
+    </div>
+
+    <!-- Image Lightbox Modal -->
+    <div id="wiki-image-lightbox" class="lightbox-overlay" hidden data-pagefind-ignore>
+      <div class="lightbox-dialog">
+        <button type="button" class="lightbox-close" aria-label="閉じる">✕</button>
+        <div class="lightbox-img-wrapper">
+          <img id="lightbox-img" src="" alt="" />
+        </div>
+        <div class="lightbox-caption" id="lightbox-caption"></div>
+      </div>
+    </div>
+
+    <script src="/book.js"></script>
+  </body>
+</html>

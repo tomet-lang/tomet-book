@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- ==================== 1. BOOK VIEW (DEFAULT) ==================== -->
+<div class="book-view" id="wiki-book-view">
+  <!-- Permanent Left Rail -->
+  <nav class="book-rail-nav" id="book-rail-nav" data-pagefind-ignore aria-label="ナビゲーションバー">
+    <a href="/wiki" class="rail-tab rail-tab-title" id="btn-rail-home" title="{{ site_title }} ホームへ">
+      <span class="rail-letters">
+        {% for ch in rail_letters %}
+        <span>{{ ch }}</span>
+        {% endfor %}
+      </span>
+    </a>
+    <div class="rail-divider"></div>
+    <button type="button" class="rail-tab rail-tab-toc is-active" id="btn-rail-toc" title="目次を開閉">
+      <span class="rail-letters rail-letters-toc">
+        <span>目</span><span>次</span>
+      </span>
+    </button>
+  </nav>
+
+  <!-- Pane 1: 目次ペイン -->
+  <aside class="book-pane pane-nav" id="pane-nav" data-pagefind-ignore>
+    <div class="pane-header pane-header-collapsible" id="header-collapse-nav" title="クリックして目次を折りたたむ" role="button" tabindex="0">
+      <span class="pane-title">目次</span>
+      <span class="pane-collapse-arrow">◀</span>
+    </div>
+    <div class="pane-scroll">
+      <nav class="nav-breadcrumbs">
+        <a href="/wiki" class="nav-crumb-home">← ホーム</a>
+        {% if section %}
+        <div class="nav-crumb-section">
+          <span class="crumb-label">分類:</span>
+          <span class="crumb-val" data-pagefind-filter="section">{{ section }}</span>
+        </div>
+        {% endif %}
+      </nav>
+
+      {% if toc and toc | length > 0 %}
+      <div class="pane-toc">
+        <div class="toc-heading">目次</div>
+        <ul class="toc-items">
+          {% for item in toc %}
+          <li class="toc-item" style="margin-left: {{ (item.level - 2) * 12 }}px">
+            <a href="#{{ item.id }}" class="book-toc-link" data-target="{{ item.id }}">{{ item.text }}</a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <div class="pane-recent" id="pane-recent-section" hidden>
+        <div class="toc-heading">最近開いたノート</div>
+        <ul class="recent-items" id="pane-recent-list"></ul>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Pane 2: データプロファイルペイン -->
+  {% if has_data %}
+  <aside class="book-pane pane-data" id="pane-data" data-pagefind-ignore>
+    <div class="pane-header pane-header-collapsible" id="header-collapse-data" title="クリックしてデータを折りたたむ" role="button" tabindex="0">
+      <span class="pane-title">データ・プロファイル</span>
+      <span class="pane-collapse-arrow">◀</span>
+    </div>
+    <div class="pane-collapsed-bar" id="bar-expand-data" title="クリックしてデータを展開" role="button" tabindex="0">
+      <span class="collapsed-icon">📊</span>
+      <span class="collapsed-label">データ</span>
+      <span class="collapsed-arrow">▶</span>
+    </div>
+    <div class="pane-scroll pane-scroll-data">
+      <div class="infobox">
+        <div class="infobox-title" {% if primary_color %}style="border-top: 3px solid #{{ primary_color }};"{% endif %}>
+          {% if icon %}<span>{{ icon }}</span>{% endif %}
+          <span>{{ page_title }}</span>
+        </div>
+        {% if infobox_rows and infobox_rows | length > 0 %}
+        <table class="infobox-table">
+          <tbody>
+            {% for row in infobox_rows %}
+            <tr>
+              <th class="infobox-label">{{ row.label }}</th>
+              <td class="infobox-data">{{ row.value | safe }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% endif %}
+      </div>
+    </div>
+  </aside>
+  {% endif %}
+
+  <!-- Pane 3: 本文ペイン -->
+  <main class="book-pane pane-content" data-pagefind-body>
+    <div class="pane-header pane-content-header">
+      <span class="pane-title">本文</span>
+    </div>
+    <div class="pane-scroll pane-scroll-content" id="book-content-scroll">
+      <div class="pane-article-container">
+        {% if banner_url or icon or (hero_chips and hero_chips | length > 0) %}
+        <div class="book-hero-section">
+          {% if banner_url %}
+          <div class="hero-banner-wrapper">
+            <img src="{{ banner_url }}" alt="{{ page_title }} バナー" class="hero-banner-img" />
+            <button type="button" class="hero-zoom-btn" title="バナーを拡大表示">🔍 拡大</button>
+          </div>
+          {% endif %}
+          <div class="hero-content" {% if primary_color %}style="border-bottom-color: #{{ primary_color }};"{% endif %}>
+            {% if icon %}
+            <div class="hero-avatar" {% if primary_color %}style="border-color: #{{ primary_color }};"{% endif %}>
+              <span class="avatar-icon">{{ icon }}</span>
+            </div>
+            {% endif %}
+            <div class="hero-title-area">
+              <div class="hero-title-row">
+                <h1 class="content-title" data-pagefind-meta="title" data-pagefind-weight="10">{{ page_title }}</h1>
+                {% if kind %}
+                <span class="kind-tag" data-pagefind-filter="kind">{{ kind }}</span>
+                {% endif %}
+              </div>
+              {% if hero_chips and hero_chips | length > 0 %}
+              <div class="hero-meta-chips">
+                {% for chip in hero_chips %}
+                <span class="hero-chip">
+                  {% if chip.label %}<span class="chip-label">{{ chip.label }}:</span>{% endif %}
+                  <span class="chip-val">{{ chip.value }}</span>
+                </span>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <header class="article-header" style="margin-bottom: 24px;">
+          <div class="title-row" style="display: flex; align-items: baseline; gap: 10px;">
+            <h1 class="content-title" data-pagefind-meta="title" data-pagefind-weight="10">{{ page_title }}</h1>
+            {% if kind %}
+            <span class="kind-tag" data-pagefind-filter="kind">{{ kind }}</span>
+            {% endif %}
+          </div>
+        </header>
+        {% endif %}
+
+        <article>
+          {{ body_html | safe }}
+        </article>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ==================== 2. CLASSIC VIEW (縦スクロール) ==================== -->
+<div class="classic-view" data-pagefind-body>
+  <header class="site-header" data-pagefind-ignore>
+    <div class="site-header-inner">
+      <a href="/wiki" class="site-title">{{ site_title }}</a>
+    </div>
+  </header>
+
+  <header class="article-header" style="margin-bottom: 20px;">
+    <h1 style="font-size: 2rem; margin: 0 0 8px 0;">{{ page_title }}</h1>
+    {% if section %}
+    <div style="font-size: 0.85rem; color: var(--text-muted);">分類: {{ section }}</div>
+    {% endif %}
+  </header>
+
+  <article>
+    {{ body_html | safe }}
+  </article>
+</div>
+{% endblock %}

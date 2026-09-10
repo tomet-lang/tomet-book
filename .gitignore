@@ -1,0 +1,28 @@
+# -----------------------------------------------------------------------
+# Files ignored by Git.
+# -----------------------------------------------------------------------
+
+#[ Build file ]
+build/
+dist/
+target/
+result
+result-*
+
+#[ Dev ]
+.direnv/
+.claude/
+.cargo/
+!.cargo/
+!.cargo/config.toml
+.idea/
+.zed/
+
+#[ User's variable ]
+.env
+.env.*
+!.env.example
+
+#[ OS ]
+.DS_Store
+Thumbs.db

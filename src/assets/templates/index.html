@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="classic-view" style="display: block; max-width: 960px; margin: 0 auto; padding: 24px 20px;" data-pagefind-ignore>
+  <header class="site-header" style="margin-bottom: 24px;">
+    <h1 style="font-size: 2rem; margin: 0 0 6px 0;">{{ site_title }}</h1>
+    <p style="color: var(--text-muted); font-size: 0.95rem; margin: 0;">{{ description | default('Total notes: ' ~ entries | length) }}</p>
+  </header>
+
+  {% if sections and sections | length > 0 %}
+  <section style="margin-bottom: 32px;">
+    <h2 style="font-size: 1.35rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 6px; margin-bottom: 16px;">セクション分類</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;">
+      {% for sec in sections %}
+      <div style="background: var(--surface); border: 1px solid var(--border); padding: 14px 16px;">
+        <h3 style="margin: 0 0 4px 0; font-size: 1.05rem;">{{ sec.name }}</h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">{{ sec.count }} ノート</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section>
+    <h2 style="font-size: 1.35rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 6px; margin-bottom: 16px;">ノート一覧</h2>
+    <div style="background: var(--surface); border: 1px solid var(--border); padding: 16px 20px;">
+      <ul style="list-style: square; padding-left: 20px; margin: 0;">
+        {% for entry in entries %}
+        <li style="margin: 6px 0;">
+          <a href="{{ entry.url }}">{{ entry.title }}</a>
+          {% if entry.section %}
+          <span style="color: var(--text-muted); font-size: 0.85em; margin-left: 8px;">({{ entry.section }})</span>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+</div>
+{% endblock %}

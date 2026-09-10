@@ -1,0 +1,35 @@
+[package]
+name = "tmtbook"
+version = "0.1.0"
+edition = "2024"
+description = "A standalone book & wiki generator for Tomet"
+
+[[bin]]
+name = "tmtbook"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0.95"
+clap = { version = "4.5.23", features = ["derive"] }
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = "1.0.134"
+toml = "0.8.19"
+minijinja = { version = "2.7.0", features = ["loader", "json"] }
+walkdir = "2.5.0"
+regex = "1.11.1"
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+notify = "6.1.1"
+tokio = { version = "1.42.0", features = ["full"] }
+axum = { version = "0.7.9", features = ["ws"] }
+tower-http = { version = "0.5.2", features = ["fs", "cors", "trace"] }
+futures = "0.3.31"
+
+# Tomet ecosystem dependencies
+tomet-ast = { git = "https://github.com/tomet-lang/tomet.git" }
+tomet-parser = { git = "https://github.com/tomet-lang/tomet.git" }
+tomet-tree = { git = "https://github.com/tomet-lang/tomet.git" }
+tomet-semantics = { git = "https://github.com/tomet-lang/tomet.git" }
+tomet-transform = { git = "https://github.com/tomet-lang/tomet.git" }
+tomet-links = { git = "https://github.com/tomet-lang/tomet.git" }
+tomet-html = { git = "https://github.com/tomet-lang/tomet.git" }
