@@ -700,8 +700,21 @@ html[data-view="classic"] .classic-view {
   min-height: 41px;
   display: flex;
   align-items: flex-end;
-  border-bottom: 1px solid var(--border);
   box-sizing: border-box;
+  position: relative;
+}
+
+/* 最前面に必ず通る境界線 (横線): 付箋が線の上に被らず、線の裏からひょこっと出る */
+.pane-content-header::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border);
+  z-index: 10; /* 付箋より確実に前面に通す */
+  pointer-events: none;
 }
 
 [data-theme="dark"] .pane-content-header {
@@ -717,8 +730,8 @@ html[data-view="classic"] .classic-view {
   overflow-y: visible;
   scrollbar-width: none;
   position: relative;
-  z-index: 2;
-  margin-bottom: -1px; /* 下端の border-bottom (1px) に完全に重ねて全付箋を接地 */
+  z-index: 1; /* 境界線 (z-index: 10) の裏側 */
+  margin-bottom: 0;
 }
 .sticky-tabs-bar::-webkit-scrollbar {
   display: none;
@@ -825,7 +838,7 @@ html[data-view="classic"] .classic-view {
   z-index: 10;
 }
 
-/* --- 柔らかい付箋カラー (枠線なし / 色付き影) --- */
+/* --- 柔らかい付箋カラー (枠線なし / ほんのり控えめな影) --- */
 
 /* H1: 柔らかいイエロー (ポストイット定番イエロー) */
 .sticky-tab-btn.level-1 {
@@ -840,7 +853,7 @@ html[data-view="classic"] .classic-view {
 .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-1 {
   background: #fcd34d; /* アクティブ時は少し鮮やかに */
   color: #78350f;
-  box-shadow: 0 -3px 8px rgba(217, 119, 6, 0.32); /* ほんのちょっと濃い色付き影 */
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.08); /* アイコンのような淡い自然な影 */
 }
 
 /* H2: 柔らかいミントグリーン */
@@ -856,7 +869,7 @@ html[data-view="classic"] .classic-view {
 .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-2 {
   background: #6ee7b7;
   color: #064e3b;
-  box-shadow: 0 -3px 8px rgba(5, 150, 105, 0.32); /* ほんのちょっと濃い色付き影 */
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.08);
 }
 
 /* H3: 柔らかいパステルスカイブルー */
@@ -872,7 +885,7 @@ html[data-view="classic"] .classic-view {
 .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-3 {
   background: #7dd3fc;
   color: #0c4a6e;
-  box-shadow: 0 -3px 8px rgba(2, 132, 199, 0.32); /* ほんのちょっと濃い色付き影 */
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.08);
 }
 
 /* H4+: 柔らかいラベンダーパープル */
@@ -894,10 +907,10 @@ html[data-view="classic"] .classic-view {
 .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-4 {
   background: #d8b4fe;
   color: #581c87;
-  box-shadow: 0 -3px 8px rgba(124, 58, 237, 0.32); /* ほんのちょっと濃い色付き影 */
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.08);
 }
 
-/* --- ダークモード対応 (目に優しいパステルトーン) --- */
+/* --- ダークモード対応 (目に優しいパステルトーン & 控えめな影) --- */
 [data-theme="dark"] .sticky-tab-btn.level-1 {
   background: rgba(245, 158, 11, 0.22);
   color: #fef08a;
@@ -909,7 +922,7 @@ html[data-view="classic"] .classic-view {
 [data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-1 {
   background: rgba(245, 158, 11, 0.42);
   color: #fffbeb;
-  box-shadow: 0 -3px 10px rgba(245, 158, 11, 0.4);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.35);
 }
 
 [data-theme="dark"] .sticky-tab-btn.level-2 {
@@ -923,7 +936,7 @@ html[data-view="classic"] .classic-view {
 [data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-2 {
   background: rgba(16, 185, 129, 0.42);
   color: #ecfdf5;
-  box-shadow: 0 -3px 10px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.35);
 }
 
 [data-theme="dark"] .sticky-tab-btn.level-3 {
@@ -937,7 +950,7 @@ html[data-view="classic"] .classic-view {
 [data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-3 {
   background: rgba(14, 165, 233, 0.42);
   color: #f0f9ff;
-  box-shadow: 0 -3px 10px rgba(14, 165, 233, 0.4);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.35);
 }
 
 [data-theme="dark"] .sticky-tab-btn.level-4,
@@ -957,7 +970,7 @@ html[data-view="classic"] .classic-view {
 [data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-4 {
   background: rgba(168, 85, 247, 0.42);
   color: #faf5ff;
-  box-shadow: 0 -3px 10px rgba(168, 85, 247, 0.4);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.35);
 }
 
 .sticky-tab-text {
