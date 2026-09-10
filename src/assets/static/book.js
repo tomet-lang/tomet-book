@@ -130,7 +130,13 @@
         });
       });
 
-      const updateStickyTabs = setupStickyTabs(scrollContainer);
+      const updateStickyTabs = setupStickyTabs(scrollContainer, headingTargets, () => {
+        isClickScrolling = true;
+        if (clickTimer) clearTimeout(clickTimer);
+        clickTimer = setTimeout(() => {
+          isClickScrolling = false;
+        }, 800);
+      });
 
       // ScrollSpy: auto-highlight TOC item on scroll
       let scrollTicking = false;
@@ -192,37 +198,14 @@
       setTimeout(updateScrollSpy, 80);
     }
 
-    // 付箋見出し (Sticky-Tab Headings: 1段スリムヘッダー & fixed確実表示ドロップダウン & ScrollSpy完全同期)
-    function setupStickyTabs(scrollContainer) {
+    // 付箋見出し (Sticky-Tab Headings: インライン横展開アコーディオン & ScrollSpy完全同期)
+    // 構造: [ H1 ] (H2) (H2) (H3->いまアクティブなやつまでが展開される) (H2) [ H1 ] [ H1 ] ...
+    function setupStickyTabs(scrollContainer, headingTargets, markClickScrolling) {
       const tabsBar = document.getElementById('sticky-tabs-bar');
       if (!tabsBar) return null;
 
-      const tabItems = Array.from(tabsBar.querySelectorAll('.sticky-tab-item'));
-      if (tabItems.length === 0) return null;
-
-      function closeAllDropdowns() {
-        tabItems.forEach((item) => {
-          item.classList.remove('is-open');
-          const dd = item.querySelector('.sticky-tab-dropdown');
-          if (dd) dd.hidden = true;
-        });
-      }
-
-      function openDropdown(item, btn, dropdown) {
-        closeAllDropdowns();
-        item.classList.add('is-open');
-        dropdown.hidden = false;
-
-        // Position fixed using getBoundingClientRect() to avoid ANY overflow clipping
-        const rect = btn.getBoundingClientRect();
-        const dropdownWidth = 220;
-        let left = rect.left;
-        if (left + dropdownWidth > window.innerWidth - 16) {
-          left = Math.max(16, window.innerWidth - dropdownWidth - 16);
-        }
-        dropdown.style.top = `${rect.bottom + 6}px`;
-        dropdown.style.left = `${left}px`;
-      }
+      const nodes = Array.from(tabsBar.querySelectorAll('.sticky-tab-node'));
+      if (nodes.length === 0) return null;
 
       function scrollToHeading(id) {
         if (!id || !scrollContainer) return;
@@ -232,132 +215,75 @@
         scrollContainer.scrollTo({ top, behavior: 'smooth' });
       }
 
-      tabItems.forEach((item) => {
-        const btn = item.querySelector('.sticky-tab-btn');
-        const dropdown = item.querySelector('.sticky-tab-dropdown');
-        const targetId = item.getAttribute('data-target');
+      function setActiveHeading(currentId) {
+        if (!currentId) return;
 
-        btn?.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const hasChildren = !!dropdown;
-          const isOpen = item.classList.contains('is-open');
+        // 1. Target node search
+        let targetNode = nodes.find((n) => n.getAttribute('data-id') === currentId);
 
-          if (hasChildren) {
-            if (isOpen) {
-              closeAllDropdowns();
-            } else {
-              openDropdown(item, btn, dropdown);
-              scrollToHeading(targetId);
+        // Fallback: If currentId is deeper (H4+), find closest preceding heading in headingTargets that exists in tabsBar
+        if (!targetNode && headingTargets && headingTargets.length > 0) {
+          const idx = headingTargets.findIndex((h) => h.id === currentId);
+          if (idx > 0) {
+            for (let i = idx - 1; i >= 0; i--) {
+              const prevId = headingTargets[i].id;
+              targetNode = nodes.find((n) => n.getAttribute('data-id') === prevId);
+              if (targetNode) break;
             }
-          } else {
-            closeAllDropdowns();
-            scrollToHeading(targetId);
           }
+        }
+
+        if (!targetNode) return;
+
+        // 2. Clear previous active/branch states
+        nodes.forEach((n) => {
+          n.classList.remove('is-active', 'is-active-branch');
+        });
+        tabsBar.querySelectorAll('.sticky-tab-btn.is-active').forEach((btn) => {
+          btn.classList.remove('is-active');
         });
 
-        dropdown?.querySelectorAll('.sticky-dropdown-link').forEach((link) => {
-          link.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const childId = link.getAttribute('data-target');
-            closeAllDropdowns();
-            scrollToHeading(childId);
-          });
+        // 3. Mark current target as active
+        targetNode.classList.add('is-active');
+        const directBtn = Array.from(targetNode.children).find((el) => el.classList.contains('sticky-tab-btn'));
+        if (directBtn) {
+          directBtn.classList.add('is-active');
+          // Smooth scroll the tab bar horizontally to keep active tab in view
+          directBtn.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
+        }
+
+        // 4. Mark all ancestors as is-active-branch so their children slots expand
+        let parent = targetNode.parentElement ? targetNode.parentElement.closest('.sticky-tab-node') : null;
+        while (parent) {
+          parent.classList.add('is-active-branch');
+          parent = parent.parentElement ? parent.parentElement.closest('.sticky-tab-node') : null;
+        }
+      }
+
+      // Bind click on all tab buttons
+      nodes.forEach((node) => {
+        const btn = Array.from(node.children).find((el) => el.classList.contains('sticky-tab-btn'));
+        const targetId = node.getAttribute('data-id');
+
+        btn?.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (markClickScrolling) markClickScrolling();
+          setActiveHeading(targetId);
+          scrollToHeading(targetId);
         });
       });
 
-      // Close dropdowns on outside click
-      if (!window.__stickyTabsOutsideClickBound) {
-        window.__stickyTabsOutsideClickBound = true;
-        document.addEventListener('click', (e) => {
-          if (!e.target.closest('.sticky-tab-item') && !e.target.closest('.sticky-tab-dropdown')) {
-            closeAllDropdowns();
-          }
-        });
+      // Initial active state: activate the first root node if nothing is active yet
+      const firstNode = nodes[0];
+      if (firstNode && !tabsBar.querySelector('.sticky-tab-node.is-active')) {
+        const firstId = firstNode.getAttribute('data-id');
+        setActiveHeading(firstId);
       }
 
-      // Reposition or close dropdown on scroll
-      const onScrollReposition = () => {
-        const openItem = document.querySelector('.sticky-tab-item.is-open');
-        if (openItem) {
-          const btn = openItem.querySelector('.sticky-tab-btn');
-          const dd = openItem.querySelector('.sticky-tab-dropdown');
-          if (btn && dd && !dd.hidden) {
-            const rect = btn.getBoundingClientRect();
-            if (rect.bottom < 0 || rect.top > window.innerHeight) {
-              closeAllDropdowns();
-            } else {
-              let left = rect.left;
-              const dropdownWidth = 220;
-              if (left + dropdownWidth > window.innerWidth - 16) {
-                left = Math.max(16, window.innerWidth - dropdownWidth - 16);
-              }
-              dd.style.top = `${rect.bottom + 6}px`;
-              dd.style.left = `${left}px`;
-            }
-          }
-        }
-      };
-      scrollContainer.addEventListener('scroll', onScrollReposition, { passive: true });
-
-      // ScrollSpy: auto-sync active tab and inline child label (› 小見出し名)
+      // Return update function for ScrollSpy
       return function updateStickyTabsOnScroll(currentId) {
-        if (!currentId) return;
-
-        let activeTabItem = null;
-        let activeChildText = null;
-
-        for (const item of tabItems) {
-          const tabTarget = item.getAttribute('data-target');
-          if (tabTarget === currentId) {
-            activeTabItem = item;
-            activeChildText = null;
-            break;
-          }
-
-          const matchingChild = item.querySelector(`.sticky-dropdown-link[data-target="${currentId}"]`);
-          if (matchingChild) {
-            activeTabItem = item;
-            const textEl = matchingChild.querySelector('.dropdown-item-text');
-            activeChildText = textEl ? textEl.textContent.trim() : matchingChild.textContent.trim();
-            break;
-          }
-        }
-
-        if (activeTabItem) {
-          tabItems.forEach((item) => {
-            const subLabel = item.querySelector('.sticky-sub-active-label');
-            if (item === activeTabItem) {
-              if (!item.classList.contains('is-active')) {
-                item.classList.add('is-active');
-                item.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
-              }
-              if (subLabel) {
-                if (activeChildText) {
-                  subLabel.textContent = `› ${activeChildText}`;
-                  subLabel.hidden = false;
-                } else {
-                  subLabel.textContent = '';
-                  subLabel.hidden = true;
-                }
-              }
-            } else {
-              item.classList.remove('is-active');
-              if (subLabel) {
-                subLabel.textContent = '';
-                subLabel.hidden = true;
-              }
-            }
-
-            item.querySelectorAll('.sticky-dropdown-link').forEach((link) => {
-              if (link.getAttribute('data-target') === currentId) {
-                link.classList.add('is-active');
-              } else {
-                link.classList.remove('is-active');
-              }
-            });
-          });
-        }
+        setActiveHeading(currentId);
       };
     }
 

@@ -655,16 +655,10 @@ html[data-view="classic"] .classic-view {
   box-sizing: border-box;
 }
 
+/* ==================== STICKY TABS (付箋見出し: 横展開アコーディオン) ==================== */
 .pane-content-header {
   background: var(--surface);
   padding: 0 8px;
-  overflow: visible;
-}
-
-/* ==================== STICKY TABS (付箋見出し) ==================== */
-.pane-content-header {
-  background: var(--surface);
-  padding: 0 10px;
   overflow: visible;
   height: 36px;
   min-height: 36px;
@@ -690,50 +684,58 @@ html[data-view="classic"] .classic-view {
 .sticky-tabs-list {
   display: flex;
   align-items: flex-end;
-  gap: 5px;
+  gap: 4px;
   list-style: none;
   margin: 0;
   padding: 0;
   height: 100%;
 }
 
-.sticky-tab-item {
-  position: relative;
-  display: flex;
+/* 階層ノード (インラインで横並び) */
+.sticky-tab-node {
+  display: inline-flex;
   align-items: flex-end;
+  gap: 3px;
+  position: relative;
   height: 100%;
 }
 
-/* 付箋風タブボタン（基本形状） */
+/* 付箋ボタン（共通スタイル） */
 .sticky-tab-btn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  position: relative;
+  gap: 4px;
   background: var(--surface-subtle);
   border: 1px solid var(--border-subtle);
-  border-bottom: none;
-  border-radius: 6px 6px 0 0;
   color: var(--text-muted);
   cursor: pointer;
   white-space: nowrap;
+  user-select: none;
+  box-sizing: border-box;
   transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
               background 0.15s ease,
               color 0.15s ease,
-              box-shadow 0.15s ease,
-              border-color 0.15s ease;
-  user-select: none;
-  box-sizing: border-box;
-  margin-bottom: 0;
+              border-color 0.15s ease,
+              box-shadow 0.15s ease;
 }
 
-/* 付箋の上部カラーテープ（接着面アクセントストライプ） */
-.sticky-tab-btn::before {
+/* H1: [ H1 ] デカく目立つ親付箋 (四角いインデックス付箋形状) */
+.sticky-tab-btn.level-1 {
+  height: 30px;
+  padding: 4px 10px 4px 8px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  border-radius: 6px 6px 0 0;
+  border-bottom: none;
+  position: relative;
+}
+
+.sticky-tab-btn.level-1::before {
   content: '';
   position: absolute;
   top: 0;
-  left: 5px;
-  right: 5px;
+  left: 6px;
+  right: 6px;
   height: 2px;
   border-radius: 2px 2px 0 0;
   background: var(--link);
@@ -741,112 +743,160 @@ html[data-view="classic"] .classic-view {
   transition: all 0.15s ease;
 }
 
-.sticky-tab-btn:hover {
+.sticky-tab-btn.level-1:hover {
   background: var(--surface-hover);
   color: var(--text);
   border-color: var(--border);
   transform: translateY(-1px);
 }
-.sticky-tab-btn:hover::before {
+.sticky-tab-btn.level-1:hover::before {
   opacity: 0.7;
 }
 
-/* --- レベル別のサイズ設計 (H1をデカく、H2から小さく) --- */
-/* H1: 大きく存在感のある親付箋 */
-.sticky-tab-btn.level-1 {
-  height: 30px;
-  padding: 4px 10px 4px 8px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  max-width: 220px;
-}
-
-/* H2: H1より少しコンパクトな付箋 */
+/* H2: (H2) 丸みのある小見出しピル/付箋 */
 .sticky-tab-btn.level-2 {
-  height: 26px;
-  padding: 3px 8px 3px 6px;
-  font-size: 0.68rem;
+  height: 24px;
+  padding: 2px 8px;
+  font-size: 0.67rem;
   font-weight: 500;
-  max-width: 190px;
-  opacity: 0.92;
+  border-radius: 12px;
+  margin-bottom: 2px;
 }
 
-/* H3以降: さらにコンパクト */
+.sticky-tab-btn.level-2:hover {
+  background: var(--surface-hover);
+  color: var(--link);
+  border-color: var(--border);
+  transform: translateY(-1px);
+}
+
+/* H3: (H3) さらにコンパクトなミニピル */
 .sticky-tab-btn.level-3,
-.sticky-tab-btn.level-4 {
-  height: 24px;
-  padding: 2px 7px 2px 5px;
-  font-size: 0.64rem;
+.sticky-tab-btn.level-4,
+.sticky-tab-btn.level-5,
+.sticky-tab-btn.level-6 {
+  height: 21px;
+  padding: 1px 6px;
+  font-size: 0.61rem;
   font-weight: 500;
-  max-width: 170px;
-  opacity: 0.85;
+  border-radius: 10px;
+  margin-bottom: 3px;
+}
+
+.sticky-tab-btn.level-3:hover,
+.sticky-tab-btn.level-4:hover {
+  background: var(--surface-hover);
+  color: var(--link);
+  border-color: var(--border);
+  transform: translateY(-1px);
 }
 
 /* --- アクティブな付箋タブ: ちょっと上に上がっていく！ --- */
-.sticky-tab-item.is-active .sticky-tab-btn {
+.sticky-tab-btn.level-1.is-active {
   background: var(--surface);
   color: var(--text-heading);
-  font-weight: 700;
   border-color: var(--border);
   box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.08), 0 2px 0 var(--surface);
   z-index: 10;
-  transform: translateY(-4px); /* 上にひょこっと上がる！ */
-  opacity: 1;
+  transform: translateY(-4px); /* 上にひょこっと浮上！ */
 }
 
-.sticky-tab-item.is-active .sticky-tab-btn::before {
+.sticky-tab-btn.level-1.is-active::before {
   height: 3px;
   opacity: 1;
   background: var(--link);
   box-shadow: 0 1px 4px rgba(var(--link-rgb, 59, 130, 246), 0.35);
 }
 
-.sticky-tab-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* スクロール連動でインライン表示されるアクティブ小見出し (› 小見出し名) */
-.sticky-sub-active-label {
-  display: inline-flex;
-  align-items: center;
-  color: var(--link);
+.sticky-tab-btn.level-2.is-active {
+  background: var(--link);
+  color: #ffffff;
   font-weight: 600;
-  font-size: 0.68rem;
-  padding: 1px 6px;
-  background: var(--surface-subtle);
-  border-radius: 4px;
-  max-width: 130px;
+  border-color: var(--link);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px); /* H2も上にひょこっと上がる！ */
+  z-index: 10;
+}
+
+.sticky-tab-btn.level-2.is-active .sticky-level-badge {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.sticky-tab-btn.level-3.is-active {
+  background: var(--link);
+  color: #ffffff;
+  font-weight: 600;
+  border-color: var(--link);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  z-index: 10;
+}
+
+.sticky-tab-btn.level-3.is-active .sticky-level-badge {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* 親ノードがアクティブブランチの場合 (現在子または孫を見ている時) */
+.sticky-tab-node.is-active-branch > .sticky-tab-btn.level-1 {
+  background: var(--surface);
+  color: var(--text-heading);
+  border-color: var(--border);
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.sticky-tab-node.is-active-branch > .sticky-tab-btn.level-1::before {
+  height: 2px;
+  opacity: 0.85;
+  background: var(--link);
+}
+
+.sticky-tab-node.is-active-branch > .sticky-tab-btn.level-2 {
+  background: var(--surface-hover);
+  color: var(--text-heading);
+  border-color: var(--border);
+  font-weight: 600;
+}
+
+.sticky-tab-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  animation: stickySubFadeIn 0.15s ease-out;
-}
-@keyframes stickySubFadeIn {
-  from { opacity: 0; transform: translateX(-3px); }
-  to { opacity: 1; transform: translateX(0); }
+  max-width: 160px;
 }
 
-.sticky-sub-active-label:not([hidden]) {
+/* --- 横に展開される子ヘッダーのスロット (アクティブブランチ時にスッと開く) --- */
+.sticky-children-slot {
   display: inline-flex;
+  align-items: flex-end;
+  gap: 3px;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: max-width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+              opacity 0.22s ease,
+              margin 0.2s ease;
+  margin: 0;
 }
 
-/* ドロップダウン開閉矢印 */
-.sticky-tab-arrow {
-  display: inline-block;
-  opacity: 0.5;
-  transition: transform 0.15s ease;
-  flex-shrink: 0;
-}
-.sticky-tab-item.is-open .sticky-tab-arrow {
-  transform: rotate(180deg);
+/* 親ノードがアクティブまたはアクティブブランチの時、子スロットが横に展開！ */
+.sticky-tab-node.is-active > .sticky-children-slot,
+.sticky-tab-node.is-active-branch > .sticky-children-slot {
+  max-width: 1500px;
   opacity: 1;
+  pointer-events: auto;
+  margin-left: 3px;
+  margin-right: 3px;
 }
 
 /* --- ヘッダーレベルバッジ (H1, H2, H3, ...) --- */
 .sticky-level-badge {
-  font-size: 0.58rem;
+  font-size: 0.56rem;
   font-weight: 700;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   padding: 1px 4px;
@@ -896,83 +946,6 @@ html[data-view="classic"] .classic-view {
   background: rgba(100, 116, 139, 0.12);
   color: #64748b;
   border: 1px solid rgba(100, 116, 139, 0.2);
-}
-
-/* --- 小さなドロップダウン (position: fixed で確実に表示) --- */
-.sticky-tab-dropdown {
-  position: fixed;
-  min-width: 170px;
-  max-width: 290px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18), 0 3px 8px rgba(0, 0, 0, 0.08);
-  z-index: 99999;
-  padding: 4px 0;
-  animation: stickyDropdownPop 0.15s cubic-bezier(0.2, 0, 0, 1);
-}
-
-@keyframes stickyDropdownPop {
-  from {
-    opacity: 0;
-    transform: translateY(-4px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.sticky-dropdown-header {
-  padding: 5px 12px 4px 12px;
-  font-size: 0.65rem;
-  color: var(--text-muted);
-  border-bottom: 1px solid var(--border-subtle);
-  font-weight: 600;
-}
-
-.sticky-dropdown-list {
-  list-style: none;
-  margin: 0;
-  padding: 2px 0;
-  max-height: 280px;
-  overflow-y: auto;
-}
-
-.sticky-dropdown-item {
-  margin: 0;
-  padding: 0;
-}
-
-.sticky-dropdown-link {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  text-decoration: none;
-  transition: background 0.1s ease, color 0.1s ease;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.sticky-dropdown-link:hover {
-  background: var(--surface-hover);
-  color: var(--link);
-}
-
-.sticky-dropdown-link.is-active {
-  background: var(--surface-subtle);
-  color: var(--link);
-  font-weight: 600;
-}
-
-.dropdown-item-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .pane-scroll-content {

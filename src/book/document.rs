@@ -47,12 +47,14 @@ pub struct ProcessedDoc {
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct SectionTab {
+pub struct TocNode {
     pub id: String,
     pub text: String,
     pub level: u32,
-    pub children: Vec<TocItem>,
+    pub children: Vec<TocNode>,
 }
+
+pub type SectionTab = TocNode;
 
 fn is_link_ref(raw: &str) -> bool {
     let s = raw.trim();
@@ -345,9 +347,7 @@ pub fn process_tomet_document(
         }
     }
 
-    // 7b. Section tabs for header navigation
-    let mut section_tabs: Vec<SectionTab> = Vec::new();
-
+    // 7b. Hierarchical section tree for horizontal accordion header
     let has_h1 = toc.iter().any(|item| item.level == 1);
     let top_level = if has_h1 {
         1
@@ -355,29 +355,33 @@ pub fn process_tomet_document(
         toc.iter().map(|item| item.level).min().unwrap_or(1)
     };
 
-    for item in &toc {
-        let is_new_tab = match section_tabs.last() {
-            None => true,
-            Some(last) => {
-                if item.level <= top_level {
-                    true
-                } else if item.level <= last.level {
-                    true
-                } else {
-                    false
-                }
+    fn insert_node_into(parent: &mut TocNode, node: TocNode) {
+        if let Some(last) = parent.children.last_mut() {
+            if node.level > last.level {
+                insert_node_into(last, node);
+                return;
             }
+        }
+        parent.children.push(node);
+    }
+
+    let mut section_tabs: Vec<TocNode> = Vec::new();
+    for item in &toc {
+        let node = TocNode {
+            id: item.id.clone(),
+            text: item.text.clone(),
+            level: item.level,
+            children: Vec::new(),
         };
 
-        if is_new_tab {
-            section_tabs.push(SectionTab {
-                id: item.id.clone(),
-                text: item.text.clone(),
-                level: item.level,
-                children: Vec::new(),
-            });
-        } else if let Some(current_tab) = section_tabs.last_mut() {
-            current_tab.children.push(item.clone());
+        if section_tabs.is_empty() || item.level <= top_level {
+            section_tabs.push(node);
+        } else if let Some(last_root) = section_tabs.last_mut() {
+            if item.level > last_root.level {
+                insert_node_into(last_root, node);
+            } else {
+                section_tabs.push(node);
+            }
         }
     }
 

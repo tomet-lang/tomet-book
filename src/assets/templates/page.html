@@ -187,39 +187,42 @@
     <div class="pane-header pane-content-header">
       {% if section_tabs and section_tabs | length > 0 %}
       <nav class="sticky-tabs-bar" id="sticky-tabs-bar" aria-label="付箋見出し" data-pagefind-ignore>
-        <ul class="sticky-tabs-list">
-          {% for tab in section_tabs %}
-          <li class="sticky-tab-item level-{{ tab.level }}{% if loop.first %} is-active{% endif %}" data-tab-id="{{ tab.id }}" data-target="{{ tab.id }}" data-level="{{ tab.level }}">
-            <button type="button" class="sticky-tab-btn level-{{ tab.level }}" data-target="{{ tab.id }}" title="[H{{ tab.level }}] {{ tab.text }}">
-              <span class="sticky-level-badge level-{{ tab.level }}">H{{ tab.level }}</span>
-              <span class="sticky-tab-label">{{ tab.text }}</span>
-              {% if tab.children and tab.children | length > 0 %}
-              <span class="sticky-sub-active-label" data-parent="{{ tab.id }}" hidden></span>
-              <svg class="sticky-tab-arrow" viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <path d="m6 9 6 6 6-6"></path>
-              </svg>
-              {% endif %}
+        <div class="sticky-tabs-list">
+          {% for h1 in section_tabs %}
+          <div class="sticky-tab-node level-{{ h1.level }}" data-id="{{ h1.id }}" data-level="{{ h1.level }}">
+            <button type="button" class="sticky-tab-btn level-{{ h1.level }}" data-target="{{ h1.id }}" title="[H{{ h1.level }}] {{ h1.text }}">
+              <span class="sticky-level-badge level-{{ h1.level }}">H{{ h1.level }}</span>
+              <span class="sticky-tab-text">{{ h1.text }}</span>
             </button>
-            {% if tab.children and tab.children | length > 0 %}
-            <div class="sticky-tab-dropdown" hidden>
-              <div class="sticky-dropdown-header">
-                <span class="sticky-dropdown-title">{{ tab.text }} の小見出し</span>
+
+            {% if h1.children and h1.children | length > 0 %}
+            <div class="sticky-children-slot level-2-slot" data-parent-id="{{ h1.id }}">
+              {% for h2 in h1.children %}
+              <div class="sticky-tab-node level-{{ h2.level }}" data-id="{{ h2.id }}" data-level="{{ h2.level }}">
+                <button type="button" class="sticky-tab-btn level-{{ h2.level }}" data-target="{{ h2.id }}" title="[H{{ h2.level }}] {{ h2.text }}">
+                  <span class="sticky-level-badge level-{{ h2.level }}">H{{ h2.level }}</span>
+                  <span class="sticky-tab-text">{{ h2.text }}</span>
+                </button>
+
+                {% if h2.children and h2.children | length > 0 %}
+                <div class="sticky-children-slot level-3-slot" data-parent-id="{{ h2.id }}">
+                  {% for h3 in h2.children %}
+                  <div class="sticky-tab-node level-{{ h3.level }}" data-id="{{ h3.id }}" data-level="{{ h3.level }}">
+                    <button type="button" class="sticky-tab-btn level-{{ h3.level }}" data-target="{{ h3.id }}" title="[H{{ h3.level }}] {{ h3.text }}">
+                      <span class="sticky-level-badge level-{{ h3.level }}">H{{ h3.level }}</span>
+                      <span class="sticky-tab-text">{{ h3.text }}</span>
+                    </button>
+                  </div>
+                  {% endfor %}
+                </div>
+                {% endif %}
               </div>
-              <ul class="sticky-dropdown-list">
-                {% for child in tab.children %}
-                <li class="sticky-dropdown-item level-{{ child.level }}">
-                  <a href="#{{ child.id }}" class="sticky-dropdown-link level-{{ child.level }}" data-target="{{ child.id }}">
-                    <span class="sticky-level-badge level-{{ child.level }}">H{{ child.level }}</span>
-                    <span class="dropdown-item-text">{{ child.text }}</span>
-                  </a>
-                </li>
-                {% endfor %}
-              </ul>
+              {% endfor %}
             </div>
             {% endif %}
-          </li>
+          </div>
           {% endfor %}
-        </ul>
+        </div>
       </nav>
       {% else %}
       <span class="pane-title">本文</span>
