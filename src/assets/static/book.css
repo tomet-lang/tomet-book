@@ -657,6 +657,174 @@ html[data-view="classic"] .classic-view {
 
 .pane-content-header {
   background: var(--surface);
+  padding: 0 8px;
+  overflow: visible;
+}
+
+/* ==================== STICKY TABS (付箋見出し) ==================== */
+.sticky-tabs-bar {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: none;
+}
+.sticky-tabs-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.sticky-tabs-list {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+.sticky-tab-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.sticky-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  user-select: none;
+  max-width: 240px;
+}
+
+.sticky-tab-btn:hover {
+  background: var(--surface-subtle);
+  color: var(--text);
+  border-color: var(--border-subtle);
+}
+
+.sticky-tab-item.is-active .sticky-tab-btn {
+  background: var(--surface-hover);
+  color: var(--text-heading);
+  font-weight: 600;
+  border-color: var(--border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.sticky-tab-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sticky-sub-active-label {
+  display: inline-flex;
+  align-items: center;
+  color: var(--link);
+  font-weight: 500;
+  font-size: 0.68rem;
+  opacity: 0.9;
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sticky-sub-active-label:not([hidden]) {
+  display: inline-block;
+}
+
+.sticky-tab-arrow {
+  display: inline-block;
+  opacity: 0.5;
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.sticky-tab-item.is-open .sticky-tab-arrow {
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+.sticky-tab-dropdown {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  min-width: 160px;
+  max-width: 280px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+  z-index: 1000;
+  padding: 4px 0;
+}
+
+.sticky-dropdown-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.sticky-dropdown-item {
+  margin: 0;
+  padding: 0;
+}
+
+.sticky-dropdown-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: background 0.1s ease, color 0.1s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sticky-dropdown-link:hover {
+  background: var(--surface-hover);
+  color: var(--link);
+}
+
+.sticky-dropdown-link.is-active {
+  color: var(--link);
+  font-weight: 600;
+  background: var(--surface-subtle);
+}
+
+.dropdown-item-bullet {
+  font-size: 0.65rem;
+  opacity: 0.4;
+}
+
+.sticky-dropdown-link.is-active .dropdown-item-bullet {
+  color: var(--link);
+  opacity: 1;
+}
+
+.dropdown-item-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pane-scroll-content {

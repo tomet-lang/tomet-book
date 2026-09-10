@@ -72,6 +72,7 @@ impl<'a> BookRenderer<'a> {
             infobox_rows => &doc.infobox_rows,
             has_data => doc.has_data,
             toc => &doc.toc,
+            section_tabs => &doc.section_tabs,
             body_html => &doc.body_html,
         };
 

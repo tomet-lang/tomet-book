@@ -87,14 +87,24 @@
     const tocLinks = document.querySelectorAll('.book-toc-link');
     const scrollContainer = document.getElementById('book-content-scroll');
 
-    if (scrollContainer && tocLinks.length > 0) {
-      const headingTargets = Array.from(tocLinks)
+    const hasTabs = !!document.getElementById('sticky-tabs-bar');
+    if (scrollContainer && (tocLinks.length > 0 || hasTabs)) {
+      let headingTargets = Array.from(tocLinks)
         .map((link) => {
           const id = link.getAttribute('data-target');
           const el = id ? document.getElementById(id) : null;
           return el ? { id, el, link } : null;
         })
         .filter(Boolean);
+
+      if (headingTargets.length === 0) {
+        const headingEls = scrollContainer.querySelectorAll('h1[id], h2[id], h3[id], h4[id]');
+        headingTargets = Array.from(headingEls).map((el) => ({
+          id: el.id,
+          el,
+          link: null,
+        }));
+      }
 
       let isClickScrolling = false;
       let clickTimer = null;
@@ -119,6 +129,8 @@
           }
         });
       });
+
+      const updateStickyTabs = setupStickyTabs(scrollContainer);
 
       // ScrollSpy: auto-highlight TOC item on scroll
       let scrollTicking = false;
@@ -147,7 +159,7 @@
 
         if (currentId) {
           headingTargets.forEach(({ id, link }) => {
-            if (id === currentId) {
+            if (id === currentId && link) {
               if (!link.classList.contains('is-active')) {
                 tocLinks.forEach((l) => l.classList.remove('is-active'));
                 link.classList.add('is-active');
@@ -155,6 +167,9 @@
               }
             }
           });
+          if (updateStickyTabs) {
+            updateStickyTabs(currentId);
+          }
         }
       };
 
@@ -172,6 +187,138 @@
       );
 
       setTimeout(updateScrollSpy, 150);
+    }
+
+    // 付箋見出し (Sticky-Tab Headings)
+    function setupStickyTabs(scrollContainer) {
+      const tabsBar = document.getElementById('sticky-tabs-bar');
+      if (!tabsBar) return null;
+
+      const tabItems = Array.from(tabsBar.querySelectorAll('.sticky-tab-item'));
+      if (tabItems.length === 0) return null;
+
+      function closeAllDropdowns() {
+        tabItems.forEach((item) => {
+          item.classList.remove('is-open');
+          const dd = item.querySelector('.sticky-tab-dropdown');
+          if (dd) dd.hidden = true;
+        });
+      }
+
+      function scrollToHeading(id) {
+        if (!id || !scrollContainer) return;
+        const target = document.getElementById(id);
+        if (!target) return;
+        const top = target.offsetTop - scrollContainer.offsetTop - 16;
+        scrollContainer.scrollTo({ top, behavior: 'smooth' });
+      }
+
+      tabItems.forEach((item) => {
+        const btn = item.querySelector('.sticky-tab-btn');
+        const dropdown = item.querySelector('.sticky-tab-dropdown');
+        const targetId = item.getAttribute('data-target');
+
+        btn?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const hasChildren = !!dropdown;
+          const isOpen = item.classList.contains('is-open');
+
+          if (hasChildren) {
+            if (isOpen) {
+              closeAllDropdowns();
+            } else {
+              closeAllDropdowns();
+              item.classList.add('is-open');
+              dropdown.hidden = false;
+            }
+          } else {
+            closeAllDropdowns();
+            scrollToHeading(targetId);
+          }
+        });
+
+        dropdown?.querySelectorAll('.sticky-dropdown-link').forEach((link) => {
+          link.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const childId = link.getAttribute('data-target');
+            closeAllDropdowns();
+            scrollToHeading(childId);
+          });
+        });
+      });
+
+      if (!window.__stickyTabsOutsideClickBound) {
+        window.__stickyTabsOutsideClickBound = true;
+        document.addEventListener('click', (e) => {
+          if (!e.target.closest('.sticky-tab-item')) {
+            document.querySelectorAll('.sticky-tab-item.is-open').forEach((item) => {
+              item.classList.remove('is-open');
+              const dd = item.querySelector('.sticky-tab-dropdown');
+              if (dd) dd.hidden = true;
+            });
+          }
+        });
+      }
+
+      return function updateStickyTabsOnScroll(currentId) {
+        if (!currentId) return;
+
+        let activeTabItem = null;
+        let activeChildText = null;
+
+        for (const item of tabItems) {
+          const tabTarget = item.getAttribute('data-target');
+          if (tabTarget === currentId) {
+            activeTabItem = item;
+            activeChildText = null;
+            break;
+          }
+
+          const matchingChild = item.querySelector(`.sticky-dropdown-link[data-target="${currentId}"]`);
+          if (matchingChild) {
+            activeTabItem = item;
+            const textEl = matchingChild.querySelector('.dropdown-item-text');
+            activeChildText = textEl ? textEl.textContent.trim() : matchingChild.textContent.trim();
+            break;
+          }
+        }
+
+        if (activeTabItem) {
+          tabItems.forEach((item) => {
+            const subLabel = item.querySelector('.sticky-sub-active-label');
+            if (item === activeTabItem) {
+              if (!item.classList.contains('is-active')) {
+                item.classList.add('is-active');
+                item.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+              }
+              if (subLabel) {
+                if (activeChildText) {
+                  subLabel.textContent = ` › ${activeChildText}`;
+                  subLabel.hidden = false;
+                } else {
+                  subLabel.textContent = '';
+                  subLabel.hidden = true;
+                }
+              }
+            } else {
+              item.classList.remove('is-active');
+              if (subLabel) {
+                subLabel.textContent = '';
+                subLabel.hidden = true;
+              }
+            }
+
+            item.querySelectorAll('.sticky-dropdown-link').forEach((link) => {
+              if (link.getAttribute('data-target') === currentId) {
+                link.classList.add('is-active');
+              } else {
+                link.classList.remove('is-active');
+              }
+            });
+          });
+        }
+      };
     }
 
     // 1. 目次ペインと常設左縦バーの開閉制御

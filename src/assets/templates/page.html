@@ -185,7 +185,41 @@
   <!-- Pane 3: 本文ペイン -->
   <main class="book-pane pane-content" data-pagefind-body>
     <div class="pane-header pane-content-header">
+      {% if section_tabs and section_tabs | length > 0 %}
+      <nav class="sticky-tabs-bar" id="sticky-tabs-bar" aria-label="付箋見出し" data-pagefind-ignore>
+        <ul class="sticky-tabs-list">
+          {% for tab in section_tabs %}
+          <li class="sticky-tab-item" data-tab-id="{{ tab.id }}" data-target="{{ tab.id }}">
+            <button type="button" class="sticky-tab-btn" data-target="{{ tab.id }}" title="{{ tab.text }}">
+              <span class="sticky-tab-label">{{ tab.text }}</span>
+              {% if tab.children and tab.children | length > 0 %}
+              <span class="sticky-sub-active-label" data-parent="{{ tab.id }}" hidden></span>
+              <svg class="sticky-tab-arrow" viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m6 9 6 6 6-6"></path>
+              </svg>
+              {% endif %}
+            </button>
+            {% if tab.children and tab.children | length > 0 %}
+            <div class="sticky-tab-dropdown" hidden>
+              <ul class="sticky-dropdown-list">
+                {% for child in tab.children %}
+                <li class="sticky-dropdown-item">
+                  <a href="#{{ child.id }}" class="sticky-dropdown-link" data-target="{{ child.id }}">
+                    <span class="dropdown-item-bullet">•</span>
+                    <span class="dropdown-item-text">{{ child.text }}</span>
+                  </a>
+                </li>
+                {% endfor %}
+              </ul>
+            </div>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </nav>
+      {% else %}
       <span class="pane-title">本文</span>
+      {% endif %}
     </div>
     <div class="pane-scroll pane-scroll-content" id="book-content-scroll">
       <div class="pane-article-container">

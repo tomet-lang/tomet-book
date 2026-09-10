@@ -42,7 +42,16 @@ pub struct ProcessedDoc {
     pub infobox_rows: Vec<InfoboxRowItem>,
     pub has_data: bool,
     pub toc: Vec<TocItem>,
+    pub section_tabs: Vec<SectionTab>,
     pub body_html: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct SectionTab {
+    pub id: String,
+    pub text: String,
+    pub level: u32,
+    pub children: Vec<TocItem>,
 }
 
 fn is_link_ref(raw: &str) -> bool {
@@ -336,6 +345,35 @@ pub fn process_tomet_document(
         }
     }
 
+    // 7b. Section tabs for header navigation
+    let mut section_tabs: Vec<SectionTab> = Vec::new();
+
+    for item in &toc {
+        let is_new_tab = match section_tabs.last() {
+            None => true,
+            Some(last) => {
+                if item.level == 1 {
+                    true
+                } else if item.level == 2 && last.level >= 2 {
+                    true
+                } else {
+                    false
+                }
+            }
+        };
+
+        if is_new_tab {
+            section_tabs.push(SectionTab {
+                id: item.id.clone(),
+                text: item.text.clone(),
+                level: item.level,
+                children: Vec::new(),
+            });
+        } else if let Some(current_tab) = section_tabs.last_mut() {
+            current_tab.children.push(item.clone());
+        }
+    }
+
     // 8. Section classification (e.g. "30-39 Knowledge/01 Dev" -> "30-39 Knowledge")
     let section = Path::new(rel_path)
         .parent()
@@ -617,6 +655,7 @@ pub fn process_tomet_document(
         infobox_rows,
         has_data,
         toc,
+        section_tabs,
         body_html: html,
     })
 }
