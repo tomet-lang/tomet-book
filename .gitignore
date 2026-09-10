@@ -1,20 +1,34 @@
 # -----------------------------------------------------------------------
 # Files ignored by Git.
+#
+# Keep project-specific ignore rules in subdirectories whenever possible.
 # -----------------------------------------------------------------------
+
+#[ Zed extension build ]
+editors/zed/extension.wasm
+editors/zed/grammars/
+
+#[ npm ]
+node_modules/
+
+# -----------------------------------------------------------------------
+
+#[ Test output ]
+# Actual snapshot output, written only when it differs from tests/ref/.
+tests/store/
 
 #[ Build file ]
 build/
 dist/
-target/
+package/
 result
 result-*
+target/
 
 #[ Dev ]
 .direnv/
 .claude/
 .cargo/
-!.cargo/
-!.cargo/config.toml
 .idea/
 .zed/
 
@@ -25,4 +39,5 @@ result-*
 
 #[ OS ]
 .DS_Store
+Desktop.ini
 Thumbs.db

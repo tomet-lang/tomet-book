@@ -3,13 +3,13 @@
   pkgs,
   stdenv,
   mkShell,
+  fenix,
 
   tmtbook,
   tomet,
   ...
 }:
 let
-  fenix = inputs.fenix.packages.${stdenv.hostPlatform.system};
   rust-toolchain = fenix.combine [
     (fenix.stable.withComponents [
       "cargo"

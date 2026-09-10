@@ -25,10 +25,14 @@ flake-parts.lib.mkFlake { inherit inputs; } {
 
       devShells.default = pkgs.callPackage ./dev.nix {
         inherit inputs craneLib;
+        fenix = inputs.fenix.packages.${pkgs.stdenv.hostPlatform.system};
+
         tmtbook = pkgs.callPackage ./pkgs/tmtbook.nix { inherit craneLib; };
         tomet = inputs.tomet.packages.${pkgs.system}.tomet;
       };
 
-      treefmt = import ./formatter.nix;
+      treefmt = import ./formatter.nix {
+        tomet = inputs.tomet.packages.${pkgs.system}.tomet;
+      };
     };
 }
