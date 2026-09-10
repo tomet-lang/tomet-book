@@ -26,7 +26,7 @@
   <body class="is-fluid">
     <div class="container is-fluid">
       <div class="floating-controls" id="floating-controls" data-pagefind-ignore>
-        <div class="floating-drag-handle" id="floating-drag-handle" title="ドラッグして移動" aria-label="ドラッグして移動">
+        <div class="floating-drag-handle" id="floating-drag-handle" title="{{ t["drag.handle"] }}" aria-label="{{ t["drag.handle"] }}">
           <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" aria-hidden="true">
             <circle cx="2.5" cy="2" r="1.5" />
             <circle cx="7.5" cy="2" r="1.5" />
@@ -41,16 +41,16 @@
             <input
               type="search"
               id="wiki-search-input"
-              placeholder="検索... (Ctrl+K)"
+              placeholder="{{ t["search.placeholder"] }}"
               autocomplete="off"
               spellcheck="false"
             />
           </div>
           <div id="wiki-search-results" class="search-results" hidden></div>
         </div>
-        <div class="view-switcher" role="group" aria-label="表示モード切替">
-          <button type="button" class="view-btn view-btn-book" id="btn-view-book" title="本モード (マルチペイン)">📖 本</button>
-          <button type="button" class="view-btn view-btn-classic" id="btn-view-classic" title="縦スクロールモード">📄 縦</button>
+        <div class="view-switcher" role="group" aria-label="{{ t["view.switch"] }}">
+          <button type="button" class="view-btn view-btn-book" id="btn-view-book" title="{{ t["view.book_title"] }}">{{ t["view.book"] }}</button>
+          <button type="button" class="view-btn view-btn-classic" id="btn-view-classic" title="{{ t["view.classic_title"] }}">{{ t["view.classic"] }}</button>
         </div>
       </div>
 
@@ -80,7 +80,7 @@
     <!-- Image Lightbox Modal -->
     <div id="wiki-image-lightbox" class="lightbox-overlay" hidden data-pagefind-ignore>
       <div class="lightbox-dialog">
-        <button type="button" class="lightbox-close" aria-label="閉じる">✕</button>
+        <button type="button" class="lightbox-close" aria-label="{{ t["lightbox.close"] }}">✕</button>
         <div class="lightbox-img-wrapper">
           <img id="lightbox-img" src="" alt="" />
         </div>
@@ -88,6 +88,7 @@
       </div>
     </div>
 
+    <script>window.tmtStrings = {{ t | tojson | safe }};</script>
     <script src="/book.js"></script>
   </body>
 </html>

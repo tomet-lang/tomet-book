@@ -64,10 +64,97 @@ pub struct UiConfig {
     pub hero_chips: Vec<HeroChipConfig>,
     #[serde(default)]
     pub infobox: InfoboxConfig,
+    /// Every piece of text the interface shows, keyed by name.
+    ///
+    /// Defaults are Japanese; `[ui.strings]` in `tmtbook.toml` overrides any
+    /// subset of them, and anything left out keeps its default.
+    #[serde(default = "default_ui_strings")]
+    pub strings: HashMap<String, String>,
+}
+
+impl UiConfig {
+    /// Restore any string the user's config did not mention.
+    ///
+    /// A partial `[ui.strings]` table replaces the whole map during
+    /// deserialization, so without this an override of one label would blank
+    /// out the rest of the interface.
+    fn fill_string_defaults(&mut self) {
+        for (key, value) in default_ui_strings() {
+            self.strings.entry(key).or_insert(value);
+        }
+    }
 }
 
 fn default_view() -> String {
     "book".to_string()
+}
+
+/// The interface's text, in the language the book is written in by default.
+fn default_ui_strings() -> HashMap<String, String> {
+    [
+        // Panes and navigation
+        ("pane.toc", "目次"),
+        ("pane.links", "リンク"),
+        ("pane.graph", "グラフ"),
+        ("pane.content", "本文"),
+        ("pane.data", "データ・プロファイル"),
+        ("pane.data_short", "データ"),
+        ("pane.collapse", "クリックしてパネルを折りたたむ"),
+        ("pane.data_expand", "クリックしてデータを展開"),
+        ("pane.data_collapse", "クリックしてデータを折りたたむ"),
+        ("nav.home", "← ホーム"),
+        ("nav.home_title", "ホームへ"),
+        ("nav.section", "分類:"),
+        ("nav.bar", "ナビゲーションバー"),
+        // Content chrome
+        ("toc.heading", "目次"),
+        ("recent.heading", "最近開いたノート"),
+        ("backlinks.heading", "バックリンク"),
+        ("backlinks.empty", "リンクしているノートはありません"),
+        ("graph.heading", "ローカルグラフ"),
+        ("graph.placeholder", "グラフ準備中"),
+        ("sticky.label", "付箋見出し"),
+        ("sticky.children", "子見出し"),
+        ("costume.label", "衣装:"),
+        ("costume.item", "衣装"),
+        ("image.zoom", "拡大"),
+        ("image.zoom_banner", "バナーを拡大表示"),
+        ("image.banner_alt", "バナー"),
+        ("lightbox.close", "閉じる"),
+        // Catalog page
+        ("index.sections", "セクション分類"),
+        ("index.entries", "ノート一覧"),
+        ("index.note_unit", "ノート"),
+        // Controls
+        ("view.switch", "表示モード切替"),
+        ("view.book", "📖 本"),
+        ("view.book_title", "本モード (マルチペイン)"),
+        ("view.classic", "📄 縦"),
+        ("view.classic_title", "縦スクロールモード"),
+        ("drag.handle", "ドラッグして移動"),
+        ("theme.toggle", "テーマ切り替え (ライト / ダーク)"),
+        ("theme.toggle_label", "テーマ切り替え"),
+        ("theme.to_light", "ライトテーマに切り替え"),
+        ("theme.to_dark", "ダークテーマに切り替え"),
+        // Search
+        ("search.placeholder", "検索... (Ctrl+K)"),
+        ("search.loading", "検索インデックスを準備中..."),
+        ("search.empty", "見つかりませんでした"),
+        // Editing
+        ("edit.open", "編集"),
+        ("edit.editor", "エディタで開く"),
+        ("edit.vscode", "VSCode で開く"),
+        ("edit.cursor", "Cursor で開く"),
+        ("edit.copy_path", "パスをコピー"),
+        ("edit.copy_path_title", "ファイルパスをコピー"),
+        ("toast.copied", "📋 パスをクリップボードにコピーしました"),
+        ("toast.copy_failed", "❌ コピーに失敗しました"),
+        // Links that point at a page nobody has written yet
+        ("link.unresolved", "未作成のページ"),
+    ]
+    .into_iter()
+    .map(|(k, v)| (k.to_string(), v.to_string()))
+    .collect()
 }
 
 fn default_hero_chips() -> Vec<HeroChipConfig> {
@@ -103,6 +190,7 @@ impl Default for UiConfig {
             custom_css: Vec::new(),
             hero_chips: default_hero_chips(),
             infobox: InfoboxConfig::default(),
+            strings: default_ui_strings(),
         }
     }
 }
@@ -253,8 +341,9 @@ impl BookConfig {
         if config_path.exists() {
             let content = std::fs::read_to_string(&config_path)
                 .with_context(|| format!("Failed to read {}", config_path.display()))?;
-            let cfg: BookConfig = toml::from_str(&content)
+            let mut cfg: BookConfig = toml::from_str(&content)
                 .with_context(|| format!("Failed to parse {}", config_path.display()))?;
+            cfg.ui.fill_string_defaults();
             Ok(cfg)
         } else {
             Ok(BookConfig::default())
@@ -310,5 +399,67 @@ mod tests {
         let cfg = prefixes("/", "/");
         assert_eq!(cfg.wiki_out_rel(), "");
         assert_eq!(cfg.clean_url_prefix(), "");
+    }
+}
+
+#[cfg(test)]
+mod string_tests {
+    use super::*;
+
+    fn load(toml_src: &str) -> BookConfig {
+        let dir = std::env::temp_dir().join(format!(
+            "tmtbook-cfg-{}-{:?}",
+            std::process::id(),
+            std::thread::current().id()
+        ));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("tmtbook.toml"), toml_src).unwrap();
+        let cfg = BookConfig::load_from_dir(&dir).unwrap();
+        let _ = std::fs::remove_dir_all(&dir);
+        cfg
+    }
+
+    #[test]
+    fn the_defaults_are_complete_without_a_config_file() {
+        let cfg = BookConfig::default();
+        assert_eq!(
+            cfg.ui.strings.get("pane.toc").map(String::as_str),
+            Some("目次")
+        );
+        assert!(cfg.ui.strings.contains_key("search.placeholder"));
+    }
+
+    #[test]
+    fn a_config_without_a_strings_table_keeps_every_default() {
+        let cfg = load("[book]\ntitle = \"X\"\n");
+        assert_eq!(cfg.ui.strings.len(), default_ui_strings().len());
+    }
+
+    #[test]
+    fn overriding_one_string_leaves_the_rest_intact() {
+        // A partial table replaces the whole map during deserialization, so
+        // this is the case that would blank out the interface.
+        let cfg = load("[ui.strings]\n\"pane.toc\" = \"Contents\"\n");
+
+        assert_eq!(
+            cfg.ui.strings.get("pane.toc").map(String::as_str),
+            Some("Contents")
+        );
+        assert_eq!(
+            cfg.ui.strings.get("pane.content").map(String::as_str),
+            Some("本文"),
+            "untouched strings must survive"
+        );
+        assert_eq!(cfg.ui.strings.len(), default_ui_strings().len());
+    }
+
+    #[test]
+    fn an_unknown_string_key_is_kept_rather_than_dropped() {
+        let cfg = load("[ui.strings]\n\"custom.key\" = \"mine\"\n");
+        assert_eq!(
+            cfg.ui.strings.get("custom.key").map(String::as_str),
+            Some("mine")
+        );
     }
 }

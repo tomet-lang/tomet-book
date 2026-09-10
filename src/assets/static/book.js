@@ -1,4 +1,10 @@
 (() => {
+  // ==================== UI STRINGS ====================
+  // Injected by base.html from `[ui.strings]`; the fallback keeps this file
+  // working if it is ever loaded on a page that did not set them.
+  const STRINGS = window.tmtStrings || {};
+  const t = (key, fallback = "") => STRINGS[key] ?? fallback;
+
   // ==================== THEME CONTROLLER ====================
   function getSystemTheme() {
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -14,7 +20,7 @@
 
   function syncThemeIcons() {
     const isDark = getEffectiveTheme() === 'dark';
-    const titleStr = isDark ? 'ライトテーマに切り替え' : 'ダークテーマに切り替え';
+    const titleStr = isDark ? t('theme.to_light') : t('theme.to_dark');
 
     const themeBtns = document.querySelectorAll('.theme-toggle-btn, #btn-rail-theme');
     themeBtns.forEach((btn) => {
@@ -419,7 +425,7 @@
         const parentText = btn.querySelector('.sticky-tab-text')?.textContent || '';
         const parentLevel = node.getAttribute('data-level') || '1';
 
-        popoverTitle.innerHTML = `<span class="sticky-level-badge level-${parentLevel}">H${parentLevel}</span> <span>${parentText} の子見出し (${childNodes.length})</span>`;
+        popoverTitle.innerHTML = `<span class="sticky-level-badge level-${parentLevel}">H${parentLevel}</span> <span>${parentText} ${t("sticky.children")} (${childNodes.length})</span>`;
 
         popoverList.innerHTML = '';
         childNodes.forEach((child) => {
@@ -520,9 +526,9 @@
     // 1. 目次ペインと常設左縦バーの開閉制御
     function setupNavPane() {
       const titles = {
-        toc: '目次',
-        links: 'リンク',
-        graph: 'グラフ',
+        toc: t('pane.toc'),
+        links: t('pane.links'),
+        graph: t('pane.graph'),
       };
 
       function switchPanel(panelName, expandIfCollapsed = true) {
@@ -877,14 +883,14 @@
       searchDebounceTimer = setTimeout(async () => {
         const pf = await getPagefind();
         if (!pf) {
-          resultsContainer.innerHTML = '<div class="search-status">検索インデックスを準備中...</div>';
+          resultsContainer.innerHTML = `<div class="search-status">${t('search.loading')}</div>`;
           resultsContainer.hidden = false;
           return;
         }
 
         const search = await pf.search(query);
         if (!search || search.results.length === 0) {
-          resultsContainer.innerHTML = '<div class="search-status">見つかりませんでした</div>';
+          resultsContainer.innerHTML = `<div class="search-status">${t('search.empty')}</div>`;
           resultsContainer.hidden = false;
           selectedIndex = -1;
           return;
@@ -1467,9 +1473,9 @@
         if (path) {
           try {
             await navigator.clipboard.writeText(path);
-            showToast('📋 パスをクリップボードにコピーしました');
+            showToast(t('toast.copied'));
           } catch {
-            showToast('❌ コピーに失敗しました');
+            showToast(t('toast.copy_failed'));
           }
         }
         const dropdown = btn.closest('.edit-dropdown');

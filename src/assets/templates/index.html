@@ -7,7 +7,7 @@
       <h1 style="font-size: 2rem; margin: 0 0 6px 0;">{{ site_title }}</h1>
       <p style="color: var(--text-muted); font-size: 0.95rem; margin: 0;">{{ description | default('Total notes: ' ~ entries | length) }}</p>
     </div>
-    <button type="button" class="theme-toggle-btn" title="テーマ切り替え (ライト / ダーク)" aria-label="テーマ切り替え">
+    <button type="button" class="theme-toggle-btn" title="{{ t["theme.toggle"] }}" aria-label="{{ t["theme.toggle_label"] }}">
       <svg class="icon-theme icon-sun" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="4"></circle>
         <path d="M12 2v2"></path>
@@ -27,12 +27,12 @@
 
   {% if sections and sections | length > 0 %}
   <section style="margin-bottom: 32px;">
-    <h2 style="font-size: 1.35rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 6px; margin-bottom: 16px;">セクション分類</h2>
+    <h2 style="font-size: 1.35rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 6px; margin-bottom: 16px;">{{ t["index.sections"] }}</h2>
     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;">
       {% for sec in sections %}
       <div style="background: var(--surface); border: 1px solid var(--border); padding: 14px 16px;">
         <h3 style="margin: 0 0 4px 0; font-size: 1.05rem;">{{ sec.name }}</h3>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">{{ sec.count }} ノート</p>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">{{ sec.count }} {{ t["index.note_unit"] }}</p>
       </div>
       {% endfor %}
     </div>
@@ -40,7 +40,7 @@
   {% endif %}
 
   <section>
-    <h2 style="font-size: 1.35rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 6px; margin-bottom: 16px;">ノート一覧</h2>
+    <h2 style="font-size: 1.35rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 6px; margin-bottom: 16px;">{{ t["index.entries"] }}</h2>
     <div style="background: var(--surface); border: 1px solid var(--border); padding: 16px 20px;">
       <ul style="list-style: square; padding-left: 20px; margin: 0;">
         {% for entry in entries %}
