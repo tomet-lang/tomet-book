@@ -14,22 +14,12 @@
 
   function syncThemeIcons() {
     const isDark = getEffectiveTheme() === 'dark';
-    const iconStr = isDark ? '☀️' : '🌙';
     const titleStr = isDark ? 'ライトテーマに切り替え' : 'ダークテーマに切り替え';
 
-    const railBtn = document.getElementById('btn-rail-theme');
-    if (railBtn) {
-      const icon = railBtn.querySelector('.rail-theme-icon');
-      if (icon) icon.textContent = iconStr;
-      railBtn.title = titleStr;
-    }
-
-    const floatBtn = document.getElementById('btn-floating-theme');
-    if (floatBtn) {
-      const icon = floatBtn.querySelector('.theme-icon');
-      if (icon) icon.textContent = iconStr;
-      floatBtn.title = titleStr;
-    }
+    const themeBtns = document.querySelectorAll('.theme-toggle-btn, #btn-rail-theme');
+    themeBtns.forEach((btn) => {
+      btn.title = titleStr;
+    });
   }
 
   function toggleTheme() {
@@ -43,21 +33,13 @@
   }
 
   function setupThemeToggle() {
-    const railBtn = document.getElementById('btn-rail-theme');
-    const floatBtn = document.getElementById('btn-floating-theme');
-
-    if (railBtn) {
-      railBtn.onclick = (e) => {
+    const themeBtns = document.querySelectorAll('.theme-toggle-btn, #btn-rail-theme');
+    themeBtns.forEach((btn) => {
+      btn.onclick = (e) => {
         e.preventDefault();
         toggleTheme();
       };
-    }
-    if (floatBtn) {
-      floatBtn.onclick = (e) => {
-        e.preventDefault();
-        toggleTheme();
-      };
-    }
+    });
     syncThemeIcons();
   }
 
@@ -192,43 +174,94 @@
     // 1. 目次ペインと常設左縦バーの開閉制御
     function setupNavPane() {
       const paneNav = document.getElementById('pane-nav');
-      const btnRailToc = document.getElementById('btn-rail-toc');
+      const paneTitle = document.getElementById('pane-nav-title');
+      const railTabs = document.querySelectorAll('.rail-tab-nav');
+      const panelViews = document.querySelectorAll('.pane-panel-view');
       const btnCollapseNav = document.getElementById('header-collapse-nav');
 
-      function updateNavState(isCollapsed) {
-        if (!paneNav) return;
-        if (isCollapsed) {
-          paneNav.classList.add('is-collapsed');
-          if (btnRailToc) btnRailToc.classList.remove('is-active');
-        } else {
+      if (!paneNav) return;
+
+      const titles = {
+        toc: '目次',
+        links: 'リンク',
+        graph: 'グラフ',
+      };
+
+      let activePanel = 'toc';
+
+      function switchPanel(panelName, expandIfCollapsed = true) {
+        activePanel = panelName;
+
+        if (expandIfCollapsed) {
           paneNav.classList.remove('is-collapsed');
-          if (btnRailToc) btnRailToc.classList.add('is-active');
+          try {
+            localStorage.setItem('wiki-pane-nav-collapsed', 'false');
+          } catch (e) {}
+        }
+
+        railTabs.forEach((tab) => {
+          if (tab.getAttribute('data-panel') === panelName && !paneNav.classList.contains('is-collapsed')) {
+            tab.classList.add('is-active');
+          } else {
+            tab.classList.remove('is-active');
+          }
+        });
+
+        panelViews.forEach((view) => {
+          if (view.id === `pane-panel-${panelName}`) {
+            view.hidden = false;
+            view.classList.add('is-active');
+          } else {
+            view.hidden = true;
+            view.classList.remove('is-active');
+          }
+        });
+
+        if (paneTitle && titles[panelName]) {
+          paneTitle.textContent = titles[panelName];
         }
       }
 
+      function collapsePane() {
+        paneNav.classList.add('is-collapsed');
+        railTabs.forEach((tab) => tab.classList.remove('is-active'));
+        try {
+          localStorage.setItem('wiki-pane-nav-collapsed', 'true');
+        } catch (e) {}
+      }
+
+      // Restore collapsed state
       try {
         const isNarrow = window.innerWidth <= 900;
         const navSetting = localStorage.getItem('wiki-pane-nav-collapsed');
         const isCollapsed = navSetting !== null ? navSetting === 'true' : isNarrow;
-        updateNavState(isCollapsed);
+        if (isCollapsed) {
+          collapsePane();
+        } else {
+          switchPanel('toc', true);
+        }
       } catch (e) {}
 
-      btnRailToc?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const currentlyCollapsed = paneNav?.classList.contains('is-collapsed') ?? false;
-        const next = !currentlyCollapsed;
-        updateNavState(next);
-        try {
-          localStorage.setItem('wiki-pane-nav-collapsed', String(next));
-        } catch (e) {}
+      railTabs.forEach((tab) => {
+        tab.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const panel = tab.getAttribute('data-panel');
+          if (!panel) return;
+
+          const isCollapsed = paneNav.classList.contains('is-collapsed');
+          if (isCollapsed) {
+            switchPanel(panel, true);
+          } else if (activePanel === panel) {
+            collapsePane();
+          } else {
+            switchPanel(panel, true);
+          }
+        });
       });
 
       const handleNavCollapse = (e) => {
         e.stopPropagation();
-        updateNavState(true);
-        try {
-          localStorage.setItem('wiki-pane-nav-collapsed', 'true');
-        } catch (e) {}
+        collapsePane();
       };
 
       btnCollapseNav?.addEventListener('click', handleNavCollapse);

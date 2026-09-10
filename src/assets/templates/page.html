@@ -18,74 +18,114 @@
 
     <!-- Navigation / Tools -->
     <div class="rail-tools">
-      <button type="button" class="rail-tab rail-tab-toc is-active" id="btn-rail-toc" title="目次を開閉" aria-label="目次を開閉">
-        <span class="rail-letters rail-letters-toc">
+      <button type="button" class="rail-tab rail-tab-nav is-active" id="btn-rail-toc" data-panel="toc" title="目次" aria-label="目次">
+        <span class="rail-letters">
           <span>目</span>
           <span>次</span>
+        </span>
+      </button>
+      <button type="button" class="rail-tab rail-tab-nav" id="btn-rail-links" data-panel="links" title="リンク" aria-label="リンク">
+        <span class="rail-letters">
+          <span>リ</span>
+          <span>ン</span>
+          <span>ク</span>
+        </span>
+      </button>
+      <button type="button" class="rail-tab rail-tab-nav" id="btn-rail-graph" data-panel="graph" title="グラフ" aria-label="グラフ">
+        <span class="rail-letters">
+          <span>グ</span>
+          <span>ラ</span>
+          <span>フ</span>
         </span>
       </button>
     </div>
 
     <!-- Bottom Footer (Theme Switcher) -->
     <div class="rail-footer">
-      <button type="button" class="rail-tab rail-tab-theme" id="btn-rail-theme" title="テーマ切り替え (ライト / ダーク)" aria-label="テーマ切り替え">
-        <span class="rail-theme-icon" id="rail-theme-icon">🌓</span>
+      <button type="button" class="rail-tab rail-tab-theme theme-toggle-btn" id="btn-rail-theme" title="テーマ切り替え (ライト / ダーク)" aria-label="テーマ切り替え">
+        <svg class="icon-theme icon-sun" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2"></path>
+          <path d="M12 20v2"></path>
+          <path d="m4.93 4.93 1.41 1.41"></path>
+          <path d="m17.66 17.66 1.41 1.41"></path>
+          <path d="M2 12h2"></path>
+          <path d="M20 12h2"></path>
+          <path d="m6.34 17.66-1.41 1.41"></path>
+          <path d="m19.07 4.93-1.41 1.41"></path>
+        </svg>
+        <svg class="icon-theme icon-moon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+        </svg>
       </button>
     </div>
   </nav>
 
   <div class="book-view" id="wiki-book-view">
 
-  <!-- Pane 1: 目次ペイン -->
+  <!-- Pane 1: ナビゲーション・ツールペイン -->
   <aside class="book-pane pane-nav" id="pane-nav" data-pagefind-ignore>
-    <div class="pane-header pane-header-collapsible" id="header-collapse-nav" title="クリックして目次を折りたたむ" role="button" tabindex="0">
-      <span class="pane-title">目次</span>
+    <div class="pane-header pane-header-collapsible" id="header-collapse-nav" title="クリックしてパネルを折りたたむ" role="button" tabindex="0">
+      <span class="pane-title" id="pane-nav-title">目次</span>
       <span class="pane-collapse-arrow">◀</span>
     </div>
     <div class="pane-scroll">
-      <nav class="nav-breadcrumbs">
-        <a href="/wiki" class="nav-crumb-home">← ホーム</a>
-        {% if section %}
-        <div class="nav-crumb-section">
-          <span class="crumb-label">分類:</span>
-          <span class="crumb-val" data-pagefind-filter="section">{{ section }}</span>
+      <!-- 1. TOC Panel View -->
+      <div class="pane-panel-view is-active" id="pane-panel-toc">
+        <nav class="nav-breadcrumbs">
+          <a href="/wiki" class="nav-crumb-home">← ホーム</a>
+          {% if section %}
+          <div class="nav-crumb-section">
+            <span class="crumb-label">分類:</span>
+            <span class="crumb-val" data-pagefind-filter="section">{{ section }}</span>
+          </div>
+          {% endif %}
+        </nav>
+
+        {% if toc and toc | length > 0 %}
+        <div class="pane-toc">
+          <div class="toc-heading">目次</div>
+          <ul class="toc-items">
+            {% for item in toc %}
+            <li class="toc-item" style="margin-left: {{ (item.level - 2) * 12 }}px">
+              <a href="#{{ item.id }}" class="book-toc-link" data-target="{{ item.id }}">{{ item.text }}</a>
+            </li>
+            {% endfor %}
+          </ul>
         </div>
         {% endif %}
-      </nav>
 
-      {% if toc and toc | length > 0 %}
-      <div class="pane-toc">
-        <div class="toc-heading">目次</div>
-        <ul class="toc-items">
-          {% for item in toc %}
-          <li class="toc-item" style="margin-left: {{ (item.level - 2) * 12 }}px">
-            <a href="#{{ item.id }}" class="book-toc-link" data-target="{{ item.id }}">{{ item.text }}</a>
-          </li>
-          {% endfor %}
-        </ul>
-      </div>
-      {% endif %}
-
-      <!-- Backlinks Placeholder -->
-      <div class="pane-nav-section pane-backlinks" id="pane-backlinks-section">
-        <div class="toc-heading">バックリンク (0)</div>
-        <div class="pane-placeholder-box">
-          <span class="placeholder-text">リンクしているノートはありません</span>
+        <div class="pane-recent" id="pane-recent-section" hidden>
+          <div class="toc-heading">最近開いたノート</div>
+          <ul class="recent-items" id="pane-recent-list"></ul>
         </div>
       </div>
 
-      <!-- Local Graph Placeholder -->
-      <div class="pane-nav-section pane-graph" id="pane-graph-section">
-        <div class="toc-heading">ローカルグラフ</div>
-        <div class="pane-placeholder-box pane-graph-box">
-          <span class="placeholder-icon">🕸️</span>
-          <span class="placeholder-text">グラフ準備中</span>
+      <!-- 2. Backlinks Panel View -->
+      <div class="pane-panel-view" id="pane-panel-links" hidden>
+        <div class="pane-tab-inner">
+          <div class="toc-heading">バックリンク (0)</div>
+          <div class="pane-placeholder-box">
+            <span class="placeholder-text">リンクしているノートはありません</span>
+          </div>
         </div>
       </div>
 
-      <div class="pane-recent" id="pane-recent-section" hidden>
-        <div class="toc-heading">最近開いたノート</div>
-        <ul class="recent-items" id="pane-recent-list"></ul>
+      <!-- 3. Local Graph Panel View -->
+      <div class="pane-panel-view" id="pane-panel-graph" hidden>
+        <div class="pane-tab-inner">
+          <div class="toc-heading">ローカルグラフ</div>
+          <div class="pane-placeholder-box pane-graph-box">
+            <svg class="placeholder-svg-icon" viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+            <span class="placeholder-text">グラフ準備中</span>
+          </div>
+        </div>
       </div>
     </div>
   </aside>
@@ -192,7 +232,7 @@
             <div class="hero-actions">
               <div class="edit-dropdown">
                 <button type="button" class="hero-action-btn btn-edit-open" title="エディタで開く" aria-label="エディタで開く">
-                  <svg class="icon-edit" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <svg class="icon-edit" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 20h9"></path>
                     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                   </svg>
@@ -201,13 +241,25 @@
                 </button>
                 <div class="edit-dropdown-menu" hidden>
                   <a href="vscode://file{{ source_path }}" class="edit-dropdown-item" title="VSCode で開く">
-                    <span class="item-icon">🔷</span> VSCode で開く
+                    <svg class="item-svg" viewBox="0 0 24 24" width="13" height="13" stroke="#007acc" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="m18 16 4-4-4-4"></path>
+                      <path d="m6 8-4 4 4 4"></path>
+                      <path d="m14.5 4-5 16"></path>
+                    </svg>
+                    <span>VSCode で開く</span>
                   </a>
                   <a href="cursor://file{{ source_path }}" class="edit-dropdown-item" title="Cursor で開く">
-                    <span class="item-icon">⚡</span> Cursor で開く
+                    <svg class="item-svg" viewBox="0 0 24 24" width="13" height="13" stroke="#e5a000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="m4.037 4.688 15.376 6.15a.994.994 0 0 1 .09 1.834l-5.69 2.53-2.53 5.69a.994.994 0 0 1-1.834-.09l-6.15-15.376a.993.993 0 0 1 .738-.738z"></path>
+                    </svg>
+                    <span>Cursor で開く</span>
                   </a>
                   <button type="button" class="edit-dropdown-item btn-copy-path" data-path="{{ source_path }}" title="ファイルパスをコピー">
-                    <span class="item-icon">📋</span> パスをコピー
+                    <svg class="item-svg" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                      <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                    </svg>
+                    <span>パスをコピー</span>
                   </button>
                 </div>
               </div>
@@ -244,7 +296,7 @@
           <div class="hero-actions">
             <div class="edit-dropdown">
               <button type="button" class="hero-action-btn btn-edit-open" title="エディタで開く" aria-label="エディタで開く">
-                <svg class="icon-edit" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="icon-edit" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M12 20h9"></path>
                   <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                 </svg>
@@ -253,13 +305,25 @@
               </button>
               <div class="edit-dropdown-menu" hidden>
                 <a href="vscode://file{{ source_path }}" class="edit-dropdown-item" title="VSCode で開く">
-                  <span class="item-icon">🔷</span> VSCode で開く
+                  <svg class="item-svg" viewBox="0 0 24 24" width="13" height="13" stroke="#007acc" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m18 16 4-4-4-4"></path>
+                    <path d="m6 8-4 4 4 4"></path>
+                    <path d="m14.5 4-5 16"></path>
+                  </svg>
+                  <span>VSCode で開く</span>
                 </a>
                 <a href="cursor://file{{ source_path }}" class="edit-dropdown-item" title="Cursor で開く">
-                  <span class="item-icon">⚡</span> Cursor で開く
+                  <svg class="item-svg" viewBox="0 0 24 24" width="13" height="13" stroke="#e5a000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m4.037 4.688 15.376 6.15a.994.994 0 0 1 .09 1.834l-5.69 2.53-2.53 5.69a.994.994 0 0 1-1.834-.09l-6.15-15.376a.993.993 0 0 1 .738-.738z"></path>
+                  </svg>
+                  <span>Cursor で開く</span>
                 </a>
                 <button type="button" class="edit-dropdown-item btn-copy-path" data-path="{{ source_path }}" title="ファイルパスをコピー">
-                  <span class="item-icon">📋</span> パスをコピー
+                  <svg class="item-svg" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                  </svg>
+                  <span>パスをコピー</span>
                 </button>
               </div>
             </div>
@@ -279,8 +343,26 @@
 
 <!-- ==================== 2. CLASSIC VIEW (縦スクロール) ==================== -->
 <div class="classic-view" id="wiki-classic-view" data-pagefind-ignore>
-  <nav class="breadcrumb">
-    <a href="/wiki">← Home</a>{% if section %} / <span class="breadcrumb-section">{{ section }}</span>{% endif %} / <span>{{ page_title }}</span>
+  <nav class="breadcrumb breadcrumb-classic" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+      <a href="/wiki">← Home</a>{% if section %} / <span class="breadcrumb-section">{{ section }}</span>{% endif %} / <span>{{ page_title }}</span>
+    </div>
+    <button type="button" class="theme-toggle-btn" title="テーマ切り替え (ライト / ダーク)" aria-label="テーマ切り替え">
+      <svg class="icon-theme icon-sun" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="4"></circle>
+        <path d="M12 2v2"></path>
+        <path d="M12 20v2"></path>
+        <path d="m4.93 4.93 1.41 1.41"></path>
+        <path d="m17.66 17.66 1.41 1.41"></path>
+        <path d="M2 12h2"></path>
+        <path d="M20 12h2"></path>
+        <path d="m6.34 17.66-1.41 1.41"></path>
+        <path d="m19.07 4.93-1.41 1.41"></path>
+      </svg>
+      <svg class="icon-theme icon-moon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+      </svg>
+    </button>
   </nav>
 
   {% if banner_url %}
@@ -337,7 +419,7 @@
       <div class="hero-actions">
         <div class="edit-dropdown">
           <button type="button" class="hero-action-btn btn-edit-open" title="エディタで開く" aria-label="エディタで開く">
-            <svg class="icon-edit" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="icon-edit" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 20h9"></path>
               <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
             </svg>
@@ -346,13 +428,25 @@
           </button>
           <div class="edit-dropdown-menu" hidden>
             <a href="vscode://file{{ source_path }}" class="edit-dropdown-item" title="VSCode で開く">
-              <span class="item-icon">🔷</span> VSCode で開く
+              <svg class="item-svg" viewBox="0 0 24 24" width="13" height="13" stroke="#007acc" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m18 16 4-4-4-4"></path>
+                <path d="m6 8-4 4 4 4"></path>
+                <path d="m14.5 4-5 16"></path>
+              </svg>
+              <span>VSCode で開く</span>
             </a>
             <a href="cursor://file{{ source_path }}" class="edit-dropdown-item" title="Cursor で開く">
-              <span class="item-icon">⚡</span> Cursor で開く
+              <svg class="item-svg" viewBox="0 0 24 24" width="13" height="13" stroke="#e5a000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m4.037 4.688 15.376 6.15a.994.994 0 0 1 .09 1.834l-5.69 2.53-2.53 5.69a.994.994 0 0 1-1.834-.09l-6.15-15.376a.993.993 0 0 1 .738-.738z"></path>
+              </svg>
+              <span>Cursor で開く</span>
             </a>
             <button type="button" class="edit-dropdown-item btn-copy-path" data-path="{{ source_path }}" title="ファイルパスをコピー">
-              <span class="item-icon">📋</span> パスをコピー
+              <svg class="item-svg" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+              </svg>
+              <span>パスをコピー</span>
             </button>
           </div>
         </div>
@@ -392,7 +486,7 @@
     <div class="hero-actions">
       <div class="edit-dropdown">
         <button type="button" class="hero-action-btn btn-edit-open" title="エディタで開く" aria-label="エディタで開く">
-          <svg class="icon-edit" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="icon-edit" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 20h9"></path>
             <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
           </svg>
@@ -401,13 +495,25 @@
         </button>
         <div class="edit-dropdown-menu" hidden>
           <a href="vscode://file{{ source_path }}" class="edit-dropdown-item" title="VSCode で開く">
-            <span class="item-icon">🔷</span> VSCode で開く
+            <svg class="item-svg" viewBox="0 0 24 24" width="13" height="13" stroke="#007acc" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m18 16 4-4-4-4"></path>
+              <path d="m6 8-4 4 4 4"></path>
+              <path d="m14.5 4-5 16"></path>
+            </svg>
+            <span>VSCode で開く</span>
           </a>
           <a href="cursor://file{{ source_path }}" class="edit-dropdown-item" title="Cursor で開く">
-            <span class="item-icon">⚡</span> Cursor で開く
+            <svg class="item-svg" viewBox="0 0 24 24" width="13" height="13" stroke="#e5a000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m4.037 4.688 15.376 6.15a.994.994 0 0 1 .09 1.834l-5.69 2.53-2.53 5.69a.994.994 0 0 1-1.834-.09l-6.15-15.376a.993.993 0 0 1 .738-.738z"></path>
+            </svg>
+            <span>Cursor で開く</span>
           </a>
           <button type="button" class="edit-dropdown-item btn-copy-path" data-path="{{ source_path }}" title="ファイルパスをコピー">
-            <span class="item-icon">📋</span> パスをコピー
+            <svg class="item-svg" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+            </svg>
+            <span>パスをコピー</span>
           </button>
         </div>
       </div>

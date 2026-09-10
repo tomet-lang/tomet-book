@@ -2,9 +2,27 @@
 
 {% block content %}
 <div class="classic-view" style="display: block; max-width: 960px; margin: 0 auto; padding: 24px 20px;" data-pagefind-ignore>
-  <header class="site-header" style="margin-bottom: 24px;">
-    <h1 style="font-size: 2rem; margin: 0 0 6px 0;">{{ site_title }}</h1>
-    <p style="color: var(--text-muted); font-size: 0.95rem; margin: 0;">{{ description | default('Total notes: ' ~ entries | length) }}</p>
+  <header class="site-header site-header-index" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start;">
+    <div>
+      <h1 style="font-size: 2rem; margin: 0 0 6px 0;">{{ site_title }}</h1>
+      <p style="color: var(--text-muted); font-size: 0.95rem; margin: 0;">{{ description | default('Total notes: ' ~ entries | length) }}</p>
+    </div>
+    <button type="button" class="theme-toggle-btn" title="テーマ切り替え (ライト / ダーク)" aria-label="テーマ切り替え">
+      <svg class="icon-theme icon-sun" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="4"></circle>
+        <path d="M12 2v2"></path>
+        <path d="M12 20v2"></path>
+        <path d="m4.93 4.93 1.41 1.41"></path>
+        <path d="m17.66 17.66 1.41 1.41"></path>
+        <path d="M2 12h2"></path>
+        <path d="M20 12h2"></path>
+        <path d="m6.34 17.66-1.41 1.41"></path>
+        <path d="m19.07 4.93-1.41 1.41"></path>
+      </svg>
+      <svg class="icon-theme icon-moon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+      </svg>
+    </button>
   </header>
 
   {% if sections and sections | length > 0 %}
