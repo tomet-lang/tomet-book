@@ -377,7 +377,7 @@ html[data-view="classic"] .classic-view {
 
 .pane-header {
   height: 41px;
-  background: var(--surface-subtle);
+  background: #dfe3e8; /* 付箋と明確に分ける落ち着いた暗めヘッダー背景 */
   border-bottom: 1px solid var(--border);
   padding: 0 10px;
   display: flex;
@@ -390,6 +390,10 @@ html[data-view="classic"] .classic-view {
   user-select: none;
   flex-shrink: 0;
   box-sizing: border-box;
+}
+
+[data-theme="dark"] .pane-header {
+  background: #16191d; /* ダークモードでの暗めヘッダー背景 */
 }
 
 .pane-header-collapsible {
@@ -689,7 +693,7 @@ html[data-view="classic"] .classic-view {
 
 /* ==================== STICKY TABS (付箋見出し: 横展開アコーディオン) ==================== */
 .pane-content-header {
-  background: var(--surface);
+  background: #dfe3e8; /* 付箋と明確に分ける暗め背景 */
   padding: 0 8px;
   overflow: visible;
   height: 41px;
@@ -698,6 +702,10 @@ html[data-view="classic"] .classic-view {
   align-items: flex-end;
   border-bottom: 1px solid var(--border);
   box-sizing: border-box;
+}
+
+[data-theme="dark"] .pane-content-header {
+  background: #16191d;
 }
 
 .sticky-tabs-bar {
@@ -735,27 +743,24 @@ html[data-view="classic"] .classic-view {
   height: 100%;
 }
 
-/* 付箋ボタン共通: すべてのレベルで四角いインデックス付箋形状 (上丸・下平・サーフェス背景・色枠) */
+/* 付箋ボタン共通: 枠線なし・四角いインデックス付箋形状 (上丸・下平・柔らかい付箋背景色) */
 .sticky-tab-btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   border-radius: 4px 4px 0 0;
-  border: 1.5px solid;
-  background: var(--surface-subtle);
-  color: var(--text-muted);
+  border: none; /* 枠線なし！ */
   cursor: pointer;
   white-space: nowrap;
   user-select: none;
   box-sizing: border-box;
   align-self: flex-end;
-  margin-bottom: 0; /* マージンを0に統一し、バー全体の -1px で完全に接地 (非アクティブの浮きを解消) */
+  margin-bottom: 0;
   line-height: 1;
   transition: height 0.15s ease,
               padding 0.15s ease,
               background 0.15s ease,
               color 0.15s ease,
-              border-color 0.15s ease,
               box-shadow 0.15s ease;
 }
 
@@ -820,137 +825,139 @@ html[data-view="classic"] .classic-view {
   z-index: 10;
 }
 
-/* --- サーフェス系背景色 & レベル別カラー枠 (テキスト色は統一で高可読性) --- */
+/* --- 柔らかい付箋カラー (枠線なし / 色付き影) --- */
 
-/* H1: イエロー/ゴールド枠 */
+/* H1: 柔らかいイエロー (ポストイット定番イエロー) */
 .sticky-tab-btn.level-1 {
-  border-color: rgba(217, 119, 6, 0.45);
+  background: #fef3c7; /* 優しいパステルイエロー */
+  color: #78350f;     /* 落ち着いたアンバーブラウン */
 }
 .sticky-tab-btn.level-1:hover {
-  background: var(--surface-hover);
-  color: var(--text);
-  border-color: #d97706;
+  background: #fde68a;
+  color: #78350f;
 }
-.sticky-tab-btn.level-1.is-active {
-  background: var(--surface);
-  color: var(--text);
-  border-color: #d97706;
-  border-bottom-color: var(--surface); /* ベースラインと完全に一体化 */
-  box-shadow: 0 -2px 6px rgba(217, 119, 6, 0.15);
-}
+.sticky-tab-btn.level-1.is-active,
 .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-1 {
-  background: var(--surface);
-  color: var(--text);
-  border-color: #d97706;
-  border-bottom-color: var(--surface);
+  background: #fcd34d; /* アクティブ時は少し鮮やかに */
+  color: #78350f;
+  box-shadow: 0 -3px 8px rgba(217, 119, 6, 0.32); /* ほんのちょっと濃い色付き影 */
 }
 
-/* H2: グリーン枠 */
+/* H2: 柔らかいミントグリーン */
 .sticky-tab-btn.level-2 {
-  border-color: rgba(5, 150, 105, 0.45);
+  background: #d1fae5; /* 優しいミントグリーン */
+  color: #064e3b;     /* 濃いフォレストグリーン */
 }
 .sticky-tab-btn.level-2:hover {
-  background: var(--surface-hover);
-  color: var(--text);
-  border-color: #059669;
+  background: #a7f3d0;
+  color: #064e3b;
 }
-.sticky-tab-btn.level-2.is-active {
-  background: var(--surface);
-  color: var(--text);
-  border-color: #059669;
-  border-bottom-color: var(--surface);
-  box-shadow: 0 -2px 6px rgba(5, 150, 105, 0.15);
-}
+.sticky-tab-btn.level-2.is-active,
 .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-2 {
-  background: var(--surface);
-  color: var(--text);
-  border-color: #059669;
-  border-bottom-color: var(--surface);
+  background: #6ee7b7;
+  color: #064e3b;
+  box-shadow: 0 -3px 8px rgba(5, 150, 105, 0.32); /* ほんのちょっと濃い色付き影 */
 }
 
-/* H3: スカイブルー枠 */
+/* H3: 柔らかいパステルスカイブルー */
 .sticky-tab-btn.level-3 {
-  border-color: rgba(2, 132, 199, 0.45);
+  background: #e0f2fe; /* 優しいパステルスカイ */
+  color: #0c4a6e;     /* 濃いネイビーブルー */
 }
 .sticky-tab-btn.level-3:hover {
-  background: var(--surface-hover);
-  color: var(--text);
-  border-color: #0284c7;
+  background: #bae6fd;
+  color: #0c4a6e;
 }
-.sticky-tab-btn.level-3.is-active {
-  background: var(--surface);
-  color: var(--text);
-  border-color: #0284c7;
-  border-bottom-color: var(--surface);
-  box-shadow: 0 -2px 6px rgba(2, 132, 199, 0.15);
-}
+.sticky-tab-btn.level-3.is-active,
 .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-3 {
-  background: var(--surface);
-  color: var(--text);
-  border-color: #0284c7;
-  border-bottom-color: var(--surface);
+  background: #7dd3fc;
+  color: #0c4a6e;
+  box-shadow: 0 -3px 8px rgba(2, 132, 199, 0.32); /* ほんのちょっと濃い色付き影 */
 }
 
-/* H4+: パープル枠 */
+/* H4+: 柔らかいラベンダーパープル */
 .sticky-tab-btn.level-4,
 .sticky-tab-btn.level-5,
 .sticky-tab-btn.level-6 {
-  border-color: rgba(124, 58, 237, 0.45);
+  background: #f3e8ff; /* 優しいラベンダー */
+  color: #581c87;     /* 濃いパープル */
 }
 .sticky-tab-btn.level-4:hover,
 .sticky-tab-btn.level-5:hover,
 .sticky-tab-btn.level-6:hover {
-  background: var(--surface-hover);
-  color: var(--text);
-  border-color: #7c3aed;
+  background: #e9d5ff;
+  color: #581c87;
 }
 .sticky-tab-btn.level-4.is-active,
 .sticky-tab-btn.level-5.is-active,
-.sticky-tab-btn.level-6.is-active {
-  background: var(--surface);
-  color: var(--text);
-  border-color: #7c3aed;
-  border-bottom-color: var(--surface);
-  box-shadow: 0 -2px 6px rgba(124, 58, 237, 0.15);
+.sticky-tab-btn.level-6.is-active,
+.sticky-tab-node.is-active-branch > .sticky-tab-btn.level-4 {
+  background: #d8b4fe;
+  color: #581c87;
+  box-shadow: 0 -3px 8px rgba(124, 58, 237, 0.32); /* ほんのちょっと濃い色付き影 */
 }
 
-/* --- ダークモード対応枠色 --- */
+/* --- ダークモード対応 (目に優しいパステルトーン) --- */
 [data-theme="dark"] .sticky-tab-btn.level-1 {
-  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.22);
+  color: #fef08a;
 }
-[data-theme="dark"] .sticky-tab-btn.level-1:hover,
+[data-theme="dark"] .sticky-tab-btn.level-1:hover {
+  background: rgba(245, 158, 11, 0.32);
+}
 [data-theme="dark"] .sticky-tab-btn.level-1.is-active,
 [data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-1 {
-  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.42);
+  color: #fffbeb;
+  box-shadow: 0 -3px 10px rgba(245, 158, 11, 0.4);
 }
 
 [data-theme="dark"] .sticky-tab-btn.level-2 {
-  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(16, 185, 129, 0.22);
+  color: #a7f3d0;
 }
-[data-theme="dark"] .sticky-tab-btn.level-2:hover,
+[data-theme="dark"] .sticky-tab-btn.level-2:hover {
+  background: rgba(16, 185, 129, 0.32);
+}
 [data-theme="dark"] .sticky-tab-btn.level-2.is-active,
 [data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-2 {
-  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.42);
+  color: #ecfdf5;
+  box-shadow: 0 -3px 10px rgba(16, 185, 129, 0.4);
 }
 
 [data-theme="dark"] .sticky-tab-btn.level-3 {
-  border-color: rgba(14, 165, 233, 0.45);
+  background: rgba(14, 165, 233, 0.22);
+  color: #bae6fd;
 }
-[data-theme="dark"] .sticky-tab-btn.level-3:hover,
+[data-theme="dark"] .sticky-tab-btn.level-3:hover {
+  background: rgba(14, 165, 233, 0.32);
+}
 [data-theme="dark"] .sticky-tab-btn.level-3.is-active,
 [data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-3 {
-  border-color: #0ea5e9;
+  background: rgba(14, 165, 233, 0.42);
+  color: #f0f9ff;
+  box-shadow: 0 -3px 10px rgba(14, 165, 233, 0.4);
 }
 
 [data-theme="dark"] .sticky-tab-btn.level-4,
 [data-theme="dark"] .sticky-tab-btn.level-5,
 [data-theme="dark"] .sticky-tab-btn.level-6 {
-  border-color: rgba(168, 85, 247, 0.45);
+  background: rgba(168, 85, 247, 0.22);
+  color: #e9d5ff;
 }
 [data-theme="dark"] .sticky-tab-btn.level-4:hover,
+[data-theme="dark"] .sticky-tab-btn.level-5:hover,
+[data-theme="dark"] .sticky-tab-btn.level-6:hover {
+  background: rgba(168, 85, 247, 0.32);
+}
 [data-theme="dark"] .sticky-tab-btn.level-4.is-active,
+[data-theme="dark"] .sticky-tab-btn.level-5.is-active,
+[data-theme="dark"] .sticky-tab-btn.level-6.is-active,
 [data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-4 {
-  border-color: #a855f7;
+  background: rgba(168, 85, 247, 0.42);
+  color: #faf5ff;
+  box-shadow: 0 -3px 10px rgba(168, 85, 247, 0.4);
 }
 
 .sticky-tab-text {
@@ -996,58 +1003,60 @@ html[data-view="classic"] .classic-view {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   padding: 1px 5px;
   border-radius: 2px;
+  border: none;
   line-height: 1.15;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   flex-shrink: 0;
 }
 
-.sticky-level-badge.level-1 {
-  background: rgba(217, 119, 6, 0.12);
+/* 付箋ボタン内のバッジ: 背景に薄いトーン、文字色は付箋から継承して高コントラスト */
+.sticky-tab-btn .sticky-level-badge {
+  background: rgba(0, 0, 0, 0.08);
+  color: inherit;
+}
+[data-theme="dark"] .sticky-tab-btn .sticky-level-badge {
+  background: rgba(255, 255, 255, 0.14);
+  color: inherit;
+}
+
+/* ポップオーバー内のバッジ */
+.sticky-hover-item .sticky-level-badge.level-1 {
+  background: rgba(217, 119, 6, 0.15);
   color: #b45309;
-  border: 1px solid rgba(217, 119, 6, 0.25);
 }
-[data-theme="dark"] .sticky-level-badge.level-1 {
-  background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
-  border-color: rgba(245, 158, 11, 0.3);
-}
-
-.sticky-level-badge.level-2 {
-  background: rgba(16, 185, 129, 0.12);
-  color: #047857;
-  border: 1px solid rgba(16, 185, 129, 0.25);
-}
-[data-theme="dark"] .sticky-level-badge.level-2 {
+.sticky-hover-item .sticky-level-badge.level-2 {
   background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
-  border-color: rgba(16, 185, 129, 0.3);
+  color: #047857;
 }
-
-.sticky-level-badge.level-3 {
-  background: rgba(14, 165, 233, 0.12);
-  color: #0369a1;
-  border: 1px solid rgba(14, 165, 233, 0.25);
-}
-[data-theme="dark"] .sticky-level-badge.level-3 {
+.sticky-hover-item .sticky-level-badge.level-3 {
   background: rgba(14, 165, 233, 0.15);
-  color: #38bdf8;
-  border-color: rgba(14, 165, 233, 0.3);
+  color: #0369a1;
+}
+.sticky-hover-item .sticky-level-badge.level-4,
+.sticky-hover-item .sticky-level-badge.level-5,
+.sticky-hover-item .sticky-level-badge.level-6 {
+  background: rgba(168, 85, 247, 0.15);
+  color: #6d28d9;
 }
 
-.sticky-level-badge.level-4,
-.sticky-level-badge.level-5,
-.sticky-level-badge.level-6 {
-  background: rgba(168, 85, 247, 0.12);
-  color: #6d28d9;
-  border: 1px solid rgba(168, 85, 247, 0.25);
+[data-theme="dark"] .sticky-hover-item .sticky-level-badge.level-1 {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
 }
-[data-theme="dark"] .sticky-level-badge.level-4,
-[data-theme="dark"] .sticky-level-badge.level-5,
-[data-theme="dark"] .sticky-level-badge.level-6 {
-  background: rgba(168, 85, 247, 0.15);
+[data-theme="dark"] .sticky-hover-item .sticky-level-badge.level-2 {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+[data-theme="dark"] .sticky-hover-item .sticky-level-badge.level-3 {
+  background: rgba(14, 165, 233, 0.2);
+  color: #38bdf8;
+}
+[data-theme="dark"] .sticky-hover-item .sticky-level-badge.level-4,
+[data-theme="dark"] .sticky-hover-item .sticky-level-badge.level-5,
+[data-theme="dark"] .sticky-hover-item .sticky-level-badge.level-6 {
+  background: rgba(168, 85, 247, 0.2);
   color: #c084fc;
-  border-color: rgba(168, 85, 247, 0.3);
 }
 
 /* ==================== HOVER SUBHEADINGS POPOVER ==================== */
