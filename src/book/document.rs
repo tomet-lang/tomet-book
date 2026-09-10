@@ -11,14 +11,7 @@ use crate::config::BookConfig;
 pub const DOC_EXTENSIONS: &[&str] = &[".tmt", ".tm"];
 
 // Compiled once: `process_tomet_document` runs per file, in parallel, so
-// rebuilding these on every call was pure overhead.
-static HEADING_RE: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r#"<h([1-6])\b([^>]*)>([\s\S]*?)</h([1-6])>"#).unwrap());
-static ID_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"id="([^"]*)""#).unwrap());
-static HEADING_NUMBER_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"<span class="(?:tmt|tm)-heading-number">[^<]*</span>"#).unwrap()
-});
-static TAG_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"<[^>]+>"#).unwrap());
+// rebuilding this on every call was pure overhead.
 static ISO_DATE_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"^(\d{4})-(\d{2})-(\d{2})"#).unwrap());
 
@@ -283,6 +276,48 @@ fn resolve_meta_media_path(
     }
 }
 
+/// Headings the book treats as page furniture rather than content, so a
+/// document opening with one still gets its real title from the next heading.
+fn is_boilerplate_heading(text: &str) -> bool {
+    text.eq_ignore_ascii_case("related")
+        || text.eq_ignore_ascii_case("footnotes")
+        || text.eq_ignore_ascii_case("references")
+        || text == "関連"
+        || text == "参考文献"
+        || text == "脚注"
+}
+
+/// Turn the renderer's heading outline into the page TOC, alongside the first
+/// content H1 (used as a title fallback).
+///
+/// Only levels 1-4 make it into the TOC; deeper headings are structure the
+/// sticky tabs have no room for.
+fn toc_from_outline(outline: &[tomet_html::HeadingInfo]) -> (Option<String>, Vec<TocItem>) {
+    let mut first_h1 = None;
+    let mut toc = Vec::new();
+
+    for heading in outline {
+        let text = heading.text.trim();
+        if text.is_empty() {
+            continue;
+        }
+
+        if heading.level == 1 && first_h1.is_none() && !is_boilerplate_heading(text) {
+            first_h1 = Some(text.to_string());
+        }
+
+        if (1..=4).contains(&heading.level) {
+            toc.push(TocItem {
+                id: heading.id.clone().unwrap_or_default(),
+                level: u32::from(heading.level),
+                text: text.to_string(),
+            });
+        }
+    }
+
+    (first_h1, toc)
+}
+
 fn insert_node_into(parent: &mut TocNode, node: TocNode) {
     if let Some(last) = parent.children.last_mut() {
         if node.level > last.level {
@@ -390,46 +425,10 @@ pub fn process_tomet_document(
         auto_slug_headings: true,
         lang: Some(config.book.lang.clone()),
     };
-    let html = tomet_html::render_body_with(&doc, &render_opts);
+    let (html, outline) = tomet_html::render_body_with_outline(&doc, &render_opts);
 
-    // 6. Extract TOC and H1 from HTML
-    let mut first_h1: Option<String> = None;
-    let mut toc = Vec::new();
-
-    for cap in HEADING_RE.captures_iter(&html) {
-        let open_level: u32 = cap[1].parse().unwrap_or(1);
-        let close_level: u32 = cap[4].parse().unwrap_or(1);
-        if open_level != close_level {
-            continue;
-        }
-        let attrs = &cap[2];
-        let inner = &cap[3];
-
-        let id = ID_RE
-            .captures(attrs)
-            .map(|c| c[1].to_string())
-            .unwrap_or_default();
-        let cleaned = HEADING_NUMBER_RE.replace_all(inner, "");
-        let text = TAG_RE.replace_all(&cleaned, "").trim().to_string();
-
-        let is_boilerplate = text.eq_ignore_ascii_case("related")
-            || text == "関連"
-            || text == "参考文献"
-            || text == "脚注"
-            || text.eq_ignore_ascii_case("footnotes")
-            || text.eq_ignore_ascii_case("references");
-
-        if open_level == 1 && first_h1.is_none() && !text.is_empty() && !is_boilerplate {
-            first_h1 = Some(text.clone());
-        }
-        if (open_level >= 1 && open_level <= 4) && !text.is_empty() {
-            toc.push(TocItem {
-                id,
-                level: open_level,
-                text,
-            });
-        }
-    }
+    // 6. Build the TOC from the renderer's own heading outline
+    let (first_h1, mut toc) = toc_from_outline(&outline);
 
     // 7. Title resolution: @meta.title -> (if generic stem, first H1) -> file stem
     let stem = Path::new(rel_path)
@@ -1025,5 +1024,93 @@ mod extension_tests {
     fn leaves_other_names_alone() {
         assert_eq!(strip_doc_extension("image.png"), "image.png");
         assert_eq!(strip_doc_extension("plain"), "plain");
+    }
+}
+
+#[cfg(test)]
+mod outline_tests {
+    use super::*;
+    use tomet_html::HeadingInfo;
+
+    fn heading(level: u8, id: Option<&str>, text: &str) -> HeadingInfo {
+        HeadingInfo {
+            level,
+            id: id.map(str::to_string),
+            text: text.to_string(),
+            number: None,
+        }
+    }
+
+    #[test]
+    fn levels_one_to_four_become_toc_items() {
+        let (_, toc) = toc_from_outline(&[
+            heading(1, Some("a"), "A"),
+            heading(4, Some("d"), "D"),
+            heading(5, Some("e"), "E"),
+        ]);
+
+        let seen: Vec<(u32, &str)> = toc.iter().map(|i| (i.level, i.text.as_str())).collect();
+        assert_eq!(
+            seen,
+            vec![(1, "A"), (4, "D")],
+            "H5 is too deep for the tabs"
+        );
+    }
+
+    #[test]
+    fn a_heading_without_an_id_still_lists_but_cannot_be_linked() {
+        let (_, toc) = toc_from_outline(&[heading(1, None, "A")]);
+        assert_eq!(toc[0].id, "");
+    }
+
+    #[test]
+    fn the_first_content_h1_is_reported_as_the_title_candidate() {
+        let (first_h1, _) = toc_from_outline(&[
+            heading(1, Some("a"), "Real Title"),
+            heading(1, Some("b"), "Later"),
+        ]);
+        assert_eq!(first_h1.as_deref(), Some("Real Title"));
+    }
+
+    #[test]
+    fn boilerplate_headings_never_become_the_title() {
+        let (first_h1, _) = toc_from_outline(&[
+            heading(1, Some("r"), "関連"),
+            heading(1, Some("t"), "本当の見出し"),
+        ]);
+        assert_eq!(first_h1.as_deref(), Some("本当の見出し"));
+
+        for label in ["Related", "references", "FOOTNOTES", "参考文献", "脚注"] {
+            let (first_h1, _) = toc_from_outline(&[heading(1, Some("x"), label)]);
+            assert_eq!(first_h1, None, "{label} should not be a title");
+        }
+    }
+
+    #[test]
+    fn a_deeper_first_heading_leaves_the_title_unset() {
+        let (first_h1, toc) = toc_from_outline(&[heading(2, Some("s"), "Section")]);
+        assert_eq!(first_h1, None);
+        assert_eq!(toc.len(), 1);
+    }
+
+    #[test]
+    fn blank_headings_are_dropped() {
+        let (first_h1, toc) =
+            toc_from_outline(&[heading(1, Some("a"), "   "), heading(1, Some("b"), "B")]);
+        assert_eq!(toc.len(), 1);
+        assert_eq!(first_h1.as_deref(), Some("B"));
+    }
+
+    #[test]
+    fn the_number_label_never_leaks_into_the_toc_text() {
+        // Numbering lives in HeadingInfo::number, so the text is the author's.
+        let numbered = HeadingInfo {
+            level: 1,
+            id: Some("a".to_string()),
+            text: "Chapter".to_string(),
+            number: Some("1".to_string()),
+        };
+        let (_, toc) = toc_from_outline(&[numbered]);
+        assert_eq!(toc[0].text, "Chapter");
     }
 }
