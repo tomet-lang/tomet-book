@@ -375,7 +375,103 @@
         }
       }
 
-      // Bind click on all tab buttons
+      // Hover popover for child subheadings
+      let popover = document.getElementById('sticky-hover-popover');
+      if (!popover) {
+        popover = document.createElement('div');
+        popover.id = 'sticky-hover-popover';
+        popover.className = 'sticky-hover-popover';
+        popover.hidden = true;
+        popover.setAttribute('data-pagefind-ignore', '');
+        popover.innerHTML = `
+          <div class="sticky-hover-popover-header">
+            <span class="sticky-hover-popover-title"></span>
+          </div>
+          <div class="sticky-hover-popover-list"></div>
+        `;
+        document.body.appendChild(popover);
+      }
+      const popoverTitle = popover.querySelector('.sticky-hover-popover-title');
+      const popoverList = popover.querySelector('.sticky-hover-popover-list');
+      let hoverTimer = null;
+      let closeTimer = null;
+
+      function hidePopover() {
+        if (hoverTimer) clearTimeout(hoverTimer);
+        if (closeTimer) clearTimeout(closeTimer);
+        if (popover) popover.hidden = true;
+      }
+
+      function showPopoverForNode(node, btn) {
+        if (!popover || !popoverTitle || !popoverList) return;
+        const childrenSlot = node.querySelector(':scope > .sticky-children-slot');
+        if (!childrenSlot) {
+          hidePopover();
+          return;
+        }
+
+        const childNodes = Array.from(childrenSlot.querySelectorAll(':scope > .sticky-tab-node'));
+        if (childNodes.length === 0) {
+          hidePopover();
+          return;
+        }
+
+        const parentText = btn.querySelector('.sticky-tab-text')?.textContent || '';
+        const parentLevel = node.getAttribute('data-level') || '1';
+
+        popoverTitle.innerHTML = `<span class="sticky-level-badge level-${parentLevel}">H${parentLevel}</span> <span>${parentText} の子見出し (${childNodes.length})</span>`;
+
+        popoverList.innerHTML = '';
+        childNodes.forEach((child) => {
+          const childId = child.getAttribute('data-id');
+          const childLevel = child.getAttribute('data-level') || '2';
+          const childBtn = child.querySelector(':scope > .sticky-tab-btn');
+          const childText = childBtn?.querySelector('.sticky-tab-text')?.textContent || childId;
+          const isActive = child.classList.contains('is-active');
+
+          const item = document.createElement('a');
+          item.href = `#${childId}`;
+          item.className = `sticky-hover-item level-${childLevel}${isActive ? ' is-active' : ''}`;
+          item.setAttribute('data-target', childId);
+          item.innerHTML = `
+            <span class="sticky-level-badge level-${childLevel}">H${childLevel}</span>
+            <span class="item-text">${childText}</span>
+          `;
+
+          item.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            hidePopover();
+            if (markClickScrolling) markClickScrolling();
+            setActiveHeading(childId);
+            scrollToHeading(childId);
+          });
+
+          popoverList.appendChild(item);
+        });
+
+        popover.hidden = false;
+        const rect = btn.getBoundingClientRect();
+        const popoverWidth = Math.min(320, Math.max(200, popover.offsetWidth || 220));
+        let left = rect.left;
+        if (left + popoverWidth > window.innerWidth - 12) {
+          left = Math.max(12, window.innerWidth - popoverWidth - 12);
+        }
+        popover.style.top = `${rect.bottom + 2}px`;
+        popover.style.left = `${left}px`;
+      }
+
+      if (popover && !popover.__hoverBound) {
+        popover.__hoverBound = true;
+        popover.addEventListener('mouseenter', () => {
+          if (closeTimer) clearTimeout(closeTimer);
+        });
+        popover.addEventListener('mouseleave', () => {
+          closeTimer = setTimeout(hidePopover, 180);
+        });
+      }
+
+      // Bind click & hover on all tab buttons
       nodes.forEach((node) => {
         const btn = Array.from(node.children).find((el) => el.classList.contains('sticky-tab-btn'));
         const targetId = node.getAttribute('data-id');
@@ -383,11 +479,30 @@
         btn?.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
+          hidePopover();
           if (markClickScrolling) markClickScrolling();
           setActiveHeading(targetId);
           scrollToHeading(targetId);
         });
+
+        btn?.addEventListener('mouseenter', () => {
+          if (closeTimer) clearTimeout(closeTimer);
+          if (hoverTimer) clearTimeout(hoverTimer);
+          hoverTimer = setTimeout(() => {
+            showPopoverForNode(node, btn);
+          }, 120);
+        });
+
+        btn?.addEventListener('mouseleave', () => {
+          if (hoverTimer) clearTimeout(hoverTimer);
+          closeTimer = setTimeout(hidePopover, 180);
+        });
       });
+
+      // Close popover on scroll
+      scrollContainer?.addEventListener('scroll', () => {
+        hidePopover();
+      }, { passive: true });
 
       // Initial active state: activate the first root node if nothing is active yet
       const firstNode = nodes[0];

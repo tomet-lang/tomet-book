@@ -296,10 +296,16 @@ html[data-view="classic"] .classic-view {
   gap: 6px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 0;
   padding: 4px 6px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
   user-select: none;
+}
+
+.floating-controls input,
+.floating-controls .view-switcher,
+.floating-controls .view-btn {
+  border-radius: 0 !important;
 }
 
 .floating-drag-handle {
@@ -311,7 +317,7 @@ html[data-view="classic"] .classic-view {
   color: var(--text-muted);
   cursor: grab;
   touch-action: none;
-  border-radius: 3px;
+  border-radius: 0;
   transition: background 0.15s ease, color 0.15s ease;
   flex-shrink: 0;
 }
@@ -726,244 +732,221 @@ html[data-view="classic"] .classic-view {
   height: 100%;
 }
 
-/* 付箋ボタン共通: すべてのレベルで四角いインデックス付箋形状 (上丸・下平・完全ボーダー) */
+/* 付箋ボタン共通: すべてのレベルで四角いインデックス付箋形状 (上丸・下平・サーフェス背景・色枠) */
 .sticky-tab-btn {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  border-radius: 5px 5px 0 0;
-  border: 1px solid;
+  border-radius: 4px 4px 0 0;
+  border: 1.5px solid;
+  background: var(--surface-subtle);
+  color: var(--text-muted);
   cursor: pointer;
   white-space: nowrap;
   user-select: none;
   box-sizing: border-box;
   align-self: flex-end;
-  margin-bottom: -1px;
-  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+  margin-bottom: -1px; /* ベースラインと完全に接合 (下が見えない) */
+  transition: height 0.15s ease,
+              padding 0.15s ease,
               background 0.15s ease,
               color 0.15s ease,
               border-color 0.15s ease,
               box-shadow 0.15s ease;
 }
 
-/* --- サイズ階層 (H1 > H2 > H3 > H4+) --- */
+/* --- サイズ階層 & アクティブ時の高さ伸長 (下からひょこっと出る / 下は接地維持) --- */
 .sticky-tab-btn.level-1 {
-  height: 28px;
+  height: 25px;
+  padding: 2px 10px 2px 8px;
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+.sticky-tab-btn.level-1.is-active {
+  height: 29px; /* 上方向に4px伸びる！底面は接地したまま */
   padding: 3px 10px 3px 8px;
   font-size: 0.75rem;
   font-weight: 700;
+  z-index: 10;
 }
 
 .sticky-tab-btn.level-2 {
-  height: 24px;
-  padding: 2px 8px 2px 7px;
+  height: 22px;
+  padding: 1px 8px 1px 7px;
   font-size: 0.67rem;
+  font-weight: 500;
+}
+.sticky-tab-btn.level-2.is-active {
+  height: 26px; /* 上方向に4px伸びる！ */
+  padding: 2px 8px 2px 7px;
+  font-size: 0.68rem;
   font-weight: 600;
+  z-index: 10;
 }
 
 .sticky-tab-btn.level-3 {
-  height: 21px;
+  height: 19px;
   padding: 1px 7px 1px 6px;
   font-size: 0.61rem;
   font-weight: 500;
 }
+.sticky-tab-btn.level-3.is-active {
+  height: 23px; /* 上方向に4px伸びる！ */
+  padding: 2px 7px 1px 6px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  z-index: 10;
+}
 
 .sticky-tab-btn.level-4,
 .sticky-tab-btn.level-5,
 .sticky-tab-btn.level-6 {
-  height: 19px;
+  height: 17px;
   padding: 1px 6px 1px 5px;
   font-size: 0.57rem;
   font-weight: 500;
 }
+.sticky-tab-btn.level-4.is-active,
+.sticky-tab-btn.level-5.is-active,
+.sticky-tab-btn.level-6.is-active {
+  height: 21px;
+  padding: 2px 6px 1px 5px;
+  font-size: 0.58rem;
+  font-weight: 600;
+  z-index: 10;
+}
 
-/* --- 付箋の背景色・境界線 (レベルごとのカラフル付箋: ライトモード) --- */
+/* --- サーフェス系背景色 & レベル別カラー枠 (テキスト色は統一で高可読性) --- */
 
-/* H1: 温かみのあるイエロー付箋 */
+/* H1: イエロー/ゴールド枠 */
 .sticky-tab-btn.level-1 {
-  background: #fef9c3;
-  border-color: #fde047;
-  color: #713f12;
+  border-color: rgba(217, 119, 6, 0.45);
 }
 .sticky-tab-btn.level-1:hover {
-  background: #fef08a;
-  border-color: #facc15;
-  color: #451a03;
-  transform: translateY(-2px);
+  background: var(--surface-hover);
+  color: var(--text);
+  border-color: #d97706;
 }
 .sticky-tab-btn.level-1.is-active {
-  background: #fde047;
-  border-color: #ca8a04;
-  color: #451a03;
-  transform: translateY(-4px);
-  box-shadow: 0 3px 8px rgba(202, 138, 4, 0.3);
-  z-index: 10;
+  background: var(--surface);
+  color: var(--text);
+  border-color: #d97706;
+  border-bottom-color: var(--surface); /* ベースラインと完全に一体化 */
+  box-shadow: 0 -2px 6px rgba(217, 119, 6, 0.15);
 }
 .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-1 {
-  background: #fef08a;
-  border-color: #eab308;
-  color: #713f12;
+  background: var(--surface);
+  color: var(--text);
+  border-color: #d97706;
+  border-bottom-color: var(--surface);
 }
 
-/* H2: 爽やかなミントグリーン付箋 */
+/* H2: グリーン枠 */
 .sticky-tab-btn.level-2 {
-  background: #ecfdf5;
-  border-color: #a7f3d0;
-  color: #065f46;
+  border-color: rgba(5, 150, 105, 0.45);
 }
 .sticky-tab-btn.level-2:hover {
-  background: #d1fae5;
-  border-color: #6ee7b7;
-  color: #044e39;
-  transform: translateY(-2px);
+  background: var(--surface-hover);
+  color: var(--text);
+  border-color: #059669;
 }
 .sticky-tab-btn.level-2.is-active {
-  background: #a7f3d0;
+  background: var(--surface);
+  color: var(--text);
   border-color: #059669;
-  color: #064e3b;
-  transform: translateY(-3px);
-  box-shadow: 0 3px 8px rgba(5, 150, 105, 0.3);
-  z-index: 10;
+  border-bottom-color: var(--surface);
+  box-shadow: 0 -2px 6px rgba(5, 150, 105, 0.15);
 }
 .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-2 {
-  background: #d1fae5;
-  border-color: #34d399;
-  color: #065f46;
+  background: var(--surface);
+  color: var(--text);
+  border-color: #059669;
+  border-bottom-color: var(--surface);
 }
 
-/* H3: 明るいスカイブルー付箋 */
+/* H3: スカイブルー枠 */
 .sticky-tab-btn.level-3 {
-  background: #f0f9ff;
-  border-color: #bae6fd;
-  color: #075985;
+  border-color: rgba(2, 132, 199, 0.45);
 }
 .sticky-tab-btn.level-3:hover {
-  background: #e0f2fe;
-  border-color: #7dd3fc;
-  color: #034568;
-  transform: translateY(-1px);
+  background: var(--surface-hover);
+  color: var(--text);
+  border-color: #0284c7;
 }
 .sticky-tab-btn.level-3.is-active {
-  background: #bae6fd;
+  background: var(--surface);
+  color: var(--text);
   border-color: #0284c7;
-  color: #082f49;
-  transform: translateY(-2px);
-  box-shadow: 0 3px 8px rgba(2, 132, 199, 0.3);
-  z-index: 10;
+  border-bottom-color: var(--surface);
+  box-shadow: 0 -2px 6px rgba(2, 132, 199, 0.15);
 }
 .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-3 {
-  background: #e0f2fe;
-  border-color: #38bdf8;
-  color: #075985;
+  background: var(--surface);
+  color: var(--text);
+  border-color: #0284c7;
+  border-bottom-color: var(--surface);
 }
 
-/* H4+: 上品なラベンダー付箋 */
+/* H4+: パープル枠 */
 .sticky-tab-btn.level-4,
 .sticky-tab-btn.level-5,
 .sticky-tab-btn.level-6 {
-  background: #faf5ff;
-  border-color: #e9d5ff;
-  color: #581c87;
+  border-color: rgba(124, 58, 237, 0.45);
 }
-.sticky-tab-btn.level-4:hover {
-  background: #f3e8ff;
-  border-color: #d8b4fe;
-  color: #3b0764;
-  transform: translateY(-1px);
+.sticky-tab-btn.level-4:hover,
+.sticky-tab-btn.level-5:hover,
+.sticky-tab-btn.level-6:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+  border-color: #7c3aed;
 }
-.sticky-tab-btn.level-4.is-active {
-  background: #e9d5ff;
-  border-color: #9333ea;
-  color: #3b0764;
-  transform: translateY(-2px);
-  box-shadow: 0 3px 8px rgba(147, 51, 234, 0.3);
-  z-index: 10;
+.sticky-tab-btn.level-4.is-active,
+.sticky-tab-btn.level-5.is-active,
+.sticky-tab-btn.level-6.is-active {
+  background: var(--surface);
+  color: var(--text);
+  border-color: #7c3aed;
+  border-bottom-color: var(--surface);
+  box-shadow: 0 -2px 6px rgba(124, 58, 237, 0.15);
 }
 
-/* --- ダークモード対応の付箋色 --- */
+/* --- ダークモード対応枠色 --- */
 [data-theme="dark"] .sticky-tab-btn.level-1 {
-  background: #2b2513;
-  border-color: #4a3e1c;
-  color: #fef08a;
+  border-color: rgba(245, 158, 11, 0.45);
 }
-[data-theme="dark"] .sticky-tab-btn.level-1:hover {
-  background: #383018;
-  border-color: #635222;
-  color: #fef9c3;
-}
-[data-theme="dark"] .sticky-tab-btn.level-1.is-active {
-  background: #473a1d;
-  border-color: #ca8a04;
-  color: #fef08a;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
-}
+[data-theme="dark"] .sticky-tab-btn.level-1:hover,
+[data-theme="dark"] .sticky-tab-btn.level-1.is-active,
 [data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-1 {
-  background: #383018;
-  border-color: #635222;
-  color: #fef08a;
+  border-color: #f59e0b;
 }
 
 [data-theme="dark"] .sticky-tab-btn.level-2 {
-  background: #11261d;
-  border-color: #1b4733;
-  color: #a7f3d0;
+  border-color: rgba(16, 185, 129, 0.45);
 }
-[data-theme="dark"] .sticky-tab-btn.level-2:hover {
-  background: #173829;
-  border-color: #276648;
-  color: #d1fae5;
-}
-[data-theme="dark"] .sticky-tab-btn.level-2.is-active {
-  background: #1d4d36;
-  border-color: #10b981;
-  color: #ecfdf5;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
-}
+[data-theme="dark"] .sticky-tab-btn.level-2:hover,
+[data-theme="dark"] .sticky-tab-btn.level-2.is-active,
 [data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-2 {
-  background: #173829;
-  border-color: #276648;
-  color: #a7f3d0;
+  border-color: #10b981;
 }
 
 [data-theme="dark"] .sticky-tab-btn.level-3 {
-  background: #102436;
-  border-color: #174263;
-  color: #bae6fd;
+  border-color: rgba(14, 165, 233, 0.45);
 }
-[data-theme="dark"] .sticky-tab-btn.level-3:hover {
-  background: #16334a;
-  border-color: #215982;
-  color: #e0f2fe;
-}
-[data-theme="dark"] .sticky-tab-btn.level-3.is-active {
-  background: #1b4568;
-  border-color: #0ea5e9;
-  color: #f0f9ff;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
-}
+[data-theme="dark"] .sticky-tab-btn.level-3:hover,
+[data-theme="dark"] .sticky-tab-btn.level-3.is-active,
 [data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-3 {
-  background: #16334a;
-  border-color: #215982;
-  color: #bae6fd;
+  border-color: #0ea5e9;
 }
 
 [data-theme="dark"] .sticky-tab-btn.level-4,
 [data-theme="dark"] .sticky-tab-btn.level-5,
 [data-theme="dark"] .sticky-tab-btn.level-6 {
-  background: #231633;
-  border-color: #3d235e;
-  color: #e9d5ff;
+  border-color: rgba(168, 85, 247, 0.45);
 }
-[data-theme="dark"] .sticky-tab-btn.level-4:hover {
-  background: #301e47;
-  border-color: #59318a;
-  color: #f3e8ff;
-}
-[data-theme="dark"] .sticky-tab-btn.level-4.is-active {
-  background: #3e265c;
+[data-theme="dark"] .sticky-tab-btn.level-4:hover,
+[data-theme="dark"] .sticky-tab-btn.level-4.is-active,
+[data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-4 {
   border-color: #a855f7;
-  color: #faf5ff;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
 }
 
 .sticky-tab-text {
@@ -995,6 +978,7 @@ html[data-view="classic"] .classic-view {
   max-width: 1500px;
   opacity: 1;
   pointer-events: auto;
+  overflow: visible; /* 上部の見切れを完全防止！ */
   margin-left: 3px;
   margin-right: 3px;
 }
@@ -1005,7 +989,7 @@ html[data-view="classic"] .classic-view {
   font-weight: 700;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   padding: 1px 4px;
-  border-radius: 3px;
+  border-radius: 2px;
   line-height: 1.1;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -1013,51 +997,127 @@ html[data-view="classic"] .classic-view {
 }
 
 .sticky-level-badge.level-1 {
-  background: rgba(161, 98, 7, 0.12);
-  color: #854d0e;
-  border: 1px solid rgba(161, 98, 7, 0.25);
+  background: rgba(217, 119, 6, 0.12);
+  color: #b45309;
+  border: 1px solid rgba(217, 119, 6, 0.25);
 }
 [data-theme="dark"] .sticky-level-badge.level-1 {
-  background: rgba(254, 240, 138, 0.15);
-  color: #fef08a;
-  border-color: rgba(254, 240, 138, 0.25);
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.3);
 }
 
 .sticky-level-badge.level-2 {
-  background: rgba(5, 150, 105, 0.12);
-  color: #065f46;
-  border: 1px solid rgba(5, 150, 105, 0.25);
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+  border: 1px solid rgba(16, 185, 129, 0.25);
 }
 [data-theme="dark"] .sticky-level-badge.level-2 {
-  background: rgba(167, 243, 208, 0.15);
-  color: #a7f3d0;
-  border-color: rgba(167, 243, 208, 0.25);
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.3);
 }
 
 .sticky-level-badge.level-3 {
-  background: rgba(2, 132, 199, 0.12);
-  color: #075985;
-  border: 1px solid rgba(2, 132, 199, 0.25);
+  background: rgba(14, 165, 233, 0.12);
+  color: #0369a1;
+  border: 1px solid rgba(14, 165, 233, 0.25);
 }
 [data-theme="dark"] .sticky-level-badge.level-3 {
-  background: rgba(186, 230, 253, 0.15);
-  color: #bae6fd;
-  border-color: rgba(186, 230, 253, 0.25);
+  background: rgba(14, 165, 233, 0.15);
+  color: #38bdf8;
+  border-color: rgba(14, 165, 233, 0.3);
 }
 
 .sticky-level-badge.level-4,
 .sticky-level-badge.level-5,
 .sticky-level-badge.level-6 {
-  background: rgba(147, 51, 234, 0.12);
-  color: #581c87;
-  border: 1px solid rgba(147, 51, 234, 0.25);
+  background: rgba(168, 85, 247, 0.12);
+  color: #6d28d9;
+  border: 1px solid rgba(168, 85, 247, 0.25);
 }
 [data-theme="dark"] .sticky-level-badge.level-4,
 [data-theme="dark"] .sticky-level-badge.level-5,
 [data-theme="dark"] .sticky-level-badge.level-6 {
-  background: rgba(233, 213, 255, 0.15);
-  color: #e9d5ff;
-  border-color: rgba(233, 213, 255, 0.25);
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
+/* ==================== HOVER SUBHEADINGS POPOVER ==================== */
+.sticky-hover-popover {
+  position: fixed;
+  z-index: 1000;
+  min-width: 200px;
+  max-width: 320px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0; /* 直角 */
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+  padding: 0;
+  pointer-events: auto;
+  animation: 0.12s cubic-bezier(0, 0, 0.2, 1) both popover-fade-in;
+}
+
+@keyframes popover-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sticky-hover-popover-header {
+  padding: 6px 10px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-subtle);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sticky-hover-popover-list {
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 3px 0;
+}
+
+.sticky-hover-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  font-size: 0.73rem;
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sticky-hover-item:hover {
+  background: var(--surface-hover);
+  color: var(--link);
+}
+
+.sticky-hover-item.is-active {
+  background: var(--surface-subtle);
+  font-weight: 600;
+  color: var(--link);
+}
+
+.sticky-hover-item .item-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pane-scroll-content {
