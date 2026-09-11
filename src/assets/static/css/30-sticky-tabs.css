@@ -31,14 +31,14 @@
   padding: 0;
   border: none;
   border-radius: 4px 4px 0 0;
-  background: var(--surface);
-  color: var(--text-muted);
+  background: var(--sticky-edge-btn-bg);
+  color: var(--sticky-edge-btn-color);
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
 }
 .sticky-edge-btn:hover {
-  background: var(--surface-subtle);
-  color: var(--link);
+  background: var(--sticky-edge-btn-hover-bg);
+  color: var(--sticky-edge-btn-hover-color);
 }
 #btn-sticky-top {
   margin-right: 6px;
@@ -220,6 +220,12 @@
   --sticky-l4-color: #581c87;
   --sticky-l4-active-color: #581c87;
   --sticky-l4-badge: #6d28d9;
+
+  /* Edge navigation buttons (Inverted: dark colors in light mode) */
+  --sticky-edge-btn-bg: #202122;
+  --sticky-edge-btn-hover-bg: #27292d;
+  --sticky-edge-btn-color: #a2a9b1;
+  --sticky-edge-btn-hover-color: #6da8e8;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -251,6 +257,12 @@
     --sticky-l4-color: #e9d5ff;
     --sticky-l4-active-color: #faf5ff;
     --sticky-l4-badge: #c084fc;
+
+    /* Edge navigation buttons (Inverted: light colors in dark mode) */
+    --sticky-edge-btn-bg: #f8f9fa;
+    --sticky-edge-btn-hover-bg: #eaecf0;
+    --sticky-edge-btn-color: #54595d;
+    --sticky-edge-btn-hover-color: #3366cc;
   }
 }
 
@@ -282,6 +294,12 @@
   --sticky-l4-color: #e9d5ff;
   --sticky-l4-active-color: #faf5ff;
   --sticky-l4-badge: #c084fc;
+
+  /* Edge navigation buttons (Inverted: light colors in dark mode) */
+  --sticky-edge-btn-bg: #f8f9fa;
+  --sticky-edge-btn-hover-bg: #eaecf0;
+  --sticky-edge-btn-color: #54595d;
+  --sticky-edge-btn-hover-color: #3366cc;
 }
 
 /* H1: Soft yellow (classic Post-it yellow) */
