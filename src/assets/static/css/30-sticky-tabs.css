@@ -548,3 +548,14 @@
   box-sizing: border-box;
 }
 
+
+/* 見出しの無いページには付箋も両端のボタンも無く、帯だけが残る。要素は残す
+   (クライアント側の遷移は .pane-content-header の中身を入れ替えるので、
+   無くなると入れ替え先を見失って前のページの付箋が残る) が、高さは畳む。
+   :empty ではなくこれなのは、テンプレートが空白文字を残すため。 */
+.pane-content-header:not(:has(*)) {
+  height: 0;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}

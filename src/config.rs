@@ -93,7 +93,6 @@ fn default_ui_strings() -> HashMap<String, String> {
         ("pane.graph", "グラフ"),
         ("pane.index", "索引"),
         ("index.empty", "索引が書かれていません"),
-        ("pane.content", "本文"),
         ("pane.data", "データ・プロファイル"),
         ("pane.data_short", "データ"),
         ("pane.collapse", "クリックしてパネルを折りたたむ"),
@@ -463,8 +462,8 @@ mod string_tests {
             Some("Contents")
         );
         assert_eq!(
-            cfg.ui.strings.get("pane.content").map(String::as_str),
-            Some("本文"),
+            cfg.ui.strings.get("pane.links").map(String::as_str),
+            Some("リンク"),
             "untouched strings must survive"
         );
         assert_eq!(cfg.ui.strings.len(), default_ui_strings().len());
