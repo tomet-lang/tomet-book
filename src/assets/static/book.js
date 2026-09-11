@@ -259,64 +259,60 @@
         }, 800);
       });
 
-      // ScrollSpy: auto-highlight TOC item on scroll
-      let scrollTicking = false;
-      const updateScrollSpy = () => {
+      // ScrollSpy: the single source of truth for "which heading am I on".
+      //
+      // An IntersectionObserver reports each heading as it crosses a line 80px
+      // below the top of the scroll container, and carries the rectangle with
+      // it -- so nothing here reads layout, and nothing runs while scrolling
+      // through a long section. `above` is the heading state we care about:
+      // the current heading is the last one that has passed the line.
+      const above = new Map();
+
+      const applyCurrent = () => {
         if (isClickScrolling) return;
-        const containerRect = scrollContainer.getBoundingClientRect();
-        const topThreshold = containerRect.top + 80;
 
         let currentId = null;
-        for (let i = 0; i < headingTargets.length; i++) {
-          const item = headingTargets[i];
-          const rect = item.el.getBoundingClientRect();
-          if (rect.top <= topThreshold) {
-            currentId = item.id;
-          } else {
-            break;
-          }
+        for (const { id } of headingTargets) {
+          if (above.get(id)) currentId = id;
         }
-
+        // Before the first heading has scrolled past, the first one is current.
         if (!currentId && headingTargets.length > 0) {
-          const firstRect = headingTargets[0].el.getBoundingClientRect();
-          if (firstRect.top <= containerRect.bottom) {
-            currentId = headingTargets[0].id;
-          }
+          currentId = headingTargets[0].id;
         }
+        if (!currentId) return;
 
-        if (currentId) {
-          headingTargets.forEach(({ id, link }) => {
-            if (id === currentId && link) {
-              if (!link.classList.contains('is-active')) {
-                tocLinks.forEach((l) => l.classList.remove('is-active'));
-                link.classList.add('is-active');
-                link.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-              }
-            }
-          });
-          if (updateStickyTabs) {
-            updateStickyTabs(currentId);
-          }
+        const active = headingTargets.find((item) => item.id === currentId);
+        if (active?.link && !active.link.classList.contains('is-active')) {
+          tocLinks.forEach((l) => l.classList.remove('is-active'));
+          active.link.classList.add('is-active');
+          active.link.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+        if (updateStickyTabs) {
+          updateStickyTabs(currentId);
         }
       };
 
-      if (scrollContainer.__tmtScrollHandler) {
-        scrollContainer.removeEventListener('scroll', scrollContainer.__tmtScrollHandler);
-      }
-      const onScroll = () => {
-        if (isClickScrolling || scrollTicking) return;
-        scrollTicking = true;
-        requestAnimationFrame(() => {
-          scrollTicking = false;
-          updateScrollSpy();
-        });
-      };
-      scrollContainer.__tmtScrollHandler = onScroll;
-      scrollContainer.addEventListener('scroll', onScroll, { passive: true });
-
-      // Immediate init
-      updateScrollSpy();
-      setTimeout(updateScrollSpy, 80);
+      // initPage() runs again on every client-side navigation and hot reload.
+      scrollContainer.__tmtSpyObserver?.disconnect();
+      const spy = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            // rootBounds is the band below, so its top edge *is* the line.
+            const line = entry.rootBounds?.top ?? 0;
+            above.set(entry.target.id, entry.boundingClientRect.top <= line);
+          }
+          applyCurrent();
+        },
+        {
+          root: scrollContainer,
+          // Shrink the observed area to a band starting 80px down, so crossings
+          // are reported at that line rather than at the container's edge.
+          rootMargin: '-80px 0px -85% 0px',
+          threshold: 0,
+        }
+      );
+      headingTargets.forEach(({ el }) => spy.observe(el));
+      scrollContainer.__tmtSpyObserver = spy;
     }
 
     // 付箋見出し (Sticky-Tab Headings: インライン横展開アコーディオン & ScrollSpy完全同期)
@@ -703,62 +699,6 @@
 
     bindDataPaneToggle();
 
-    // 3. 目次の現在位置ハイライト (ScrollSpy)
-    function setupTocScrollSpy() {
-      if (!scrollContainer || tocLinks.length === 0) return;
-
-      const headingEntries = [];
-      tocLinks.forEach((link) => {
-        const targetId = link.getAttribute('data-target');
-        if (!targetId) return;
-        const el = document.getElementById(targetId);
-        if (el) headingEntries.push({ id: targetId, el, link });
-      });
-
-      if (headingEntries.length === 0) return;
-
-      let ticking = false;
-      function updateActiveHeading() {
-        if (!scrollContainer) return;
-        const containerRect = scrollContainer.getBoundingClientRect();
-        const threshold = containerRect.top + 60;
-
-        let activeEntry = headingEntries[0];
-        for (let i = 0; i < headingEntries.length; i++) {
-          const rect = headingEntries[i].el.getBoundingClientRect();
-          if (rect.top <= threshold) {
-            activeEntry = headingEntries[i];
-          } else {
-            break;
-          }
-        }
-
-        headingEntries.forEach((entry) => {
-          if (entry === activeEntry) {
-            entry.link.classList.add('is-active');
-          } else {
-            entry.link.classList.remove('is-active');
-          }
-        });
-        ticking = false;
-      }
-
-      scrollContainer.addEventListener(
-        'scroll',
-        () => {
-          if (!ticking) {
-            requestAnimationFrame(updateActiveHeading);
-            ticking = true;
-          }
-        },
-        { passive: true }
-      );
-
-      updateActiveHeading();
-    }
-
-    setupTocScrollSpy();
-
     const container = document.getElementById('wiki-book-view');
     requestAnimationFrame(() => {
       container?.classList.add('is-ready');
@@ -1136,15 +1076,21 @@
       document.body.style.overflow = '';
     }
 
-    closeBtn?.addEventListener('click', closeLightbox);
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) closeLightbox();
-    });
+    // The overlay lives in base.html and survives every DOM swap, so these
+    // must be bound once -- initPage() runs again on each navigation.
+    if (!overlay.__lightboxBound) {
+      overlay.__lightboxBound = true;
 
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !overlay.hidden) closeLightbox();
-    });
+      closeBtn?.addEventListener('click', closeLightbox);
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeLightbox();
+      });
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !overlay.hidden) closeLightbox();
+      });
+    }
 
+    // These, by contrast, are page content: new nodes every time.
     document.querySelectorAll('article img, .infobox-main-img, .hero-banner-img').forEach((img) => {
       img.addEventListener('click', () => {
         const src = img.getAttribute('src');

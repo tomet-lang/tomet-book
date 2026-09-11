@@ -59,6 +59,8 @@ impl<'a> BookRenderer<'a> {
             default_view => &self.config.ui.default_view,
             custom_css => &self.config.ui.custom_css,
             t => &self.config.ui.strings,
+            css_version => &*super::assets::CSS_VERSION,
+            js_version => &*super::assets::JS_VERSION,
             rail_letters => &self.rail_letters,
             source_path => &doc.source_path,
             page_title => &doc.title,
@@ -95,6 +97,8 @@ impl<'a> BookRenderer<'a> {
             default_view => &self.config.ui.default_view,
             custom_css => &self.config.ui.custom_css,
             t => &self.config.ui.strings,
+            css_version => &*super::assets::CSS_VERSION,
+            js_version => &*super::assets::JS_VERSION,
             sections => sections,
             entries => entries,
         };

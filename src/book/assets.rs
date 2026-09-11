@@ -1,21 +1,39 @@
 use anyhow::{Context, Result};
+use std::collections::hash_map::DefaultHasher;
 use std::fs;
+use std::hash::{Hash, Hasher};
 use std::path::Path;
+use std::sync::LazyLock;
 
 use super::loader::MediaFileInfo;
 use crate::config::BookConfig;
+
+pub const BOOK_CSS: &str = include_str!("../assets/static/book.css");
+pub const BOOK_JS: &str = include_str!("../assets/static/book.js");
+
+/// A short digest of an asset's contents, for `?v=` cache busting.
+///
+/// Both files are served from fixed paths, so without this a reader who has
+/// visited before keeps the stylesheet and script their browser cached, no
+/// matter how many times the book is rebuilt.
+fn content_version(content: &str) -> String {
+    let mut hasher = DefaultHasher::new();
+    content.hash(&mut hasher);
+    format!("{:016x}", hasher.finish())
+}
+
+pub static CSS_VERSION: LazyLock<String> = LazyLock::new(|| content_version(BOOK_CSS));
+pub static JS_VERSION: LazyLock<String> = LazyLock::new(|| content_version(BOOK_JS));
 
 pub fn write_static_assets(out_dir: &Path, src_dir: &Path, config: &BookConfig) -> Result<()> {
     fs::create_dir_all(out_dir)?;
 
     // 1. Write embedded book.css
-    let css_content = include_str!("../assets/static/book.css");
-    super::write_if_changed(&out_dir.join("book.css"), css_content)
+    super::write_if_changed(&out_dir.join("book.css"), BOOK_CSS)
         .context("Failed to write book.css")?;
 
     // 2. Write embedded book.js
-    let js_content = include_str!("../assets/static/book.js");
-    super::write_if_changed(&out_dir.join("book.js"), js_content)
+    super::write_if_changed(&out_dir.join("book.js"), BOOK_JS)
         .context("Failed to write book.js")?;
 
     // 3. Copy user's custom CSS if specified and exists

@@ -146,7 +146,7 @@
         {% if images and images | length > 0 %}
         <div class="infobox-image-section">
           <div class="infobox-image-wrapper">
-            <img src="{{ images[0] }}" alt="{{ page_title }}" class="infobox-main-img" loading="lazy" />
+            <img src="{{ images[0] }}" alt="{{ page_title }}" class="infobox-main-img" loading="lazy" decoding="async" />
           </div>
           {% if images | length > 1 %}
           <div class="infobox-costume-switcher" role="tablist">
@@ -229,7 +229,7 @@
         <div class="book-hero-section">
           {% if banner_url %}
           <div class="hero-banner-wrapper">
-            <img src="{{ banner_url }}" alt="{{ page_title }} {{ t["image.banner_alt"] }}" class="hero-banner-img" {% if banner_y %}style="object-position: center {{ banner_y }}%;"{% endif %} />
+            <img src="{{ banner_url }}" alt="{{ page_title }} {{ t["image.banner_alt"] }}" class="hero-banner-img" {% if banner_y %}style="object-position: center {{ banner_y }}%;"{% endif %} loading="eager" decoding="async" fetchpriority="high" />
             <button type="button" class="hero-zoom-btn" title="{{ t["image.zoom_banner"] }}">{{ t["image.zoom"] }}</button>
           </div>
           {% endif %}
@@ -413,6 +413,8 @@
         class="hero-banner-img"
         {% if banner_y %}style="object-position: center {{ banner_y }}%;"{% endif %}
         loading="eager"
+        decoding="async"
+        fetchpriority="high"
       />
       <button type="button" class="hero-zoom-btn" title="{{ t["image.zoom_banner"] }}">{{ t["image.zoom"] }}</button>
     </div>
@@ -575,6 +577,7 @@
           alt="{{ page_title }}"
           class="infobox-main-img"
           loading="lazy"
+          decoding="async"
         />
       </div>
       {% if images | length > 1 %}

@@ -32,7 +32,7 @@
         }
       } catch {}
     </script>
-    <link rel="stylesheet" href="/book.css" />
+    <link rel="stylesheet" href="/book.css?v={{ css_version }}" />
     {% for css in custom_css %}
     <link rel="stylesheet" href="{{ css }}" />
     {% endfor %}
@@ -103,6 +103,6 @@
     </div>
 
     <script>window.tmtStrings = {{ t | tojson | safe }};</script>
-    <script src="/book.js"></script>
+    <script src="/book.js?v={{ js_version }}"></script>
   </body>
 </html>
