@@ -195,14 +195,32 @@
   height: auto;
 }
 
-/* 影も左向きへ */
-[data-tabs="right"] .sticky-tab-btn.is-active,
-[data-tabs="right"] .sticky-tab-node.is-active-branch > .sticky-tab-btn {
-  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.16);
+/* 影も左向きへ。横版と同じく、どの付箋にも同じだけ落とす。 */
+[data-tabs="right"] .sticky-tab-btn {
+  box-shadow: 2px 0 3px rgba(0, 0, 0, 0.2);
 }
-[data-theme="dark"][data-tabs="right"] .sticky-tab-btn.is-active,
-[data-theme="dark"][data-tabs="right"] .sticky-tab-node.is-active-branch > .sticky-tab-btn {
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.48);
+[data-theme="dark"][data-tabs="right"] .sticky-tab-btn {
+  box-shadow: 2px 0 3px rgba(0, 0, 0, 0.55);
+}
+
+/* ポップオーバーを開いている付箋だけ、紙より前へ出す。
+   紙の影が落ちたままだと、付箋には影があってポップオーバーには無い、という
+   継ぎ目ができる。ポップオーバーは開いている付箋の続きなので、二つまとめて
+   紙の手前に持ち上げる。
+   帯 (.sticky-tabs-bar) の z-index を外してあるのは、そこが重ね合わせ文脈だと
+   中の付箋をいくら上げても紙 (z-index: 2) を越えられないため。縦版では
+   スクロールバーを上へ出す反転を使っていないので、外しても横版に影響しない。 */
+[data-tabs="right"] .sticky-tabs-bar {
+  z-index: auto;
+}
+[data-tabs="right"] .sticky-tab-btn.is-popover-open {
+  z-index: 3;
+}
+/* 横版はアクティブな付箋を z-index: 10 で持ち上げている。帯の文脈を外した
+   いまは、それがそのまま紙 (2) を越えてしまい、アクティブな一枚にだけ紙の影が
+   落ちなくなる。縦版では兄弟と重ならないので、持ち上げる必要もない。 */
+[data-tabs="right"] .sticky-tab-btn.is-active {
+  z-index: 1;
 }
 
 /* --- 子付箋のスロット: 横ではなく下へ開く --- */
