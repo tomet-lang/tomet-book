@@ -10,6 +10,7 @@
   // ==================== VIEW TRANSITIONS ROUTER ====================
   // Intercepts in-app link clicks and performs smooth slide animations
   async function navigateTo(url, pushState = true) {
+    T.hidePopover?.();
     try {
       const res = await fetch(url);
       if (!res.ok) {

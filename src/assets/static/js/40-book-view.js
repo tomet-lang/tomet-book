@@ -36,6 +36,28 @@
     return document.documentElement.getAttribute('data-tabs') === 'right';
   }
 
+  // Sticky Tabs Hover Popover Global State (persists across SPA navigations)
+  let popoverHoverTimer = null;
+  let popoverCloseTimer = null;
+
+  function hidePopover() {
+    if (popoverHoverTimer) {
+      clearTimeout(popoverHoverTimer);
+      popoverHoverTimer = null;
+    }
+    if (popoverCloseTimer) {
+      clearTimeout(popoverCloseTimer);
+      popoverCloseTimer = null;
+    }
+    const popover = document.getElementById('sticky-hover-popover');
+    if (popover) {
+      popover.hidden = true;
+    }
+    document
+      .querySelectorAll('.sticky-tab-btn.is-popover-open')
+      .forEach((el) => el.classList.remove('is-popover-open'));
+  }
+
   function setupBookViewInteraction() {
     const tocLinks = document.querySelectorAll('.book-toc-link');
     const scrollContainer = document.getElementById('book-content-scroll');
@@ -182,6 +204,8 @@
       const tabsBar = document.getElementById('sticky-tabs-bar');
       if (!tabsBar) return null;
 
+      hidePopover();
+
       const nodes = Array.from(tabsBar.querySelectorAll('.sticky-tab-node'));
       if (nodes.length === 0) return null;
 
@@ -254,21 +278,25 @@
         popover.className = 'sticky-hover-popover';
         popover.hidden = true;
         popover.setAttribute('data-pagefind-ignore', '');
-        popover.innerHTML = `<div class="sticky-hover-popover-list"></div>`;
+        popover.innerHTML = `<div class="sticky-popover-tab" role="button"></div><div class="sticky-hover-popover-list"></div>`;
         document.body.appendChild(popover);
       }
-      const popoverList = popover.querySelector('.sticky-hover-popover-list');
-      let hoverTimer = null;
-      let closeTimer = null;
-
-      function hidePopover() {
-        if (hoverTimer) clearTimeout(hoverTimer);
-        if (closeTimer) clearTimeout(closeTimer);
-        if (popover) popover.hidden = true;
-        // The tab stops standing in for a hovered one.
-        tabsBar
-          .querySelectorAll('.sticky-tab-btn.is-popover-open')
-          .forEach((el) => el.classList.remove('is-popover-open'));
+      let popoverTab = popover.querySelector('.sticky-popover-tab');
+      let popoverList = popover.querySelector('.sticky-hover-popover-list');
+      if (!popoverTab) {
+        popoverTab = document.createElement('div');
+        popoverTab.className = 'sticky-popover-tab';
+        popoverTab.setAttribute('role', 'button');
+        if (popoverList) {
+          popover.insertBefore(popoverTab, popoverList);
+        } else {
+          popover.appendChild(popoverTab);
+        }
+      }
+      if (!popoverList) {
+        popoverList = document.createElement('div');
+        popoverList.className = 'sticky-hover-popover-list';
+        popover.appendChild(popoverList);
       }
 
       function showPopoverForNode(node, btn) {
@@ -331,15 +359,43 @@
         const isParentActive = node.classList.contains('is-active') || node.classList.contains('is-active-branch');
         popover.className = `sticky-hover-popover level-${parentLevel}${isParentActive ? ' is-active' : ''}`;
 
+        // Populate the dummy tab clone so the tab and flyout form one seamless L-shaped sheet of paper.
+        if (popoverTab) {
+          popoverTab.className = `sticky-popover-tab sticky-tab-btn level-${parentLevel}${isParentActive ? ' is-active' : ''}`;
+          popoverTab.innerHTML = btn.innerHTML;
+          popoverTab.title = btn.title || '';
+          popoverTab.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            hidePopover();
+            btn.click();
+          };
+        }
+
         const rect = btn.getBoundingClientRect();
-        const popoverWidth = Math.min(320, Math.max(200, popover.offsetWidth || 220));
+        popover.style.width = '';
+        const popoverWidth = Math.min(320, Math.max(220, popover.offsetWidth || 220));
 
         if (isVerticalTabs()) {
-          // The sticky tabs are on the right edge, so the popover expands to their left.
-          const top = Math.max(12, Math.min(rect.top, window.innerHeight - 120));
-          popover.style.top = `${top}px`;
+          // In vertical mode, the popover expands leftward with the dummy tab overlaid on the parent tab.
+          popover.style.width = `${popoverWidth}px`;
+          const targetHeight = Math.min(280, popoverList.scrollHeight || 200);
+          let popoverTop = rect.top;
+          if (popoverTop + targetHeight > window.innerHeight - 16) {
+            popoverTop = Math.max(12, window.innerHeight - targetHeight - 16);
+          }
+          popoverList.style.maxHeight = `${Math.min(280, Math.max(120, window.innerHeight - popoverTop - 24))}px`;
+          popover.style.top = `${popoverTop}px`;
           popover.style.left = `${Math.max(12, rect.left - popoverWidth)}px`;
+
+          if (popoverTab) {
+            popoverTab.style.top = `${rect.top - popoverTop}px`;
+            popoverTab.style.width = `${rect.width + 1}px`;
+            popoverTab.style.height = `${rect.height}px`;
+          }
         } else {
+          popover.style.width = '';
+          popoverList.style.maxHeight = '280px';
           let left = rect.left;
           if (left + popoverWidth > window.innerWidth - 12) {
             left = Math.max(12, window.innerWidth - popoverWidth - 12);
@@ -353,10 +409,18 @@
       if (popover && !popover.__hoverBound) {
         popover.__hoverBound = true;
         popover.addEventListener('mouseenter', () => {
-          if (closeTimer) clearTimeout(closeTimer);
+          if (popoverCloseTimer) {
+            clearTimeout(popoverCloseTimer);
+            popoverCloseTimer = null;
+          }
         });
-        popover.addEventListener('mouseleave', () => {
-          closeTimer = setTimeout(hidePopover, 180);
+        popover.addEventListener('mouseleave', (e) => {
+          const toEl = e.relatedTarget;
+          if (toEl && toEl.closest && toEl.closest('.sticky-tab-btn')) {
+            return;
+          }
+          if (popoverCloseTimer) clearTimeout(popoverCloseTimer);
+          popoverCloseTimer = setTimeout(hidePopover, 180);
         });
       }
 
@@ -375,16 +439,27 @@
         });
 
         btn?.addEventListener('mouseenter', () => {
-          if (closeTimer) clearTimeout(closeTimer);
-          if (hoverTimer) clearTimeout(hoverTimer);
-          hoverTimer = setTimeout(() => {
+          if (popoverCloseTimer) {
+            clearTimeout(popoverCloseTimer);
+            popoverCloseTimer = null;
+          }
+          if (popoverHoverTimer) clearTimeout(popoverHoverTimer);
+          popoverHoverTimer = setTimeout(() => {
             showPopoverForNode(node, btn);
           }, 120);
         });
 
-        btn?.addEventListener('mouseleave', () => {
-          if (hoverTimer) clearTimeout(hoverTimer);
-          closeTimer = setTimeout(hidePopover, 180);
+        btn?.addEventListener('mouseleave', (e) => {
+          if (popoverHoverTimer) {
+            clearTimeout(popoverHoverTimer);
+            popoverHoverTimer = null;
+          }
+          const toEl = e.relatedTarget;
+          if (popover && toEl && popover.contains(toEl)) {
+            return;
+          }
+          if (popoverCloseTimer) clearTimeout(popoverCloseTimer);
+          popoverCloseTimer = setTimeout(hidePopover, 180);
         });
       });
 
@@ -711,5 +786,5 @@
     updateRecentNotes();
   }
 
-  Object.assign(T, { setupBookViewInteraction, syncHeadingHash });
+  Object.assign(T, { setupBookViewInteraction, syncHeadingHash, hidePopover });
 })();

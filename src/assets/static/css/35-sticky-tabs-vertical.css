@@ -115,13 +115,9 @@
   width: calc(100% - 6px);
 }
 
-/* Flow inline: line clamp is handled by the parent container, so only wrapping is allowed here. */
+/* Level badges hidden per user preference */
 [data-tabs="right"] .sticky-tab-label > .sticky-level-badge {
-  display: inline;
-  margin-right: 4px;
-  /* Inline elements align to baseline, causing smaller badges to sink below text.
-     Align to vertical middle. */
-  vertical-align: middle;
+  display: none;
 }
 
 [data-tabs="right"] .sticky-tab-text {
@@ -201,6 +197,12 @@
   box-shadow: 2px 0 3px rgba(0, 0, 0, 0.4);
 }
 
+/* While a popover is open, suppress the underlying tab's shadow so it doesn't double up with the dummy tab's drop-shadow */
+[data-tabs="right"] .sticky-tab-btn.is-popover-open,
+[data-theme="dark"][data-tabs="right"] .sticky-tab-btn.is-popover-open {
+  box-shadow: none;
+}
+
 /* Project only the tab that currently has an open popover in front of the article.
    Leaving the article shadow on creates an unnatural seam where the tab has shadow but the popover doesn't.
    Since the popover extends from the open tab, both are lifted forward in front of the paper.
@@ -217,17 +219,7 @@
   z-index: 1;
 }
 
-/* Tabs with open popovers sit in front of the article. Having the same specificity (0,3,0)
-   as .is-active above, this rule defined later takes precedence.
-   Reversing order would leave active tabs recessed behind even when their popover opens. */
-[data-tabs="right"] .sticky-tab-btn.is-popover-open {
-  z-index: 3;
-}
-/* Child slots form a z-index: 0 stacking context; setting their child tabs to 3 cannot reach
-   the article (2). Elevate the enclosing slot including all open tabs through nesting levels. */
-[data-tabs="right"] .sticky-children-slot:has(.sticky-tab-btn.is-popover-open) {
-  z-index: 3;
-}
+
 
 /* --- Child Tab Slots: Open downward instead of horizontally --- */
 [data-tabs="right"] .sticky-children-slot {
@@ -267,6 +259,10 @@
   width: 26px;
   height: 24px;
   border-radius: 0 4px 4px 0;
+  box-shadow: 2px 0 3px rgba(0, 0, 0, 0.13);
+}
+[data-theme="dark"][data-tabs="right"] .sticky-edge-btn {
+  box-shadow: 2px 0 3px rgba(0, 0, 0, 0.4);
 }
 [data-tabs="right"] #btn-sticky-top {
   margin: 0 0 6px 0;
@@ -275,10 +271,52 @@
   margin: 6px 0 0 0;
 }
 
-/* --- Popover: Expands to the left rather than downward, changing the join corner --- */
+/* --- Popover in Vertical Mode (L-shaped seamless paper via dummy tab clone) --- */
 [data-tabs="right"] .sticky-hover-popover {
+  background: transparent;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  overflow: visible;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25));
+  animation: 0.1s ease-out both popover-fade-in-vertical;
+}
+
+[data-theme="dark"][data-tabs="right"] .sticky-hover-popover {
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.55));
+}
+
+@keyframes popover-fade-in-vertical {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+[data-tabs="right"] .sticky-hover-popover-list {
+  width: 100%;
+  background: var(--pop-bg);
   border-radius: 4px 0 4px 4px;
-  box-shadow: -8px 0 16px -6px rgba(0, 0, 0, 0.3);
+}
+
+[data-tabs="right"] .sticky-popover-tab {
+  display: flex;
+  position: absolute;
+  left: calc(100% - 1px);
+  top: 0;
+  background: var(--pop-bg);
+  color: inherit;
+  border-radius: 0 4px 4px 0;
+  box-shadow: none;
+  cursor: pointer;
+  pointer-events: auto;
+  margin: 0;
+  box-sizing: border-box;
+  border: none;
+  z-index: 1;
+  transition: none;
 }
 
 /* In vertical mode the rail is the right column itself, so it collapses horizontally. */

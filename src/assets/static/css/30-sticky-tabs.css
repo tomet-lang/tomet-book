@@ -33,8 +33,12 @@
   border-radius: 4px 4px 0 0;
   background: var(--sticky-edge-btn-bg);
   color: var(--sticky-edge-btn-color);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.13);
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+[data-theme="dark"] .sticky-edge-btn {
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
 }
 .sticky-edge-btn:hover {
   background: var(--sticky-edge-btn-hover-bg);
@@ -221,11 +225,11 @@
   --sticky-l4-active-color: #581c87;
   --sticky-l4-badge: #6d28d9;
 
-  /* Edge navigation buttons (Inverted: dark colors in light mode) */
-  --sticky-edge-btn-bg: #202122;
-  --sticky-edge-btn-hover-bg: #27292d;
-  --sticky-edge-btn-color: #a2a9b1;
-  --sticky-edge-btn-hover-color: #6da8e8;
+  /* Edge navigation buttons (Soft paper black post-it in light mode) */
+  --sticky-edge-btn-bg: #2b3036;
+  --sticky-edge-btn-hover-bg: #373d46;
+  --sticky-edge-btn-color: #eaedf1;
+  --sticky-edge-btn-hover-color: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -258,11 +262,11 @@
     --sticky-l4-active-color: #faf5ff;
     --sticky-l4-badge: #c084fc;
 
-    /* Edge navigation buttons (Inverted: light colors in dark mode) */
-    --sticky-edge-btn-bg: #f8f9fa;
-    --sticky-edge-btn-hover-bg: #eaecf0;
-    --sticky-edge-btn-color: #54595d;
-    --sticky-edge-btn-hover-color: #3366cc;
+    /* Edge navigation buttons (Soft paper white post-it in dark mode) */
+    --sticky-edge-btn-bg: #e2e4e9;
+    --sticky-edge-btn-hover-bg: #eceef2;
+    --sticky-edge-btn-color: #202122;
+    --sticky-edge-btn-hover-color: #101418;
   }
 }
 
@@ -295,11 +299,11 @@
   --sticky-l4-active-color: #faf5ff;
   --sticky-l4-badge: #c084fc;
 
-  /* Edge navigation buttons (Inverted: light colors in dark mode) */
-  --sticky-edge-btn-bg: #f8f9fa;
-  --sticky-edge-btn-hover-bg: #eaecf0;
-  --sticky-edge-btn-color: #54595d;
-  --sticky-edge-btn-hover-color: #3366cc;
+  /* Edge navigation buttons (Soft paper white post-it in dark mode) */
+  --sticky-edge-btn-bg: #e2e4e9;
+  --sticky-edge-btn-hover-bg: #eceef2;
+  --sticky-edge-btn-color: #202122;
+  --sticky-edge-btn-hover-color: #101418;
 }
 
 /* H1: Soft yellow (classic Post-it yellow) */
@@ -465,12 +469,9 @@
   flex-shrink: 0;
 }
 
-/* Badge inside sticky tab button: carries no background and inherits tab text color */
+/* Badge inside sticky tab button: hidden per user preference */
 .sticky-tab-btn .sticky-level-badge {
-  background: none;
-  color: inherit;
-  padding-left: 0;
-  padding-right: 0;
+  display: none;
 }
 
 /* Badges in popover use per-level text colors. Background is mixed with popover ground (var(--pop-bg))
@@ -500,6 +501,11 @@
    the top left corner stays square where the two meet, and the three free corners get
    the tab's radius. Everything inside is transparent so that one colour is
    what shows. */
+/* Dummy tab clone used in vertical mode; hidden by default in horizontal layout */
+.sticky-popover-tab {
+  display: none;
+}
+
 .sticky-hover-popover {
   position: fixed;
   z-index: 1000;
@@ -577,7 +583,8 @@
   padding: 3px 0;
 }
 
-.sticky-hover-item {
+.sticky-hover-item,
+.sticky-hover-item:visited {
   display: flex;
   align-items: center;
   gap: 6px;
