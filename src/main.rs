@@ -1,16 +1,13 @@
-mod book;
-mod cli;
-mod config;
-mod serve;
-
 use anyhow::{Context, Result};
 use clap::Parser;
 use std::fs;
 use tracing::info;
 use tracing_subscriber::{EnvFilter, fmt};
 
-use cli::{Cli, Commands};
-use config::BookConfig;
+use tmtbook::book;
+use tmtbook::cli::{Cli, Commands};
+use tmtbook::config::BookConfig;
+use tmtbook::serve;
 
 #[tokio::main]
 async fn main() -> Result<()> {

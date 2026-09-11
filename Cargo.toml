@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2024"
 description = "A standalone book & wiki generator for Tomet"
 
+[lib]
+name = "tmtbook"
+path = "src/lib.rs"
+
 [[bin]]
 name = "tmtbook"
 path = "src/main.rs"
