@@ -4,17 +4,17 @@
 
   // ==================== BOOK VIEW INTERACTIONS ====================
 
-  /** いま読んでいる見出しをアドレスバーに映す。節の URL をそのままコピーできる。 */
+  /** Reflect the currently read heading in the address bar so section URLs can be copied directly. */
   function syncHeadingHash(id) {
     if (!id) return;
     if (readHash() === id) return;
     try {
-      // replaceState: スクロールしただけで戻るボタンが埋まらないようにする。
+      // replaceState: Avoid filling browser history while scrolling.
       history.replaceState(null, "", `#${encodeURIComponent(id)}`);
     } catch {}
   }
 
-  /** いまのアドレスが指している見出し id。壊れた文字列でも落ちない。 */
+  /** Heading ID indicated by the current URL hash. Safely handles malformed strings. */
   function readHash() {
     const raw = (window.location.hash || "").slice(1);
     if (!raw) return "";
@@ -25,17 +25,16 @@
     }
   }
 
-  /** 開いた URL が指していて、かつこのページに実在する見出し。 */
+  /** Heading indicated by the requested URL that exists on this page. */
   function requestedHeadingId() {
     const id = readHash();
     return id && document.getElementById(id) ? id : null;
   }
 
-  /** 付箋バーが右の縦並びになっているか。 */
+  /** Whether the sticky tabs bar is in vertical right-side layout. */
   function isVerticalTabs() {
     return document.documentElement.getAttribute('data-tabs') === 'right';
   }
-
 
   function setupBookViewInteraction() {
     const tocLinks = document.querySelectorAll('.book-toc-link');
@@ -134,7 +133,7 @@
         if (updateStickyTabs) {
           updateStickyTabs(currentId);
         }
-        // 縦スクロール版が出ているときはそちらの spy が受け持つ。
+        // When classic vertical view is active, its own spy handles the hash.
         if (document.documentElement.getAttribute("data-view") !== "classic") {
           syncHeadingHash(currentId);
         }
@@ -156,14 +155,14 @@
       scrollContainer.__tmtScrollHandler = onScroll;
       scrollContainer.addEventListener('scroll', onScroll, { passive: true });
 
-      // 開いた URL が節を指しているなら、そこから読み始める。本文は内側の
-      // スクロールコンテナなので、ブラウザ標準のアンカー移動は効かない。
+      // If the opened URL targets a section, start reading from there. Native browser
+      // anchor jumping does not work automatically inside an inner scroll container.
       const requested = requestedHeadingId();
       const settle = () => {
         if (requested) {
           const target = document.getElementById(requested);
           if (target) {
-            // 読み込み直後なので滑らせない。
+            // Immediate jump without smooth scrolling on initial load.
             scrollContainer.scrollTo({
               top: target.offsetTop - scrollContainer.offsetTop - 16,
               behavior: 'auto',
@@ -177,8 +176,8 @@
       setTimeout(settle, 80);
     }
 
-    // 付箋見出し (Sticky-Tab Headings: インライン横展開アコーディオン & ScrollSpy完全同期)
-    // 構造: [ H1 ] (H2) (H2) (H3->いまアクティブなやつまでが展開される) (H2) [ H1 ] [ H1 ] ...
+    // Sticky-Tab Headings: inline expanding accordion synchronized with ScrollSpy.
+    // Structure: [ H1 ] (H2) (H2) (H3 -> expanded up to the active item) (H2) [ H1 ] [ H1 ] ...
     function setupStickyTabs(scrollContainer, headingTargets, markClickScrolling) {
       const tabsBar = document.getElementById('sticky-tabs-bar');
       if (!tabsBar) return null;
@@ -325,8 +324,9 @@
           .forEach((el) => el.classList.remove('is-popover-open'));
         btn.classList.add('is-popover-open');
 
-        // 親ノードのレベルとアクティブ状態に合わせてクラスを設定し、
-        // CSS変数で付箋と完全に同じ配色を適用する
+        // Wear the tab's own colours so the two read as one piece of paper.
+        // Match the level and active state of the parent node so CSS variables
+        // provide the exact same color without transition interpolation mismatch.
         const parentLevel = node.getAttribute('data-level') || (btn.classList.contains('level-1') ? '1' : btn.classList.contains('level-2') ? '2' : btn.classList.contains('level-3') ? '3' : '4');
         const isParentActive = node.classList.contains('is-active') || node.classList.contains('is-active-branch');
         popover.className = `sticky-hover-popover level-${parentLevel}${isParentActive ? ' is-active' : ''}`;
@@ -335,7 +335,7 @@
         const popoverWidth = Math.min(320, Math.max(200, popover.offsetWidth || 220));
 
         if (isVerticalTabs()) {
-          // 付箋が右端にあるので、ポップオーバーはその左へ張り出す。
+          // The sticky tabs are on the right edge, so the popover expands to their left.
           const top = Math.max(12, Math.min(rect.top, window.innerHeight - 120));
           popover.style.top = `${top}px`;
           popover.style.left = `${Math.max(12, rect.left - popoverWidth)}px`;
@@ -422,7 +422,7 @@
         tabsBar.addEventListener(
           'wheel',
           (e) => {
-            // 縦モードではバーが縦スクロールなので、ブラウザ標準がそのまま効く。
+            // In vertical mode the bar scrolls vertically, so standard browser scrolling applies directly.
             if (isVerticalTabs()) return;
             const delta = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
             if (!delta) return;
@@ -480,7 +480,7 @@
       };
     }
 
-    // 1. 目次ペインと常設左縦バーの開閉制御
+    // 1. Navigation pane and permanent left rail toggle control
     function setupNavPane() {
       const titles = {
         toc: t('pane.toc'),
@@ -601,7 +601,7 @@
 
     setupNavPane();
 
-    // 2. データペインの開閉制御
+    // 2. Data pane expand/collapse control
     function bindDataPaneToggle() {
       const pane = document.getElementById('pane-data');
       const btnCollapse = document.getElementById('header-collapse-data');
@@ -666,7 +666,7 @@
       container?.classList.add('is-ready');
     });
 
-    // 4. 最近開いたノート
+    // 4. Recent notes history
     function updateRecentNotes() {
       const currentPath = window.location.pathname;
       const titleEl = document.querySelector('.content-title') || document.querySelector('.article-header h1');

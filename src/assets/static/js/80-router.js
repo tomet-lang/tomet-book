@@ -1,7 +1,7 @@
 (() => {
   const T = (window.TMT ??= {});
 
-  // いま表示しているページのパス。popstate が節の移動だけかを見分けるために持つ。
+  // Path of the current page, used to tell whether popstate is only moving between sections.
   let lastPath = window.location.pathname;
   const initPage = (...a) => T.initPage(...a);
   const syncViewMode = (...a) => T.syncViewMode(...a);
@@ -167,8 +167,8 @@
     });
 
     window.addEventListener('popstate', () => {
-      // 節を行き来しただけならページは同じ。作り直さず、いまの DOM のまま
-      // アドレスに合わせて移動する。
+      // If only navigating between sections on the same page, keep the existing DOM
+      // and scroll to the matching section instead of rebuilding.
       if (window.location.pathname === lastPath) {
         initPage();
         return;

@@ -157,9 +157,9 @@ a.hero-chip:hover .chip-val,
   text-decoration: underline;
 }
 
-/* 行き先が無いリンク。@meta 由来は tm-unresolved、本文由来は tomet-html が
-   付ける tm-ref-unresolved で、クラス名が違うだけで意味は同じ。
-   Wikipedia の赤リンクと同じく、踏む前に分かるよう赤くする。 */
+/* Unresolved links. Those from @meta use tm-unresolved, while body links from tomet-html
+   use tm-ref-unresolved; they share the same meaning despite different class names.
+   Styled in red like Wikipedia red links so missing targets are evident before clicking. */
 .tm-unresolved,
 a.tm-unresolved,
 .tm-ref-unresolved,

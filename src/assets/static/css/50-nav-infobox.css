@@ -261,7 +261,7 @@
   margin: 0;
 }
 
-/* 目次の項目と同じ骨格。ここだけ別の見た目にする理由がない。 */
+/* Same skeleton as TOC items; there is no reason to style this differently. */
 .backlink-link {
   display: block;
   padding: 6px 8px;
@@ -285,7 +285,7 @@
   white-space: nowrap;
 }
 
-/* どの分類から来ているのかが、題だけより分かりやすい。 */
+/* Shows which section this backlink originates from, clearer than title alone. */
 .backlink-section {
   display: block;
   margin-top: 1px;
@@ -297,15 +297,15 @@
   white-space: nowrap;
 }
 
-/* ==================== BOOK INDEX (書かれた目次) ==================== */
+/* ==================== BOOK INDEX (WRITTEN TOC) ==================== */
 .book-index-items {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-/* 入れ子は左へ寄せるのではなく、線を引いて親子を見せる。深い索引でも
-   字下げだけが増えて読む幅が痩せていく、ということが起きない。 */
+/* Nesting uses border lines instead of heavy indentation to show parent-child hierarchy,
+   preventing deeply nested items from running out of reading width. */
 .book-index-items .book-index-items {
   margin-left: 7px;
   padding-left: 7px;
@@ -335,8 +335,8 @@
   color: var(--link);
 }
 
-/* いま読んでいるページ。索引は本全体を映すので、自分の居場所が分からないと
-   どこまで読んだのかが分からなくなる。 */
+/* Currently read page. Since the index reflects the entire book, highlighting current location
+   keeps readers oriented. */
 .book-index-link.is-here {
   background: var(--surface-subtle);
   border-left-color: var(--link);

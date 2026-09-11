@@ -1,10 +1,10 @@
-/* ==================== STICKY TABS (付箋見出し: 横展開アコーディオン) ==================== */
+/* ==================== STICKY TABS (Horizontal Expanding Accordion) ==================== */
 .pane-content-header {
-  background: #dfe3e8; /* 付箋と明確に分ける暗め背景 */
+  background: #dfe3e8; /* Darker header background to distinctly separate from tabs */
   padding: 0 8px;
   overflow: visible;
-  /* 41px の付箋領域 + 6px のスクロールバー。付箋そのものの寸法は変えず、
-     付箋の上に細いレールが増えるだけになる。 */
+  /* 41px tab area + 6px scrollbar. Preserves the dimensions of the tabs themselves
+     and simply adds a thin rail above them. */
   height: 47px;
   min-height: 47px;
   display: flex;
@@ -17,8 +17,8 @@
   background: #16191d;
 }
 
-/* バー両端の移動ボタン: 付箋ではないので色は持たず、下端だけ付箋と揃える。
-   バーの外に置いてあるので、付箋をスクロールしても動かない。 */
+/* Edge navigation buttons: not tabs, so they carry no tab color and align to the bottom edge.
+   Positioned outside the scroll container so they remain fixed when tabs scroll. */
 .sticky-edge-btn {
   flex: 0 0 auto;
   align-self: flex-end;
@@ -49,24 +49,23 @@
 
 .sticky-tabs-bar {
   display: flex;
-  /* 上下反転しているので、local の flex-start が見た目の下端になる。
-     付箋は従来どおりバーの底に接地する。 */
+  /* Inverted vertically so local flex-start becomes the visual bottom edge.
+     Tabs remain grounded to the bottom of the bar as usual. */
   align-items: flex-start;
-  /* 両端のボタンと場所を分け合う。width:100% だと自分だけで header を占めてしまい、
-     右のボタンと最後の付箋がはみ出して切れる。 */
+  /* Shares space with the edge buttons. Setting width: 100% would monopolize the header,
+     clipping the right edge button and the last tab. */
   flex: 1 1 auto;
   min-width: 0;
   height: 100%;
   overflow-x: auto;
   overflow-y: visible;
-  /* スクロールバーは出す。ドラッグできるうえ、横に続きがあることが目で分かる。 */
+  /* Display scrollbar for draggability and clear visual indication of horizontal overflow. */
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
-  /* 横スクロールバーは必ず要素の下端に出る仕様で、位置を指定する CSS は無い。
-     バー自体を上下反転させると下端が見た目の上へ来るので、スクロールバーが
-     付箋の上に出る。中身は二重に反転して元の向きへ戻す。
-     反転しているだけで本物のスクロールコンテナのままなので、ドラッグも
-     Shift+ホイールも慣性も、ブラウザ標準の挙動がそのまま効く。 */
+  /* Horizontal scrollbars are fixed to the bottom of elements by specification.
+     Flipping the bar vertically places its bottom at the visual top, moving the scrollbar
+     above the tabs. Contents are flipped a second time to restore normal orientation.
+     Since it remains a genuine scroll container, dragging, Shift+wheel, and inertia work natively. */
   transform: rotateX(180deg);
   position: relative;
   z-index: 1;
@@ -99,7 +98,7 @@
   height: 100%;
 }
 
-/* 階層ノード (インラインで横並び) */
+/* Hierarchical node (inline horizontal layout) */
 .sticky-tab-node {
   display: inline-flex;
   align-items: flex-end;
@@ -108,13 +107,13 @@
   height: 100%;
 }
 
-/* 付箋ボタン共通: 枠線なし・四角いインデックス付箋形状 (上丸・下平・柔らかい付箋背景色) */
+/* Sticky tab button base: borderless, index tab shape (rounded top, flat bottom, soft pastel palette) */
 .sticky-tab-btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   border-radius: 4px 4px 0 0;
-  border: none; /* 枠線なし！ */
+  border: none; /* Borderless */
   cursor: pointer;
   white-space: nowrap;
   user-select: none;
@@ -129,10 +128,9 @@
               box-shadow 0.15s ease;
 }
 
-/* 影は状態で分けない。アクティブなものだけが浮いていると、束の中でその一枚
-   だけ紙質が違って見える。全部が同じだけ浮いていて、前に出る量だけが違う。
-   ぼかしは小さく、濃さで出す。淡く広いぼかしは紙の縁を溶かしてしまい、
-   付箋の切り口が曖昧になる。 */
+/* Shadows do not vary by state. If only active tabs float, they look like different paper.
+   All tabs float by the same amount; only forward projection varies.
+   Tight blur with clear contrast preserves clean tab edges without blending into the background. */
 .sticky-tab-btn {
   box-shadow: 0 -2px 3px rgba(0, 0, 0, 0.13);
 }
@@ -140,7 +138,7 @@
   box-shadow: 0 -2px 3px rgba(0, 0, 0, 0.4);
 }
 
-/* --- サイズ階層 & アクティブ時の高さ伸長 (下からひょこっと出る / 下は接地維持) --- */
+/* --- Size hierarchy & active height elongation (pops upward / remains grounded) --- */
 .sticky-tab-btn.level-1 {
   height: 29px;
   padding: 2px 10px 2px 8px;
@@ -148,7 +146,7 @@
   font-weight: 600;
 }
 .sticky-tab-btn.level-1.is-active {
-  height: 33px; /* 上方向に伸びるだけ: 幅に触るものは何も変えない */
+  height: 33px; /* Extends upward only; never alters tab width */
   z-index: 10;
 }
 
@@ -189,9 +187,9 @@
   z-index: 10;
 }
 
-/* --- 柔らかい付箋カラー (統一CSSカスタムプロパティ) --- */
+/* --- Soft sticky tab color palette (Unified CSS variables) --- */
 :root {
-  /* H1: 柔らかいイエロー (ポストイット定番イエロー) */
+  /* H1: Soft yellow (classic Post-it yellow) */
   --sticky-l1-bg: #fef3c7;
   --sticky-l1-hover-bg: #fde68a;
   --sticky-l1-active-bg: #fcd34d;
@@ -199,7 +197,7 @@
   --sticky-l1-active-color: #78350f;
   --sticky-l1-badge: #b45309;
 
-  /* H2: 柔らかいミントグリーン */
+  /* H2: Soft mint green */
   --sticky-l2-bg: #d1fae5;
   --sticky-l2-hover-bg: #a7f3d0;
   --sticky-l2-active-bg: #6ee7b7;
@@ -207,7 +205,7 @@
   --sticky-l2-active-color: #064e3b;
   --sticky-l2-badge: #047857;
 
-  /* H3: 柔らかいパステルスカイブルー */
+  /* H3: Soft pastel sky blue */
   --sticky-l3-bg: #e0f2fe;
   --sticky-l3-hover-bg: #bae6fd;
   --sticky-l3-active-bg: #7dd3fc;
@@ -215,7 +213,7 @@
   --sticky-l3-active-color: #0c4a6e;
   --sticky-l3-badge: #0369a1;
 
-  /* H4+: 柔らかいラベンダーパープル */
+  /* H4+: Soft lavender purple */
   --sticky-l4-bg: #f3e8ff;
   --sticky-l4-hover-bg: #e9d5ff;
   --sticky-l4-active-bg: #d8b4fe;
@@ -286,7 +284,7 @@
   --sticky-l4-badge: #c084fc;
 }
 
-/* H1: 柔らかいイエロー (ポストイット定番イエロー) */
+/* H1: Soft yellow (classic Post-it yellow) */
 .sticky-tab-btn.level-1 {
   background: var(--sticky-l1-bg);
   color: var(--sticky-l1-color);
@@ -302,7 +300,7 @@
   color: var(--sticky-l1-active-color);
 }
 
-/* H2: 柔らかいミントグリーン */
+/* H2: Soft mint green */
 .sticky-tab-btn.level-2 {
   background: var(--sticky-l2-bg);
   color: var(--sticky-l2-color);
@@ -318,7 +316,7 @@
   color: var(--sticky-l2-active-color);
 }
 
-/* H3: 柔らかいパステルスカイブルー */
+/* H3: Soft pastel sky blue */
 .sticky-tab-btn.level-3 {
   background: var(--sticky-l3-bg);
   color: var(--sticky-l3-color);
@@ -334,7 +332,7 @@
   color: var(--sticky-l3-active-color);
 }
 
-/* H4+: 柔らかいラベンダーパープル */
+/* H4+: Soft lavender purple */
 .sticky-tab-btn.level-4,
 .sticky-tab-btn.level-5,
 .sticky-tab-btn.level-6 {
@@ -365,45 +363,45 @@
   max-width: 220px;
 }
 
-/* --- 横に展開される子ヘッダーのスロット (アクティブブランチ時にスッと開く) --- */
-/* 折りたたみ時も完全には隠さず、最初の子付箋の左端だけを親の後ろから覗かせる。
-   子がいることが畳んだままでも分かる。 */
+/* --- Horizontally expanding child heading slot (smoothly opens on active branch) --- */
+/* When collapsed, keep a 4px peek of the first child tab from behind the parent
+   so readers can see that child headings exist even when folded. */
 .sticky-children-slot {
   display: inline-flex;
   align-items: flex-end;
-  height: 100%; /* 親と同じ高さを共有して底面アラインメントを100%一致させる */
+  height: 100%; /* Shares parent height for 100% bottom edge alignment */
   align-self: flex-end;
   gap: 3px;
-  /* 親の下に 6px 潜らせたうえで 10px 残すので、親の右へ出るのは 4px。
-     切り口の右上だけを付箋と同じ丸みにして、紙の端が覗いて見えるようにする。 */
+  /* Tucks 6px beneath the parent and retains 10px, leaving a 4px visible tab peek to the right.
+     The top-right corner is rounded to match the tab shape so it reads as paper. */
   max-width: 10px;
   border-radius: 0 4px 0 0;
   opacity: 1;
   overflow: hidden;
   white-space: nowrap;
   pointer-events: none;
-  /* オーバーシュートしないイージング: 1 を超える制御点だと畳むときに
-     目標幅を一度下回って覗きが消え、跳ね返って飛び出して見える。 */
+  /* Non-overshooting easing: cubic-bezier with control points exceeding 1 causes the peek
+     to momentarily dip below target width and pop back out during collapse. */
   transition: max-width 0.28s cubic-bezier(0.2, 0, 0, 1),
               margin 0.2s cubic-bezier(0.2, 0, 0, 1);
-  /* 親の下へ少し潜り込ませて「後ろにある」ように見せる。 */
+  /* Tucked slightly beneath parent to appear stacked behind. */
   margin: 0 0 0 -6px;
-  /* 独自の重ね合わせ文脈。中の子付箋も同じ .sticky-tab-btn (z-index:1) なので、
-     ここへ閉じ込めないと親より前に描かれてしまう。 */
+  /* Isolated stacking context. Child tabs also use .sticky-tab-btn (z-index: 1),
+     so they must be contained here to avoid rendering in front of the parent. */
   position: relative;
   z-index: 0;
 }
 
-/* 畳んでいる間はスロットを中身の高さまで縮める。height:100% のままだと箱が
-   バー全高 (41px) になり、角丸は子付箋 (26px) の十数px上の空中に付いてしまって
-   紙の位置には直線の側面しか来ない。 */
+/* While collapsed, contract slot height to match child tab height.
+   At height: 100%, the box extends to full bar height (41px), placing the rounded corner
+   above the child tab (26px) into empty space with straight edges at the paper level. */
 .sticky-tab-node:not(.is-active):not(.is-active-branch) > .sticky-children-slot {
   height: auto;
 }
 
-/* 畳んでいる間は中身を伏せ、紙の端だけが覗くようにする。
-   visibility を切り替えると文字が先に消えてから幅が縮み、動きが二段に見える。
-   幅とまったく同じ時間・同じ曲線でフェードさせて、ひと続きの動きにする。 */
+/* Conceal contents while collapsed so only the tab edge peeks through.
+   Fading opacity with the exact same duration and easing as width prevents
+   text disappearing abruptly before width collapses. */
 .sticky-children-slot .sticky-tab-btn > * {
   transition: opacity 0.28s cubic-bezier(0.2, 0, 0, 1);
 }
@@ -411,31 +409,31 @@
   opacity: 0;
 }
 
-/* バッジと見出しの入れ物。横版では存在しないかのように振る舞わせ、
-   バッジと見出しを従来どおり付箋の直接の子として並べる。
-   縦版だけがこれを行数を打ち切る箱として使う。 */
+/* Container for badge and heading text. Acts as display: contents in horizontal mode
+   so badge and title stay direct children of the tab.
+   Vertical mode uses this container to truncate lines. */
 .sticky-tab-label {
   display: contents;
 }
 
-/* 親付箋がチラ見せより手前に来るように積み順を固定する。 */
+/* Fix stacking order so parent tabs appear in front of peeked child tabs. */
 .sticky-tab-btn {
   position: relative;
   z-index: 1;
 }
 
-/* 親ノードがアクティブまたはアクティブブランチの時、子スロットが横に展開！ */
+/* Horizontally expand child slot when parent node is active or in an active branch */
 .sticky-tab-node.is-active > .sticky-children-slot,
 .sticky-tab-node.is-active-branch > .sticky-children-slot {
   max-width: 1500px;
   opacity: 1;
   pointer-events: auto;
-  overflow: visible; /* 上部の見切れを完全防止！ */
+  overflow: visible; /* Prevents top edge clipping */
   margin-left: 3px;
   margin-right: 3px;
 }
 
-/* --- ヘッダーレベルバッジ (H1, H2, H3, ...) --- */
+/* --- Heading level badge (H1, H2, H3, ...) --- */
 .sticky-level-badge {
   font-size: 0.62rem;
   font-weight: 700;
@@ -449,7 +447,7 @@
   flex-shrink: 0;
 }
 
-/* 付箋ボタン内のバッジ: 色を持たず、付箋の文字色をそのまま使う */
+/* Badge inside sticky tab button: carries no background and inherits tab text color */
 .sticky-tab-btn .sticky-level-badge {
   background: none;
   color: inherit;
@@ -457,7 +455,8 @@
   padding-right: 0;
 }
 
-/* ポップオーバー内のバッジはレベル別の色を持つ。背景は地の色 (--pop-bg) と currentColor を color-mix する。 */
+/* Badges in popover use per-level text colors. Background is mixed with popover ground (var(--pop-bg))
+   using standard color-mix. */
 .sticky-hover-item .sticky-level-badge.level-1 {
   color: var(--sticky-l1-badge);
 }
@@ -554,7 +553,6 @@
   }
 }
 
-
 .sticky-hover-popover-list {
   max-height: 280px;
   overflow-y: auto;
@@ -576,9 +574,8 @@
   text-overflow: ellipsis;
 }
 
-/* ホバー/アクティブは文字色へ寄せた不透明色。地は付箋の色そのもの。 */
-/* ホバーの合図は a:hover の下線だけに任せる。背景まで動かすと、
-   アクティブ項目の背景との区別が弱くなる。 */
+/* Active state background is tinted toward text color over tab ground color.
+   Hover state relies on underline only to avoid weakening contrast against active items. */
 
 .sticky-hover-item.is-active {
   background: var(--pop-active);
@@ -607,10 +604,9 @@
 }
 
 
-/* 見出しの無いページには付箋も両端のボタンも無く、帯だけが残る。要素は残す
-   (クライアント側の遷移は .pane-content-header の中身を入れ替えるので、
-   無くなると入れ替え先を見失って前のページの付箋が残る) が、高さは畳む。
-   :empty ではなくこれなのは、テンプレートが空白文字を残すため。 */
+/* On pages without headings, there are neither sticky tabs nor edge buttons, leaving only the header bar.
+   The DOM element is preserved (client navigation swaps its content; removing it loses the target),
+   but height collapses to 0. Uses :not(:has(*)) because templates leave whitespace. */
 .pane-content-header:not(:has(*)) {
   height: 0;
   min-height: 0;

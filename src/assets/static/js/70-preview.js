@@ -17,7 +17,7 @@
     if (isPreviewGlobalInitialized) return;
     isPreviewGlobalInitialized = true;
 
-    // スクロール時および画面クリック時にプレビューを閉じる
+    // Close preview card on scroll and outside click.
     window.addEventListener('scroll', hidePreviewCard, { capture: true, passive: true });
     document.addEventListener('click', (e) => {
       const card = document.getElementById('wiki-page-preview');

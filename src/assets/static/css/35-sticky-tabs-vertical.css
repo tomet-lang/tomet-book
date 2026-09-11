@@ -1,38 +1,38 @@
-/* ==================== STICKY TABS: 縦バージョン (右端) ==================== *
+/* ==================== STICKY TABS: Vertical Version (Right Edge) ==================== *
 
-   data-tabs="right" のときだけ効く上書き。既定 (上・横並び) の定義は
-   30-sticky-tabs.css のままで、ここは差分だけを持つ。
+   Overrides active only when data-tabs="right". Default horizontal top layout is defined
+   in 30-sticky-tabs.css; this file contains only the differential rules.
 
-   横版が「下端に接地して上へ伸びる付箋」なのに対し、縦版は「左端 (本文側) に
-   接地して右へ伸びる付箋」になる。平らな辺が本文に接し、丸い辺が外を向く
-   ところは横版と同じ。軸が入れ替わるので、丸み・伸長方向・影・覗きの
-   向きがすべて 90 度回る。 */
+   Whereas the horizontal version features tabs grounded to the bottom extending upward,
+   the vertical version features tabs grounded to the left (article side) extending to the right.
+   Both keep the flat edge flush against content and the rounded edge facing outward.
+   Because the axes swap, corner radius, extension direction, shadows, and peek orientation
+   all rotate 90 degrees. */
 
-/* 本文の下ではなく右に並べる */
+/* Arrange to the right of content rather than below header */
 [data-tabs="right"] .pane-content {
   flex-direction: row;
 }
 
 [data-tabs="right"] .pane-content-header {
-  /* 文字を横書きのまま読ませるだけの幅を渡す。高さは本文と同じだけ使う。 */
+  /* Provide sufficient width for horizontal reading; match content height */
   width: 96px;
   min-width: 96px;
   height: 100%;
   min-height: 0;
-  /* 左右とも詰める。左に余白を入れると付箋が本文から浮いて接地して見えず、
-     右に入れるとスクロールバーが帯の右辺から離れる。 */
+  /* Pack both edges: left margin floats tabs off content edge;
+     right margin separates scrollbar from the rail edge. */
   padding: 8px 0;
   flex-direction: column;
   align-items: flex-start;
-  order: 2; /* 本文の右へ */
+  order: 2; /* Move to the right of article content */
 }
 
 [data-tabs="right"] .pane-scroll-content {
   order: 1;
-  /* 紙が帯より手前にあり、その右端が付箋の上に影を落とす。付箋が紙の裏から
-     出ているように見えるのは、この一枚ぶんの奥行きによる。
-     ポップオーバーは body 直下 (z-index 1000) なので、ここを持ち上げても
-     隠れない。 */
+  /* The article surface sits above the rail and casts a shadow rightward onto tabs,
+     producing the illusion of tabs sliding out from under the paper.
+     Popovers live on document.body (z-index: 1000) and remain visible above this layer. */
   position: relative;
   z-index: 2;
   box-shadow: 4px 0 9px -3px rgba(0, 0, 0, 0.12);
@@ -42,21 +42,20 @@
   box-shadow: 4px 0 10px -3px rgba(0, 0, 0, 0.38);
 }
 
-/* --- バー本体 --- */
+/* --- Bar Container --- */
 [data-tabs="right"] .sticky-tabs-bar {
   flex-direction: column;
   align-items: flex-start;
   width: 100%;
-  /* 帯の残り高さいっぱいを占め、そこからあふれた分をスクロールさせる。
-     min-height: 0 がないと flex アイテムは中身より縮めず、いくら伸びても
-     スクロールバーが出ない。 */
+  /* Fill remaining rail height and scroll overflow.
+     Without min-height: 0, flex items cannot shrink below content size, preventing scrollbars. */
   flex: 1 1 auto;
   height: auto;
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
-  /* 横版はスクロールバーを上へ出すために反転していた。縦版は右端に出るのが
-     自然な位置なので、反転は解く。 */
+  /* The horizontal version flipped the bar to bring the scrollbar to the top.
+     Vertical layout naturally places the scrollbar on the right, so remove the inversion. */
   transform: none;
 }
 [data-tabs="right"] .sticky-tabs-bar > .sticky-tabs-list {
@@ -67,7 +66,7 @@
   height: auto;
 }
 
-/* --- 付箋そのもの --- */
+/* --- Sticky Tab Elements --- */
 [data-tabs="right"] .sticky-tab-node {
   flex-direction: column;
   align-items: flex-start;
@@ -76,25 +75,25 @@
 }
 
 [data-tabs="right"] .sticky-tab-btn {
-  /* 文字は横書きのまま。読みやすさを幅と引き換えにしている。 */
+  /* Text remains horizontal for readability, trading off width. */
   border-radius: 0 4px 4px 0;
   align-self: flex-start;
-  /* 中身は .sticky-tab-label 側で組む。付箋はその器で、パディングを持つ。 */
+  /* Content is formatted within .sticky-tab-label; the tab acts as container with padding. */
   display: flex;
   align-items: center;
   white-space: normal;
   text-align: left;
-  /* 横版が「下端から上へどれだけ出るか」で階層を表すのに対し、縦版は
-     「左端から右へどれだけ出るか」で表す。深い見出しほど引っ込む。 */
+  /* While horizontal tabs use height to represent hierarchy, vertical tabs use
+     rightward protrusion. Deeper headings indent further left. */
   transition: width 0.15s ease,
               background 0.15s ease,
               color 0.15s ease,
               box-shadow 0.15s ease;
 }
 
-/* 行数を打ち切る箱。パディングは付箋側が持ち、ここは 0 にする。
-   overflow: hidden はパディングの内側までを見せるので、この箱に padding-bottom が
-   あると、打ち切ったはずの次の行がそこへ覗いてしまう。 */
+/* Truncation box for line counts. Padding is kept on the tab button and set to 0 here.
+   overflow: hidden reveals up to the padding edge; a bottom padding on this box would
+   cause the next truncated line to peek through. */
 [data-tabs="right"] .sticky-tab-label {
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -102,12 +101,11 @@
   overflow: hidden;
   padding: 0;
   min-width: 0;
-  /* 横版の 1 行ぴったりを詰める line-height: 1 のままだと行が重なって読めない。 */
+  /* Horizontal mode uses tight line-height: 1; multiline vertical text needs breathing room. */
   line-height: 1.35;
-  /* 付箋が右へ 6px 伸びても、文字を組む幅は変わらない。伸びたぶんをそのまま
-     差し引く。付箋と同じ時間・同じ曲線で動かすので、途中の 1 フレームでも
-     (親の内側 + 6t) - 6t = 一定 になり、折り返しはどこでも揺れない。
-     幅が変わると行の切れ目が変わり、読んでいる文字が動いてしまう。 */
+  /* When the tab expands rightward by 6px, text width remains unchanged by subtracting 6px.
+     Moving with identical duration and easing ensures width stays constant across every frame,
+     preventing text wrapping jitter while reading. */
   width: 100%;
   box-sizing: border-box;
   transition: width 0.15s ease;
@@ -117,12 +115,12 @@
   width: calc(100% - 6px);
 }
 
-/* 行内に流す。clamp は入れ物が持つので、ここでは折り返しだけ許す。 */
+/* Flow inline: line clamp is handled by the parent container, so only wrapping is allowed here. */
 [data-tabs="right"] .sticky-tab-label > .sticky-level-badge {
   display: inline;
   margin-right: 4px;
-  /* 行内要素はベースラインに乗るので、本文より小さいバッジは下に沈んで見える。
-     行の中央に合わせる。 */
+  /* Inline elements align to baseline, causing smaller badges to sink below text.
+     Align to vertical middle. */
   vertical-align: middle;
 }
 
@@ -136,9 +134,9 @@
   min-width: 0;
 }
 
-/* サイズ階層: 高さと文字の大きさは横版のまま。
-   幅は中身なりに伸び、深い見出しほど手前で頭打ちになる。全部を帯いっぱいに
-   広げると棒が並んだだけになり、付箋に見えない。 */
+/* Size hierarchy: Height and font size match horizontal version.
+   Width expands to fit content, capped at shallower levels for deeper headings.
+   Stretching all tabs to full width looks like plain bars rather than tabs. */
 [data-tabs="right"] .sticky-tab-btn.level-1 {
   width: calc(100% - 14px);
   max-width: none;
@@ -195,7 +193,7 @@
   height: auto;
 }
 
-/* 影も左向きへ。横版と同じく、どの付箋にも同じだけ落とす。 */
+/* Shadow also casts leftward; matches horizontal version in casting equally on all tabs. */
 [data-tabs="right"] .sticky-tab-btn {
   box-shadow: 2px 0 3px rgba(0, 0, 0, 0.13);
 }
@@ -203,50 +201,47 @@
   box-shadow: 2px 0 3px rgba(0, 0, 0, 0.4);
 }
 
-/* ポップオーバーを開いている付箋だけ、紙より前へ出す。
-   紙の影が落ちたままだと、付箋には影があってポップオーバーには無い、という
-   継ぎ目ができる。ポップオーバーは開いている付箋の続きなので、二つまとめて
-   紙の手前に持ち上げる。
-   帯 (.sticky-tabs-bar) の z-index を外してあるのは、そこが重ね合わせ文脈だと
-   中の付箋をいくら上げても紙 (z-index: 2) を越えられないため。縦版では
-   スクロールバーを上へ出す反転を使っていないので、外しても横版に影響しない。 */
+/* Project only the tab that currently has an open popover in front of the article.
+   Leaving the article shadow on creates an unnatural seam where the tab has shadow but the popover doesn't.
+   Since the popover extends from the open tab, both are lifted forward in front of the paper.
+   z-index is removed from .sticky-tabs-bar because if the bar creates a stacking context,
+   child tabs can never exceed the article (z-index: 2). In vertical mode, removing this has no side effects
+   since the vertical flip inversion is not used. */
 [data-tabs="right"] .sticky-tabs-bar {
   z-index: auto;
 }
-/* 横版はアクティブな付箋を z-index: 10 で持ち上げている。帯の文脈を外した
-   いまは、それがそのまま紙 (2) を越えてしまい、アクティブな一枚にだけ紙の影が
-   落ちなくなる。縦版では兄弟と重ならないので、持ち上げる必要もない。 */
+/* Horizontal mode elevates active tabs with z-index: 10. Without the bar stacking context,
+   that would exceed the article (2), improperly removing the article shadow from the active tab.
+   Vertical siblings do not overlap, so elevation is unnecessary. */
 [data-tabs="right"] .sticky-tab-btn.is-active {
   z-index: 1;
 }
 
-/* ポップオーバーを開いている付箋は紙より前へ。上の .is-active と詳細度が
-   同じ (0,3,0) なので、両方が付いた付箋ではあとに書いたこちらが勝つ。
-   順番を入れ替えると、アクティブな付箋だけポップオーバーを開いても
-   奥に残る。 */
+/* Tabs with open popovers sit in front of the article. Having the same specificity (0,3,0)
+   as .is-active above, this rule defined later takes precedence.
+   Reversing order would leave active tabs recessed behind even when their popover opens. */
 [data-tabs="right"] .sticky-tab-btn.is-popover-open {
   z-index: 3;
 }
-/* 子付箋のスロットも z-index: 0 の重ね合わせ文脈なので、その中の付箋を 3 に
-   しても紙 (2) には届かない。開いている付箋を含むスロットを、入れ子の分だけ
-   まとめて持ち上げる。 */
+/* Child slots form a z-index: 0 stacking context; setting their child tabs to 3 cannot reach
+   the article (2). Elevate the enclosing slot including all open tabs through nesting levels. */
 [data-tabs="right"] .sticky-children-slot:has(.sticky-tab-btn.is-popover-open) {
   z-index: 3;
 }
 
-/* --- 子付箋のスロット: 横ではなく下へ開く --- */
+/* --- Child Tab Slots: Open downward instead of horizontally --- */
 [data-tabs="right"] .sticky-children-slot {
   flex-direction: column;
   align-items: flex-start;
   width: 100%;
-  /* 縦並びでは交差軸が横になる。基底の align-self: flex-end のままだと
-     スロットごと右へ寄り、子付箋が親より右にずれる。 */
+  /* In vertical alignment the cross-axis is horizontal. Leaving the base align-self: flex-end
+     shifts the whole slot rightward, misaligning child tabs from parent. */
   align-self: flex-start;
-  /* 子付箋は自分の width: calc(100% - N) で出っ張り量を決めるので、
-     スロットは帯いっぱいを基準として渡す。 */
+  /* Child tabs determine their protrusion using width: calc(100% - N);
+     the slot provides the full rail width as the reference base. */
   height: auto;
   max-width: none;
-  /* 畳んでいるときは下へ 4px だけ覗く (横版の右へ 4px と同じ考え方) */
+  /* Peeks 4px downward when collapsed (analogous to the 4px rightward peek in horizontal layout) */
   max-height: 10px;
   border-radius: 0 0 4px 0;
   margin: -6px 0 0 0;
@@ -255,8 +250,8 @@
 }
 [data-tabs="right"] .sticky-tab-node:not(.is-active):not(.is-active-branch) > .sticky-children-slot {
   height: auto;
-  /* 帯いっぱい (width:100%) のままだと、右下の丸みが紙より右の空中に付いて
-     覗きの切り口が直角に見える。子付箋 1 枚ぶんの幅に合わせる。 */
+  /* At full width (100%), the bottom-right radius floats in empty space to the right,
+     making the peek look square. Match the width of one child tab. */
   width: calc(100% - 22px);
 }
 [data-tabs="right"] .sticky-tab-node.is-active > .sticky-children-slot,
@@ -266,7 +261,7 @@
   margin: 3px 0;
 }
 
-/* --- 両端の移動ボタン: 上下に置く --- */
+/* --- Edge navigation buttons: positioned top and bottom --- */
 [data-tabs="right"] .sticky-edge-btn {
   align-self: flex-start;
   width: 26px;
@@ -280,13 +275,13 @@
   margin: 6px 0 0 0;
 }
 
-/* --- ポップオーバー: 下ではなく左に出るので、接合する角が変わる --- */
+/* --- Popover: Expands to the left rather than downward, changing the join corner --- */
 [data-tabs="right"] .sticky-hover-popover {
   border-radius: 4px 0 4px 4px;
   box-shadow: -8px 0 16px -6px rgba(0, 0, 0, 0.3);
 }
 
-/* 縦版では帯は右の列そのものなので、畳む向きも横になる。 */
+/* In vertical mode the rail is the right column itself, so it collapses horizontally. */
 [data-tabs="right"] .pane-content-header:not(:has(*)) {
   width: 0;
   min-width: 0;

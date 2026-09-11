@@ -39,12 +39,12 @@
     let startY = 0;
     let startLeft = 0;
     let startTop = 0;
-    // 掴んだ時点の寸法を控える。ドラッグ中に offsetWidth を読むと、直前に書いた
-    // left/top のせいでその場でレイアウトを計算させられ (強制同期レイアウト)、
-    // それがマウスに数フレーム遅れて付いてくる原因になる。
+    // Cache dimensions at the time drag starts. Reading offsetWidth during drag
+    // forces synchronous layout recalculation due to recently modified left/top,
+    // causing the element to trail behind the pointer by several frames.
     let dragWidth = 0;
     let dragHeight = 0;
-    // pointermove は毎フレームより細かく飛んでくるので、描画は 1 フレーム 1 回に畳む。
+    // Coalesce renders to once per frame since pointermove fires faster than rAF.
     let dragFrame = null;
     let offsetLeft = 0;
     let offsetTop = 0;
@@ -78,7 +78,7 @@
     const onPointerMove = (e) => {
       if (!isDragging) return;
 
-      // innerWidth/innerHeight と控えた寸法だけで済ませる。要素からは何も読まない。
+      // Bound using only window dimensions and cached element size; avoid reading from the DOM.
       const maxX = Math.max(8, window.innerWidth - dragWidth - 8);
       const maxY = Math.max(8, window.innerHeight - dragHeight - 8);
       const left = Math.max(8, Math.min(maxX, startLeft + (e.clientX - startX)));
@@ -89,8 +89,8 @@
       if (dragFrame !== null) return;
       dragFrame = requestAnimationFrame(() => {
         dragFrame = null;
-        // transform はレイアウトを起こさずコンポジタだけで動く。left/top を
-        // 毎フレーム書き換えるとそのたびにレイアウトが走る。
+        // Use transform during drag so updates run entirely on the compositor
+        // without triggering layout on every frame.
         floating.style.transform = `translate3d(${offsetLeft}px, ${offsetTop}px, 0)`;
       });
     };
@@ -108,7 +108,7 @@
         dragFrame = null;
       }
 
-      // 掴んでいる間の transform を、本来の left/top に畳んで確定する。
+      // Commit the drag transform into definitive left/top positions.
       const finalLeft = Math.round(startLeft + offsetLeft);
       const finalTop = Math.round(startTop + offsetTop);
       floating.style.transform = '';
@@ -168,9 +168,9 @@
     }
   }
 
-  // ==================== STICKY TAB SIDE (上 / 右) ====================
-  // base.html が描画前に data-tabs を立てているので、ここは押されたときに
-  // 付け替えて覚えるだけ。ちらつきはテーマ切り替えと同じ仕組みで防いでいる。
+  // ==================== STICKY TAB SIDE (TOP / RIGHT) ====================
+  // base.html sets data-tabs before first paint; this switcher simply updates
+  // and persists the attribute when clicked.
   function setupTabsSideSwitcher() {
     const btnTop = document.getElementById('btn-tabs-top');
     const btnRight = document.getElementById('btn-tabs-right');

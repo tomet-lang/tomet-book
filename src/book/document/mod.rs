@@ -294,7 +294,7 @@ pub fn process_parsed_document(
         config,
     );
 
-    // 本文のリンクに @meta のリンクを合流させる。自分自身と重複は落とす。
+    // Merge links from @meta into body links, dropping self-references and duplicates.
     for linked in std::mem::take(&mut props.linked_slugs) {
         if linked != slug && !outgoing.contains(&linked) {
             outgoing.push(linked);

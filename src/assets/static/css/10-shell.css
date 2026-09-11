@@ -152,7 +152,7 @@ html[data-view="classic"] .classic-view {
 
 .pane-header {
   height: 41px;
-  background: #dfe3e8; /* 付箋と明確に分ける落ち着いた暗めヘッダー背景 */
+  background: #dfe3e8; /* Darker header background to distinctly separate from sticky tabs */
   border-bottom: 1px solid var(--border);
   padding: 0 10px;
   display: flex;
@@ -168,7 +168,7 @@ html[data-view="classic"] .classic-view {
 }
 
 [data-theme="dark"] .pane-header {
-  background: #16191d; /* ダークモードでの暗めヘッダー背景 */
+  background: #16191d; /* Darker header background for dark theme */
 }
 
 .pane-header-collapsible {
