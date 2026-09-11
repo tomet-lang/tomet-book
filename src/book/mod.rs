@@ -1,4 +1,5 @@
 pub mod assets;
+pub mod catalog;
 pub mod document;
 pub mod loader;
 pub mod pagefind;
@@ -140,6 +141,79 @@ pub fn render_single_document(
     let written = write_if_changed(&out_html_path, &html)?;
     let url = format!("{}/{}", config.build.clean_url_prefix(), processed.slug);
     Ok((written, url))
+}
+
+/// Read the vault's `*.index.tmt` documents into one list, in filename order.
+///
+/// Returns `None` when the vault has none, which is what keeps the generated
+/// catalog as the default.
+fn read_written_index(scanned: &ScannedVault) -> Option<Vec<catalog::IndexEntry>> {
+    let index_files: Vec<&loader::DocFileInfo> = scanned
+        .control_files
+        .iter()
+        .filter(|f| catalog::is_root_index(&f.rel_path))
+        .collect();
+    if index_files.is_empty() {
+        return None;
+    }
+
+    let mut entries = Vec::new();
+    for file in index_files {
+        let Ok(source) = fs::read_to_string(&file.abs_path) else {
+            warn!("Could not read index {}", file.rel_path);
+            continue;
+        };
+
+        let from_path = Path::new(&file.rel_path);
+        let outline = catalog::parse_index_document(&source, from_path, &scanned.vault_index);
+
+        if outline.kind_missing {
+            warn!("{} does not declare @kind(index)", file.rel_path);
+        }
+        for target in &outline.unresolved {
+            warn!(
+                "{}: nothing in the vault answers to '{target}'",
+                file.rel_path
+            );
+        }
+
+        entries.extend(outline.entries);
+    }
+
+    Some(entries)
+}
+
+/// Give every slug the index names the page summary that was rendered for it.
+///
+/// A slug with no page behind it is dropped: the index may have been written
+/// before the note, or the note may have failed to render.
+fn arrange_entries(
+    index: &[catalog::IndexEntry],
+    by_slug: &HashMap<String, EntrySummary>,
+) -> Vec<EntrySummary> {
+    fn walk(
+        index: &[catalog::IndexEntry],
+        by_slug: &HashMap<String, EntrySummary>,
+        out: &mut Vec<EntrySummary>,
+    ) {
+        for entry in index {
+            let mut children = Vec::new();
+            walk(&entry.children, by_slug, &mut children);
+
+            match by_slug.get(&entry.slug) {
+                Some(summary) => out.push(EntrySummary {
+                    children,
+                    ..summary.clone()
+                }),
+                // The page is missing, but what hung below it is not.
+                None => out.extend(children),
+            }
+        }
+    }
+
+    let mut out = Vec::new();
+    walk(index, by_slug, &mut out);
+    out
 }
 
 /// Turn every page's outgoing links into the incoming list of its targets.
@@ -411,6 +485,7 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
                     url: format!("{clean_url_prefix}/{}", processed.slug),
                     title: processed.title.clone(),
                     section: processed.section.clone(),
+                    children: Vec::new(),
                 },
                 section: processed.section.clone(),
                 slug: processed.slug.clone(),
@@ -425,6 +500,8 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
     let mut processed_entries = Vec::with_capacity(results.len());
     let mut section_counts: HashMap<String, usize> = HashMap::new();
     let mut slug_owner: HashMap<String, String> = HashMap::new();
+    // A written index names pages by slug, so the catalog needs them that way.
+    let mut entries_by_slug: HashMap<String, EntrySummary> = HashMap::new();
 
     for outcome in results {
         match outcome {
@@ -446,6 +523,7 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
                         "Slug collision: '{previous}' and '{rel_path}' both render to {clean_url_prefix}/{slug}"
                     );
                 }
+                entries_by_slug.insert(slug, entry.clone());
                 processed_entries.push(entry);
             }
             DocOutcome::Failed(failure) => {
@@ -468,7 +546,16 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
         .collect();
     sections.sort_by(|a, b| a.name.cmp(&b.name));
 
-    let wiki_index_html = renderer.render_index(&sections, &processed_entries)?;
+    // A written index replaces the generated listing outright: the order is
+    // the author's, and a page they left out is a page they do not want
+    // listed. Without one, the catalog stays what it was -- everything, in
+    // whatever order the vault walk found it.
+    let catalog_entries = match read_written_index(&scanned) {
+        Some(written_index) => arrange_entries(&written_index, &entries_by_slug),
+        None => processed_entries.clone(),
+    };
+
+    let wiki_index_html = renderer.render_index(&sections, &catalog_entries)?;
     let catalog_written = write_if_changed(&wiki_root.join("index.html"), &wiki_index_html)?;
 
     // 7. Write root /index.html redirecting to the book, unless the book is already there
@@ -512,6 +599,19 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
         // No record of the last build: fall back to inspecting the output.
         let keep: HashSet<&str> = manifest.pages.iter().map(String::as_str).collect();
         pruned_pages = prune_stale_pages(&wiki_root, &keep);
+    }
+
+    if !wiki_rel.is_empty() {
+        // Control documents used to be published as pages. The manifest only
+        // knows what the last build wrote, so an output directory carried over
+        // from a version that published them would keep serving those pages
+        // forever; name them directly.
+        let control_slugs: Vec<&str> = scanned
+            .control_files
+            .iter()
+            .map(|f| document::strip_doc_extension(&f.rel_path))
+            .collect();
+        pruned_pages += prune_listed_pages(&wiki_root, &control_slugs);
     }
 
     if asset_rel.is_empty() {
@@ -619,6 +719,79 @@ mod tests {
             body_html: String::new(),
             outgoing: outgoing.iter().map(|s| s.to_string()).collect(),
         }
+    }
+
+    fn summary(slug: &str, title: &str) -> EntrySummary {
+        EntrySummary {
+            url: format!("/wiki/{slug}"),
+            title: title.to_string(),
+            section: None,
+            children: Vec::new(),
+        }
+    }
+
+    fn listed(slugs: &[(&str, &[&str])]) -> Vec<catalog::IndexEntry> {
+        slugs
+            .iter()
+            .map(|(slug, kids)| catalog::IndexEntry {
+                slug: slug.to_string(),
+                children: kids
+                    .iter()
+                    .map(|k| catalog::IndexEntry {
+                        slug: k.to_string(),
+                        children: Vec::new(),
+                    })
+                    .collect(),
+            })
+            .collect()
+    }
+
+    fn rendered(slugs: &[&str]) -> HashMap<String, EntrySummary> {
+        slugs
+            .iter()
+            .map(|s| (s.to_string(), summary(s, &s.to_uppercase())))
+            .collect()
+    }
+
+    #[test]
+    fn the_catalog_follows_the_written_order() {
+        let out = arrange_entries(
+            &listed(&[("zebra", &[]), ("apple", &[])]),
+            &rendered(&["apple", "zebra"]),
+        );
+
+        let titles: Vec<&str> = out.iter().map(|e| e.title.as_str()).collect();
+        assert_eq!(titles, ["ZEBRA", "APPLE"]);
+    }
+
+    #[test]
+    fn a_page_the_index_leaves_out_is_not_listed() {
+        let out = arrange_entries(&listed(&[("apple", &[])]), &rendered(&["apple", "hidden"]));
+
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].title, "APPLE");
+    }
+
+    #[test]
+    fn nesting_survives_the_lookup() {
+        let out = arrange_entries(
+            &listed(&[("guide", &["install"])]),
+            &rendered(&["guide", "install"]),
+        );
+
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].children.len(), 1);
+        assert_eq!(out[0].children[0].title, "INSTALL");
+    }
+
+    #[test]
+    fn a_named_page_that_does_not_exist_hands_its_children_up() {
+        // The index may have been written before the note, or the note may
+        // have failed to render. What hung below it is still real.
+        let out = arrange_entries(&listed(&[("ghost", &["install"])]), &rendered(&["install"]));
+
+        let titles: Vec<&str> = out.iter().map(|e| e.title.as_str()).collect();
+        assert_eq!(titles, ["INSTALL"]);
     }
 
     #[test]
@@ -767,6 +940,79 @@ mod manifest_tests {
             body_html: String::new(),
             outgoing: outgoing.iter().map(|s| s.to_string()).collect(),
         }
+    }
+
+    fn summary(slug: &str, title: &str) -> EntrySummary {
+        EntrySummary {
+            url: format!("/wiki/{slug}"),
+            title: title.to_string(),
+            section: None,
+            children: Vec::new(),
+        }
+    }
+
+    fn listed(slugs: &[(&str, &[&str])]) -> Vec<catalog::IndexEntry> {
+        slugs
+            .iter()
+            .map(|(slug, kids)| catalog::IndexEntry {
+                slug: slug.to_string(),
+                children: kids
+                    .iter()
+                    .map(|k| catalog::IndexEntry {
+                        slug: k.to_string(),
+                        children: Vec::new(),
+                    })
+                    .collect(),
+            })
+            .collect()
+    }
+
+    fn rendered(slugs: &[&str]) -> HashMap<String, EntrySummary> {
+        slugs
+            .iter()
+            .map(|s| (s.to_string(), summary(s, &s.to_uppercase())))
+            .collect()
+    }
+
+    #[test]
+    fn the_catalog_follows_the_written_order() {
+        let out = arrange_entries(
+            &listed(&[("zebra", &[]), ("apple", &[])]),
+            &rendered(&["apple", "zebra"]),
+        );
+
+        let titles: Vec<&str> = out.iter().map(|e| e.title.as_str()).collect();
+        assert_eq!(titles, ["ZEBRA", "APPLE"]);
+    }
+
+    #[test]
+    fn a_page_the_index_leaves_out_is_not_listed() {
+        let out = arrange_entries(&listed(&[("apple", &[])]), &rendered(&["apple", "hidden"]));
+
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].title, "APPLE");
+    }
+
+    #[test]
+    fn nesting_survives_the_lookup() {
+        let out = arrange_entries(
+            &listed(&[("guide", &["install"])]),
+            &rendered(&["guide", "install"]),
+        );
+
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].children.len(), 1);
+        assert_eq!(out[0].children[0].title, "INSTALL");
+    }
+
+    #[test]
+    fn a_named_page_that_does_not_exist_hands_its_children_up() {
+        // The index may have been written before the note, or the note may
+        // have failed to render. What hung below it is still real.
+        let out = arrange_entries(&listed(&[("ghost", &["install"])]), &rendered(&["install"]));
+
+        let titles: Vec<&str> = out.iter().map(|e| e.title.as_str()).collect();
+        assert_eq!(titles, ["INSTALL"]);
     }
 
     #[test]

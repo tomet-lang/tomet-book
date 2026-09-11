@@ -11,6 +11,10 @@ pub struct ScannedVault {
     pub media_files: Vec<MediaFileInfo>,
     pub vault_index: tomet_links::VaultLinkIndex,
     pub workspace_config_src: Option<String>,
+    /// The documents that shape the book without being part of it:
+    /// `*.index.tmt` and `*.config.tmt`, in filename order, so a long index
+    /// can be split the way a long stylesheet is.
+    pub control_files: Vec<DocFileInfo>,
 }
 
 #[derive(Debug, Clone)]
@@ -83,6 +87,7 @@ pub fn is_ignored_rel(rel_str: &str, exclude_prefixes: &[String]) -> bool {
 pub fn scan_vault(src_dir: &Path, config: &BookConfig) -> Result<ScannedVault> {
     let mut doc_files = Vec::new();
     let mut media_files = Vec::new();
+    let mut control_files: Vec<DocFileInfo> = Vec::new();
     let mut all_rel_paths = Vec::new();
 
     let exclude_prefixes = exclude_prefixes(config);
@@ -113,6 +118,16 @@ pub fn scan_vault(src_dir: &Path, config: &BookConfig) -> Result<ScannedVault> {
             .to_lowercase();
 
         if ext == "tmt" || ext == "tm" {
+            // `*.index.tmt` and `*.config.tmt` shape the book; they are not
+            // part of it. Left in `doc_files` they would each publish a page
+            // of their own -- which `default.config.tmt` has been doing.
+            if crate::book::catalog::is_control_document(&rel_str) {
+                control_files.push(DocFileInfo {
+                    abs_path: path.to_path_buf(),
+                    rel_path: rel_str,
+                });
+                continue;
+            }
             doc_files.push(DocFileInfo {
                 abs_path: path.to_path_buf(),
                 rel_path: rel_str,
@@ -141,11 +156,16 @@ pub fn scan_vault(src_dir: &Path, config: &BookConfig) -> Result<ScannedVault> {
         None
     };
 
+    // WalkDir does not promise an order, and the catalog must not depend on
+    // one: the filenames decide.
+    control_files.sort_by(|a, b| a.rel_path.cmp(&b.rel_path));
+
     Ok(ScannedVault {
         doc_files,
         media_files,
         vault_index,
         workspace_config_src,
+        control_files,
     })
 }
 

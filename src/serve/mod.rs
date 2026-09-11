@@ -97,8 +97,11 @@ fn plan_events(
             }
 
             let file_name = path.file_name().and_then(|s| s.to_str()).unwrap_or("");
+            // A control document (`*.index.tmt`, `*.config.tmt`) is not a page
+            // of its own, so there is nothing to re-render incrementally: it
+            // changes the catalog, or every page at once.
             if file_name == "tmtbook.toml"
-                || file_name == "default.config.tmt"
+                || crate::book::catalog::is_control_document(file_name)
                 || file_name.ends_with(".js")
                 || file_name.ends_with(".html")
             {
@@ -495,6 +498,19 @@ mod tests {
             "/vault/dist",
         );
         assert!(removed.global);
+    }
+
+    #[test]
+    fn editing_a_written_index_forces_a_full_rebuild() {
+        // It is not a page, so there is nothing to re-render on its own -- and
+        // the catalog it feeds is only built by the full pass.
+        let plan = plan(
+            &[modified(&["/vault/book.index.tmt"])],
+            "/vault",
+            "/vault/dist",
+        );
+        assert!(plan.global);
+        assert!(plan.docs.is_empty(), "it must not be rendered as a page");
     }
 
     #[test]

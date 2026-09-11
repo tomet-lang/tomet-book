@@ -1,0 +1,275 @@
+//! The note list a hand-written `*.index.tmt` document defines.
+//!
+//! The catalog page lists every document in whatever order the vault walk
+//! produced, which is a filing order, not a reading order. An index document
+//! lets the author state the reading order instead: what to open first, what
+//! belongs under what, and what not to show at all.
+//!
+//! The file is an ordinary Tomet document -- a nested list of links -- so it
+//! needs no syntax of its own:
+//!
+//! ```tomet
+//! @kind(index)
+//!
+//! - @link(ref:"getting-started")
+//! - @link(ref:"concepts")
+//!   - @link(ref:"concepts/tomet")
+//! ```
+
+use std::path::Path;
+
+use tomet_ast::{Block, Document, Paragraph};
+
+use super::document::strip_doc_extension;
+
+/// The suffix that marks a document as an index rather than a page.
+pub const INDEX_SUFFIX: &str = ".index.tmt";
+
+/// The suffix that marks a document as workspace configuration.
+pub const CONFIG_SUFFIX: &str = ".config.tmt";
+
+/// True for the control documents that shape the book without being part of
+/// it. They are read by name and must not also become pages.
+pub fn is_control_document(rel_path: &str) -> bool {
+    rel_path.ends_with(INDEX_SUFFIX) || rel_path.ends_with(CONFIG_SUFFIX)
+}
+
+/// True for an index document that governs the whole book: one that sits at
+/// the vault root. Index files deeper in the vault are reserved for ordering
+/// their own folder, which nothing reads yet.
+pub fn is_root_index(rel_path: &str) -> bool {
+    rel_path.ends_with(INDEX_SUFFIX) && !rel_path.contains('/')
+}
+
+/// One line of a hand-written index: the page it points at, and whatever the
+/// author nested under it.
+#[derive(Debug, Clone, PartialEq)]
+pub struct IndexEntry {
+    pub slug: String,
+    pub children: Vec<IndexEntry>,
+}
+
+/// What reading one index document yielded.
+#[derive(Debug, Default)]
+pub struct IndexOutline {
+    pub entries: Vec<IndexEntry>,
+    /// Targets that resolved to nothing, kept so the build can name them.
+    pub unresolved: Vec<String>,
+    /// True when the document did not declare `@kind(index)`.
+    pub kind_missing: bool,
+}
+
+/// Read one index document into the order it describes.
+///
+/// `from_path` is the index document's own vault-relative path, which is what
+/// makes a relative `ref:` resolve against the folder the file sits in.
+pub fn parse_index_document(
+    source: &str,
+    from_path: &Path,
+    vault_index: &tomet_links::VaultLinkIndex,
+) -> IndexOutline {
+    let Ok(doc) = tomet_parser::parse_document(source) else {
+        return IndexOutline::default();
+    };
+
+    let kind_missing = tomet_semantics::document_kind(&doc).as_deref() != Some("index");
+
+    let mut outline = IndexOutline {
+        kind_missing,
+        ..Default::default()
+    };
+    outline.entries = collect_blocks(&doc.blocks, from_path, vault_index, &mut outline.unresolved);
+    outline
+}
+
+/// Walk the lists in a run of blocks, in source order.
+fn collect_blocks(
+    blocks: &[Block],
+    from_path: &Path,
+    vault_index: &tomet_links::VaultLinkIndex,
+    unresolved: &mut Vec<String>,
+) -> Vec<IndexEntry> {
+    let mut entries = Vec::new();
+
+    for block in blocks {
+        let Block::Element(el) = block else { continue };
+        if !matches!(
+            tomet_semantics::classify_std_lenient(el),
+            tomet_semantics::ElementKind::UnorderedList | tomet_semantics::ElementKind::OrderedList
+        ) {
+            continue;
+        }
+
+        let Some(value) = &el.value else { continue };
+        for item in value.as_children() {
+            // A list item's own link lives in its content; the sub-list it
+            // opens lives in its children. Reading them separately is what
+            // keeps a parent from claiming its first child's target.
+            let target = item
+                .content
+                .as_ref()
+                .and_then(|inlines| first_page_target(inlines, item.span));
+
+            let children = item
+                .children
+                .as_deref()
+                .map(|blocks| collect_blocks(blocks, from_path, vault_index, unresolved))
+                .unwrap_or_default();
+
+            let Some(target) = target else {
+                // A bullet with no link is a label, not an entry. Its
+                // children still belong to the list.
+                entries.extend(children);
+                continue;
+            };
+
+            match resolve_page_slug(&target, from_path, vault_index) {
+                Some(slug) => entries.push(IndexEntry { slug, children }),
+                None => {
+                    unresolved.push(target);
+                    entries.extend(children);
+                }
+            }
+        }
+    }
+
+    entries
+}
+
+/// The first link in a list item that could point at a page.
+///
+/// Wrapping the item's inlines in a throwaway document is what lets this
+/// reuse `collect_links` rather than re-deriving which elements and which
+/// schemes count as a link.
+fn first_page_target(inlines: &[tomet_ast::Inline], span: tomet_ast::Span) -> Option<String> {
+    let probe = Document::new(
+        vec![Block::Paragraph(Paragraph::new(inlines.to_vec(), span))],
+        span,
+    );
+
+    tomet_links::collect_links(&probe)
+        .into_iter()
+        .find(|link| {
+            matches!(
+                link.kind,
+                tomet_links::LinkKind::Ref
+                    | tomet_links::LinkKind::Tm
+                    | tomet_links::LinkKind::File
+            )
+        })
+        .map(|link| link.target)
+}
+
+/// Resolve a link target to the slug of a page, or `None` when it points at
+/// nothing, or at something that is not a document.
+fn resolve_page_slug(
+    target: &str,
+    from_path: &Path,
+    vault_index: &tomet_links::VaultLinkIndex,
+) -> Option<String> {
+    let resolved = vault_index.resolve_ref(target, Some(from_path))?;
+    let path = resolved.to_string_lossy().replace('\\', "/");
+    let slug = strip_doc_extension(&path);
+    // strip_doc_extension leaves non-documents untouched, which is how a link
+    // to an image is told apart from a link to a page.
+    (slug != path).then(|| slug.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn index_of(paths: &[&str]) -> tomet_links::VaultLinkIndex {
+        let owned: Vec<String> = paths.iter().map(|p| p.to_string()).collect();
+        tomet_links::VaultLinkIndex::from_paths(&owned)
+    }
+
+    fn parse(source: &str, paths: &[&str]) -> IndexOutline {
+        parse_index_document(source, Path::new("book.index.tmt"), &index_of(paths))
+    }
+
+    #[test]
+    fn the_written_order_is_the_order() {
+        let out = parse(
+            "@kind(index)\n\n- @link(ref:\"zebra\")\n- @link(ref:\"apple\")\n- @link(ref:\"mango\")\n",
+            &["apple.tmt", "mango.tmt", "zebra.tmt"],
+        );
+
+        let slugs: Vec<&str> = out.entries.iter().map(|e| e.slug.as_str()).collect();
+        assert_eq!(slugs, ["zebra", "apple", "mango"]);
+        assert!(out.unresolved.is_empty());
+        assert!(!out.kind_missing);
+    }
+
+    #[test]
+    fn nesting_is_kept() {
+        let out = parse(
+            "@kind(index)\n\n- @link(ref:\"guide\")\n  - @link(ref:\"install\")\n  - @link(ref:\"usage\")\n- @link(ref:\"reference\")\n",
+            &["guide.tmt", "install.tmt", "usage.tmt", "reference.tmt"],
+        );
+
+        assert_eq!(out.entries.len(), 2);
+        assert_eq!(out.entries[0].slug, "guide");
+        let kids: Vec<&str> = out.entries[0]
+            .children
+            .iter()
+            .map(|e| e.slug.as_str())
+            .collect();
+        assert_eq!(kids, ["install", "usage"]);
+        assert_eq!(out.entries[1].slug, "reference");
+        assert!(out.entries[1].children.is_empty());
+    }
+
+    #[test]
+    fn a_target_that_resolves_to_nothing_is_reported() {
+        let out = parse(
+            "@kind(index)\n\n- @link(ref:\"ghost\")\n- @link(ref:\"real\")\n",
+            &["real.tmt"],
+        );
+
+        assert_eq!(out.entries.len(), 1);
+        assert_eq!(out.entries[0].slug, "real");
+        assert_eq!(out.unresolved, ["ghost"]);
+    }
+
+    #[test]
+    fn a_bullet_without_a_link_hands_its_children_up() {
+        let out = parse(
+            "@kind(index)\n\nはじめに\n\n- 読み物\n  - @link(ref:\"essay\")\n- @link(ref:\"notes\")\n",
+            &["essay.tmt", "notes.tmt"],
+        );
+
+        let slugs: Vec<&str> = out.entries.iter().map(|e| e.slug.as_str()).collect();
+        assert_eq!(slugs, ["essay", "notes"]);
+    }
+
+    #[test]
+    fn a_link_to_an_image_is_not_a_page() {
+        let out = parse(
+            "@kind(index)\n\n- @link(ref:\"cover.png\")\n- @link(ref:\"page\")\n",
+            &["cover.png", "page.tmt"],
+        );
+
+        let slugs: Vec<&str> = out.entries.iter().map(|e| e.slug.as_str()).collect();
+        assert_eq!(slugs, ["page"]);
+    }
+
+    #[test]
+    fn a_missing_kind_is_noticed() {
+        let out = parse("- @link(ref:\"page\")\n", &["page.tmt"]);
+        assert!(out.kind_missing);
+        assert_eq!(out.entries.len(), 1);
+    }
+
+    #[test]
+    fn control_documents_are_named_by_their_suffix() {
+        assert!(is_control_document("book.index.tmt"));
+        assert!(is_control_document("default.config.tmt"));
+        assert!(!is_control_document("index.tmt"));
+        assert!(!is_control_document("notes/index.tm"));
+
+        assert!(is_root_index("book.index.tmt"));
+        assert!(is_root_index("10-guides.index.tmt"));
+        assert!(!is_root_index("creation/book.index.tmt"));
+    }
+}

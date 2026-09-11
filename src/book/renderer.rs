@@ -30,6 +30,10 @@ pub struct EntrySummary {
     pub url: String,
     pub title: String,
     pub section: Option<String>,
+    /// Pages the index nested under this one. Always empty when the catalog
+    /// is generated rather than written.
+    #[serde(default)]
+    pub children: Vec<EntrySummary>,
 }
 
 impl<'a> BookRenderer<'a> {
