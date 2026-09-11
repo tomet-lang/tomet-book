@@ -275,9 +275,25 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
     write_static_assets(out_dir, src_dir, config).context("Failed to write static assets")?;
 
     // 3. Copy/Link media into the asset directory
-    let copied_media = copy_vault_media(out_dir, &scanned.media_files, config)
+    let media = copy_vault_media(out_dir, &scanned.media_files, config)
         .context("Failed to copy vault media")?;
-    info!("Linked/copied {} media assets", copied_media);
+    info!(
+        "Media: {} unchanged, {} linked, {} copied (of {})",
+        media.unchanged,
+        media.linked,
+        media.copied,
+        media.total()
+    );
+    if media.copied > 0 {
+        // Copying is only the fallback, so a build that keeps doing it is
+        // moving every byte again -- the vault and the output are on
+        // filesystems that cannot share a hard link.
+        warn!(
+            "Copied {} media file(s) because they could not be hard linked; \
+             put the output directory on the same filesystem as the vault to avoid this",
+            media.copied
+        );
+    }
 
     // 4. Initialize MiniJinja renderer
     let renderer = BookRenderer::new(config)?;

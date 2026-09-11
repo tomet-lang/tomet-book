@@ -102,9 +102,15 @@ fn is_same_media(src_path: &Path, dest_path: &Path) -> bool {
         }
     }
 
+    // Not the same inode, so the destination was copied rather than linked --
+    // which is what happens whenever the vault and the output sit on different
+    // filesystems. `fs::copy` carries the permissions but not the timestamps,
+    // so the two mtimes never match and demanding that they do would re-copy
+    // every file on every build. The question to ask is the one make asks:
+    // is the destination at least as new as the source, and the same size?
     if src_meta.len() == dest_meta.len()
         && let (Ok(src_mtime), Ok(dest_mtime)) = (src_meta.modified(), dest_meta.modified())
-        && src_mtime == dest_mtime
+        && dest_mtime >= src_mtime
     {
         return true;
     }
@@ -138,21 +144,39 @@ pub fn sync_single_media(
     Ok(())
 }
 
+/// How the media directory was brought up to date.
+///
+/// Worth reporting separately: `copied` is the expensive one, and a build that
+/// keeps copying the same files every time means hard links are not available
+/// between the vault and the output.
+#[derive(Debug, Default)]
+pub struct MediaSync {
+    pub unchanged: usize,
+    pub linked: usize,
+    pub copied: usize,
+}
+
+impl MediaSync {
+    pub fn total(&self) -> usize {
+        self.unchanged + self.linked + self.copied
+    }
+}
+
 pub fn copy_vault_media(
     out_dir: &Path,
     media_files: &[MediaFileInfo],
     config: &BookConfig,
-) -> Result<usize> {
+) -> Result<MediaSync> {
     let target_vault = out_dir.join(config.build.asset_out_rel());
     fs::create_dir_all(&target_vault)?;
 
-    let mut count = 0;
+    let mut sync = MediaSync::default();
     for media in media_files {
         let dest = target_vault.join(&media.rel_path);
 
         if dest.exists() {
             if is_same_media(&media.abs_path, &dest) {
-                count += 1;
+                sync.unchanged += 1;
                 continue;
             }
             let _ = fs::remove_file(&dest);
@@ -162,13 +186,88 @@ pub fn copy_vault_media(
             fs::create_dir_all(parent)?;
         }
 
-        // Try hardlink first; fallback to copy
-        let linked = fs::hard_link(&media.abs_path, &dest).is_ok()
-            || fs::copy(&media.abs_path, &dest).is_ok();
-        if linked {
-            count += 1;
+        // A hard link costs nothing and shares the bytes; copying is the
+        // fallback for when the two paths are on different filesystems.
+        if fs::hard_link(&media.abs_path, &dest).is_ok() {
+            sync.linked += 1;
+        } else if fs::copy(&media.abs_path, &dest).is_ok() {
+            sync.copied += 1;
         }
     }
 
-    Ok(count)
+    Ok(sync)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn scratch(name: &str) -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!(
+            "tmtbook-media-{}-{}-{:?}",
+            name,
+            std::process::id(),
+            std::thread::current().id()
+        ));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn a_hardlinked_file_counts_as_unchanged() {
+        let dir = scratch("hardlink");
+        let src = dir.join("a.png");
+        let dest = dir.join("b.png");
+        fs::write(&src, "data").unwrap();
+        fs::hard_link(&src, &dest).unwrap();
+
+        assert!(is_same_media(&src, &dest));
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_copied_file_counts_as_unchanged() {
+        // fs::copy carries the permissions but not the timestamps, so a
+        // destination that was copied rather than linked -- which is what
+        // happens whenever the vault and the output live on different
+        // filesystems -- has an mtime of its own. Requiring the two to match
+        // exactly would re-copy every file on every build.
+        let dir = scratch("copy");
+        let src = dir.join("a.png");
+        let dest = dir.join("b.png");
+        fs::write(&src, "data").unwrap();
+        fs::copy(&src, &dest).unwrap();
+
+        assert!(is_same_media(&src, &dest), "a fresh copy is up to date");
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_copy_of_a_file_that_then_changed_is_stale() {
+        // Same size, but the source moved on afterwards.
+        let dir = scratch("changed");
+        let src = dir.join("a.png");
+        let dest = dir.join("b.png");
+        fs::write(&src, "aaaa").unwrap();
+        fs::copy(&src, &dest).unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        fs::write(&src, "bbbb").unwrap();
+
+        assert!(!is_same_media(&src, &dest));
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_stale_copy_is_not_unchanged() {
+        let dir = scratch("stale");
+        let src = dir.join("a.png");
+        let dest = dir.join("b.png");
+        fs::write(&dest, "old").unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        fs::write(&src, "newer data").unwrap();
+
+        assert!(!is_same_media(&src, &dest));
+        let _ = fs::remove_dir_all(&dir);
+    }
 }
