@@ -4,6 +4,7 @@
   const setupThemeToggle = (...a) => T.setupThemeToggle(...a);
   const setupDraggableFloatingControls = (...a) => T.setupDraggableFloatingControls(...a);
   const setupViewSwitcher = (...a) => T.setupViewSwitcher(...a);
+  const setupTabsSideSwitcher = (...a) => T.setupTabsSideSwitcher(...a);
   const setupBookViewInteraction = (...a) => T.setupBookViewInteraction(...a);
   const setupClassicViewInteraction = (...a) => T.setupClassicViewInteraction(...a);
   const initKeyboardNavigation = (...a) => T.initKeyboardNavigation(...a);
@@ -20,6 +21,7 @@
     setupThemeToggle();
     setupDraggableFloatingControls();
     setupViewSwitcher();
+    setupTabsSideSwitcher();
     setupBookViewInteraction();
     setupClassicViewInteraction();
     initKeyboardNavigation();

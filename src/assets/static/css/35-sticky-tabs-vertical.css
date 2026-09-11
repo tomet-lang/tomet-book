@@ -1,0 +1,185 @@
+/* ==================== STICKY TABS: 縦バージョン (右端) ==================== *
+
+   data-tabs="right" のときだけ効く上書き。既定 (上・横並び) の定義は
+   30-sticky-tabs.css のままで、ここは差分だけを持つ。
+
+   横版が「下端に接地して上へ伸びる付箋」なのに対し、縦版は「左端 (本文側) に
+   接地して右へ伸びる付箋」になる。平らな辺が本文に接し、丸い辺が外を向く
+   ところは横版と同じ。軸が入れ替わるので、丸み・伸長方向・影・覗きの
+   向きがすべて 90 度回る。 */
+
+/* 本文の下ではなく右に並べる */
+[data-tabs="right"] .pane-content {
+  flex-direction: row;
+}
+
+[data-tabs="right"] .pane-content-header {
+  /* 47px の帯が縦になる。高さは本文と同じだけ使う。 */
+  width: 47px;
+  min-width: 47px;
+  height: 100%;
+  min-height: 0;
+  /* 右端は詰めて、スクロールバーが帯の右辺にぴったり立つようにする。 */
+  padding: 8px 0 8px 4px;
+  flex-direction: column;
+  align-items: flex-start;
+  order: 2; /* 本文の右へ */
+}
+
+[data-tabs="right"] .pane-scroll-content {
+  order: 1;
+}
+
+/* --- バー本体 --- */
+[data-tabs="right"] .sticky-tabs-bar {
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  /* 帯の残り高さいっぱいを占め、そこからあふれた分をスクロールさせる。
+     min-height: 0 がないと flex アイテムは中身より縮めず、いくら伸びても
+     スクロールバーが出ない。 */
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  /* 横版はスクロールバーを上へ出すために反転していた。縦版は右端に出るのが
+     自然な位置なので、反転は解く。 */
+  transform: none;
+}
+[data-tabs="right"] .sticky-tabs-bar > .sticky-tabs-list {
+  transform: none;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  height: auto;
+}
+
+/* --- 付箋そのもの --- */
+[data-tabs="right"] .sticky-tab-node {
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  height: auto;
+}
+
+[data-tabs="right"] .sticky-tab-btn {
+  /* 文字を縦に組む。本の小口に貼ったインデックスと同じ向き。 */
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  /* 右端に接地し、左の二隅だけ丸い */
+  border-radius: 0 4px 4px 0;
+  align-self: flex-start;
+  justify-content: flex-start;
+  /* 幅と高さの役割が入れ替わる */
+  height: auto;
+  max-height: 260px;
+  transition: width 0.15s ease,
+              background 0.15s ease,
+              color 0.15s ease,
+              box-shadow 0.15s ease;
+}
+
+[data-tabs="right"] .sticky-tab-text {
+  max-height: 200px;
+  max-width: none;
+}
+
+/* サイズ階層: 横版の height が width に、padding が 90 度回る */
+[data-tabs="right"] .sticky-tab-btn.level-1 {
+  width: 29px;
+  padding: 8px 2px 10px 2px;
+}
+[data-tabs="right"] .sticky-tab-btn.level-1.is-active {
+  width: 33px;
+  height: auto;
+}
+
+[data-tabs="right"] .sticky-tab-btn.level-2 {
+  width: 26px;
+  padding: 7px 2px 8px 2px;
+}
+[data-tabs="right"] .sticky-tab-btn.level-2.is-active {
+  width: 30px;
+  height: auto;
+}
+
+[data-tabs="right"] .sticky-tab-btn.level-3 {
+  width: 23px;
+  padding: 6px 1px 7px 1px;
+}
+[data-tabs="right"] .sticky-tab-btn.level-3.is-active {
+  width: 27px;
+  height: auto;
+}
+
+[data-tabs="right"] .sticky-tab-btn.level-4,
+[data-tabs="right"] .sticky-tab-btn.level-5,
+[data-tabs="right"] .sticky-tab-btn.level-6 {
+  width: 20px;
+  padding: 5px 1px 6px 1px;
+}
+[data-tabs="right"] .sticky-tab-btn.level-4.is-active,
+[data-tabs="right"] .sticky-tab-btn.level-5.is-active,
+[data-tabs="right"] .sticky-tab-btn.level-6.is-active {
+  width: 24px;
+  height: auto;
+}
+
+/* 影も左向きへ */
+[data-tabs="right"] .sticky-tab-btn.is-active,
+[data-tabs="right"] .sticky-tab-node.is-active-branch > .sticky-tab-btn {
+  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.08);
+}
+[data-theme="dark"][data-tabs="right"] .sticky-tab-btn.is-active,
+[data-theme="dark"][data-tabs="right"] .sticky-tab-node.is-active-branch > .sticky-tab-btn {
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.35);
+}
+
+/* --- 子付箋のスロット: 横ではなく下へ開く --- */
+[data-tabs="right"] .sticky-children-slot {
+  flex-direction: column;
+  align-items: flex-start;
+  /* 縦並びでは交差軸が横になる。基底の align-self: flex-end のままだと
+     スロットごと右へ寄り、子付箋が親より右にずれる。 */
+  align-self: flex-start;
+  width: auto;
+  height: auto;
+  max-width: none;
+  /* 畳んでいるときは下へ 4px だけ覗く (横版の右へ 4px と同じ考え方) */
+  max-height: 10px;
+  border-radius: 0 0 4px 0;
+  margin: -6px 0 0 0;
+  transition: max-height 0.28s cubic-bezier(0.2, 0, 0, 1),
+              margin 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+[data-tabs="right"] .sticky-tab-node:not(.is-active):not(.is-active-branch) > .sticky-children-slot {
+  width: auto;
+  height: auto;
+}
+[data-tabs="right"] .sticky-tab-node.is-active > .sticky-children-slot,
+[data-tabs="right"] .sticky-tab-node.is-active-branch > .sticky-children-slot {
+  max-width: none;
+  max-height: 1500px;
+  margin: 3px 0;
+}
+
+/* --- 両端の移動ボタン: 上下に置く --- */
+[data-tabs="right"] .sticky-edge-btn {
+  align-self: flex-start;
+  width: 26px;
+  height: 24px;
+  border-radius: 0 4px 4px 0;
+}
+[data-tabs="right"] #btn-sticky-top {
+  margin: 0 0 6px 0;
+}
+[data-tabs="right"] #btn-sticky-bottom {
+  margin: 6px 0 0 0;
+}
+
+/* --- ポップオーバー: 下ではなく左に出るので、接合する角が変わる --- */
+[data-tabs="right"] .sticky-hover-popover {
+  border-radius: 4px 0 4px 4px;
+  box-shadow: -8px 0 16px -6px rgba(0, 0, 0, 0.3);
+}

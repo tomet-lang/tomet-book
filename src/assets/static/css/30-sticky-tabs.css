@@ -3,45 +3,90 @@
   background: #dfe3e8; /* 付箋と明確に分ける暗め背景 */
   padding: 0 8px;
   overflow: visible;
-  height: 41px;
-  min-height: 41px;
+  /* 41px の付箋領域 + 6px のスクロールバー。付箋そのものの寸法は変えず、
+     付箋の上に細いレールが増えるだけになる。 */
+  height: 47px;
+  min-height: 47px;
   display: flex;
   align-items: flex-end;
   box-sizing: border-box;
   position: relative;
 }
 
-/* 最前面に必ず通る境界線 (横線): 付箋が線の上に被らず、線の裏からひょこっと出る */
-.pane-content-header::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: var(--border);
-  z-index: 10; /* 付箋より確実に前面に通す */
-  pointer-events: none;
-}
-
 [data-theme="dark"] .pane-content-header {
   background: #16191d;
 }
 
+/* バー両端の移動ボタン: 付箋ではないので色は持たず、下端だけ付箋と揃える。
+   バーの外に置いてあるので、付箋をスクロールしても動かない。 */
+.sticky-edge-btn {
+  flex: 0 0 auto;
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 26px;
+  margin-bottom: 0;
+  padding: 0;
+  border: none;
+  border-radius: 4px 4px 0 0;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.sticky-edge-btn:hover {
+  background: var(--surface-subtle);
+  color: var(--link);
+}
+#btn-sticky-top {
+  margin-right: 6px;
+}
+#btn-sticky-bottom {
+  margin-left: 6px;
+}
+
 .sticky-tabs-bar {
   display: flex;
-  align-items: flex-end;
-  width: 100%;
+  /* 上下反転しているので、local の flex-start が見た目の下端になる。
+     付箋は従来どおりバーの底に接地する。 */
+  align-items: flex-start;
+  /* 両端のボタンと場所を分け合う。width:100% だと自分だけで header を占めてしまい、
+     右のボタンと最後の付箋がはみ出して切れる。 */
+  flex: 1 1 auto;
+  min-width: 0;
   height: 100%;
   overflow-x: auto;
   overflow-y: visible;
-  scrollbar-width: none;
+  /* スクロールバーは出す。ドラッグできるうえ、横に続きがあることが目で分かる。 */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+  /* 横スクロールバーは必ず要素の下端に出る仕様で、位置を指定する CSS は無い。
+     バー自体を上下反転させると下端が見た目の上へ来るので、スクロールバーが
+     付箋の上に出る。中身は二重に反転して元の向きへ戻す。
+     反転しているだけで本物のスクロールコンテナのままなので、ドラッグも
+     Shift+ホイールも慣性も、ブラウザ標準の挙動がそのまま効く。 */
+  transform: rotateX(180deg);
   position: relative;
-  z-index: 1; /* 境界線 (z-index: 10) の裏側 */
+  z-index: 1;
   margin-bottom: 0;
 }
+.sticky-tabs-bar > .sticky-tabs-list {
+  transform: rotateX(180deg);
+}
 .sticky-tabs-bar::-webkit-scrollbar {
-  display: none;
+  height: 6px;
+}
+.sticky-tabs-bar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sticky-tabs-bar::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+.sticky-tabs-bar::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }
 
 .sticky-tabs-list {
@@ -140,7 +185,8 @@
   background: #fef3c7; /* 優しいパステルイエロー */
   color: #78350f;     /* 落ち着いたアンバーブラウン */
 }
-.sticky-tab-btn.level-1:hover {
+.sticky-tab-btn.level-1:hover,
+.sticky-tab-btn.level-1.is-popover-open {
   background: #fde68a;
   color: #78350f;
 }
@@ -156,7 +202,8 @@
   background: #d1fae5; /* 優しいミントグリーン */
   color: #064e3b;     /* 濃いフォレストグリーン */
 }
-.sticky-tab-btn.level-2:hover {
+.sticky-tab-btn.level-2:hover,
+.sticky-tab-btn.level-2.is-popover-open {
   background: #a7f3d0;
   color: #064e3b;
 }
@@ -172,7 +219,8 @@
   background: #e0f2fe; /* 優しいパステルスカイ */
   color: #0c4a6e;     /* 濃いネイビーブルー */
 }
-.sticky-tab-btn.level-3:hover {
+.sticky-tab-btn.level-3:hover,
+.sticky-tab-btn.level-3.is-popover-open {
   background: #bae6fd;
   color: #0c4a6e;
 }
@@ -191,8 +239,11 @@
   color: #581c87;     /* 濃いパープル */
 }
 .sticky-tab-btn.level-4:hover,
+.sticky-tab-btn.level-4.is-popover-open,
 .sticky-tab-btn.level-5:hover,
-.sticky-tab-btn.level-6:hover {
+.sticky-tab-btn.level-5.is-popover-open,
+.sticky-tab-btn.level-6:hover,
+.sticky-tab-btn.level-6.is-popover-open {
   background: #e9d5ff;
   color: #581c87;
 }
@@ -207,43 +258,46 @@
 
 /* --- ダークモード対応 (目に優しいパステルトーン & 控えめな影) --- */
 [data-theme="dark"] .sticky-tab-btn.level-1 {
-  background: rgba(245, 158, 11, 0.22);
+  background: #473619;
   color: #fef08a;
 }
-[data-theme="dark"] .sticky-tab-btn.level-1:hover {
-  background: rgba(245, 158, 11, 0.32);
+[data-theme="dark"] .sticky-tab-btn.level-1:hover,
+[data-theme="dark"] .sticky-tab-btn.level-1.is-popover-open {
+  background: #5d4417;
 }
 [data-theme="dark"] .sticky-tab-btn.level-1.is-active,
 [data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-1 {
-  background: rgba(245, 158, 11, 0.42);
+  background: #745115;
   color: #fffbeb;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.35);
 }
 
 [data-theme="dark"] .sticky-tab-btn.level-2 {
-  background: rgba(16, 185, 129, 0.22);
+  background: #153c33;
   color: #a7f3d0;
 }
-[data-theme="dark"] .sticky-tab-btn.level-2:hover {
-  background: rgba(16, 185, 129, 0.32);
+[data-theme="dark"] .sticky-tab-btn.level-2:hover,
+[data-theme="dark"] .sticky-tab-btn.level-2.is-popover-open {
+  background: #144c3d;
 }
 [data-theme="dark"] .sticky-tab-btn.level-2.is-active,
 [data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-2 {
-  background: rgba(16, 185, 129, 0.42);
+  background: #135c47;
   color: #ecfdf5;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.35);
 }
 
 [data-theme="dark"] .sticky-tab-btn.level-3 {
-  background: rgba(14, 165, 233, 0.22);
+  background: #14384a;
   color: #bae6fd;
 }
-[data-theme="dark"] .sticky-tab-btn.level-3:hover {
-  background: rgba(14, 165, 233, 0.32);
+[data-theme="dark"] .sticky-tab-btn.level-3:hover,
+[data-theme="dark"] .sticky-tab-btn.level-3.is-popover-open {
+  background: #13465e;
 }
 [data-theme="dark"] .sticky-tab-btn.level-3.is-active,
 [data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-3 {
-  background: rgba(14, 165, 233, 0.42);
+  background: #135473;
   color: #f0f9ff;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.35);
 }
@@ -251,19 +305,22 @@
 [data-theme="dark"] .sticky-tab-btn.level-4,
 [data-theme="dark"] .sticky-tab-btn.level-5,
 [data-theme="dark"] .sticky-tab-btn.level-6 {
-  background: rgba(168, 85, 247, 0.22);
+  background: #36264d;
   color: #e9d5ff;
 }
 [data-theme="dark"] .sticky-tab-btn.level-4:hover,
+[data-theme="dark"] .sticky-tab-btn.level-4.is-popover-open,
 [data-theme="dark"] .sticky-tab-btn.level-5:hover,
-[data-theme="dark"] .sticky-tab-btn.level-6:hover {
-  background: rgba(168, 85, 247, 0.32);
+[data-theme="dark"] .sticky-tab-btn.level-5.is-popover-open,
+[data-theme="dark"] .sticky-tab-btn.level-6:hover,
+[data-theme="dark"] .sticky-tab-btn.level-6.is-popover-open {
+  background: #452c63;
 }
 [data-theme="dark"] .sticky-tab-btn.level-4.is-active,
 [data-theme="dark"] .sticky-tab-btn.level-5.is-active,
 [data-theme="dark"] .sticky-tab-btn.level-6.is-active,
 [data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-4 {
-  background: rgba(168, 85, 247, 0.42);
+  background: #533279;
   color: #faf5ff;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.35);
 }
@@ -276,21 +333,55 @@
 }
 
 /* --- 横に展開される子ヘッダーのスロット (アクティブブランチ時にスッと開く) --- */
+/* 折りたたみ時も完全には隠さず、最初の子付箋の左端だけを親の後ろから覗かせる。
+   子がいることが畳んだままでも分かる。 */
 .sticky-children-slot {
   display: inline-flex;
   align-items: flex-end;
   height: 100%; /* 親と同じ高さを共有して底面アラインメントを100%一致させる */
   align-self: flex-end;
   gap: 3px;
-  max-width: 0;
-  opacity: 0;
+  /* 親の下に 6px 潜らせたうえで 10px 残すので、親の右へ出るのは 4px。
+     切り口の右上だけを付箋と同じ丸みにして、紙の端が覗いて見えるようにする。 */
+  max-width: 10px;
+  border-radius: 0 4px 0 0;
+  opacity: 1;
   overflow: hidden;
   white-space: nowrap;
   pointer-events: none;
-  transition: max-width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
-              opacity 0.22s ease,
-              margin 0.2s ease;
-  margin: 0;
+  /* オーバーシュートしないイージング: 1 を超える制御点だと畳むときに
+     目標幅を一度下回って覗きが消え、跳ね返って飛び出して見える。 */
+  transition: max-width 0.28s cubic-bezier(0.2, 0, 0, 1),
+              margin 0.2s cubic-bezier(0.2, 0, 0, 1);
+  /* 親の下へ少し潜り込ませて「後ろにある」ように見せる。 */
+  margin: 0 0 0 -6px;
+  /* 独自の重ね合わせ文脈。中の子付箋も同じ .sticky-tab-btn (z-index:1) なので、
+     ここへ閉じ込めないと親より前に描かれてしまう。 */
+  position: relative;
+  z-index: 0;
+}
+
+/* 畳んでいる間はスロットを中身の高さまで縮める。height:100% のままだと箱が
+   バー全高 (41px) になり、角丸は子付箋 (26px) の十数px上の空中に付いてしまって
+   紙の位置には直線の側面しか来ない。 */
+.sticky-tab-node:not(.is-active):not(.is-active-branch) > .sticky-children-slot {
+  height: auto;
+}
+
+/* 畳んでいる間は中身を伏せ、紙の端だけが覗くようにする。
+   visibility を切り替えると文字が先に消えてから幅が縮み、動きが二段に見える。
+   幅とまったく同じ時間・同じ曲線でフェードさせて、ひと続きの動きにする。 */
+.sticky-children-slot .sticky-tab-btn > * {
+  transition: opacity 0.28s cubic-bezier(0.2, 0, 0, 1);
+}
+.sticky-tab-node:not(.is-active):not(.is-active-branch) > .sticky-children-slot .sticky-tab-btn > * {
+  opacity: 0;
+}
+
+/* 親付箋がチラ見せより手前に来るように積み順を固定する。 */
+.sticky-tab-btn {
+  position: relative;
+  z-index: 1;
 }
 
 /* 親ノードがアクティブまたはアクティブブランチの時、子スロットが横に展開！ */
@@ -326,56 +417,60 @@
   padding-right: 0;
 }
 
-/* ポップオーバー内のバッジ */
+/* ポップオーバー内のバッジはレベル別の色を持つ。背景は JS が地の色に混ぜて
+   不透明な色として塗る (地は付箋の色で、レベルごとに変わるため)。 */
 .sticky-hover-item .sticky-level-badge.level-1 {
-  background: rgba(217, 119, 6, 0.15);
   color: #b45309;
 }
 .sticky-hover-item .sticky-level-badge.level-2 {
-  background: rgba(16, 185, 129, 0.15);
   color: #047857;
 }
 .sticky-hover-item .sticky-level-badge.level-3 {
-  background: rgba(14, 165, 233, 0.15);
   color: #0369a1;
 }
 .sticky-hover-item .sticky-level-badge.level-4,
 .sticky-hover-item .sticky-level-badge.level-5,
 .sticky-hover-item .sticky-level-badge.level-6 {
-  background: rgba(168, 85, 247, 0.15);
   color: #6d28d9;
 }
 
 [data-theme="dark"] .sticky-hover-item .sticky-level-badge.level-1 {
-  background: rgba(245, 158, 11, 0.2);
   color: #fbbf24;
 }
 [data-theme="dark"] .sticky-hover-item .sticky-level-badge.level-2 {
-  background: rgba(16, 185, 129, 0.2);
   color: #34d399;
 }
 [data-theme="dark"] .sticky-hover-item .sticky-level-badge.level-3 {
-  background: rgba(14, 165, 233, 0.2);
   color: #38bdf8;
 }
 [data-theme="dark"] .sticky-hover-item .sticky-level-badge.level-4,
 [data-theme="dark"] .sticky-hover-item .sticky-level-badge.level-5,
 [data-theme="dark"] .sticky-hover-item .sticky-level-badge.level-6 {
-  background: rgba(168, 85, 247, 0.2);
   color: #c084fc;
 }
 
 /* ==================== HOVER SUBHEADINGS POPOVER ==================== */
+/* The popover hangs off the bottom of its tab and should read as the same
+   piece of paper: JS paints it with the tab's own computed colours, the top
+   left corner stays square where the two meet, and the three free corners get
+   the tab's radius. Everything inside is transparent so that one colour is
+   what shows. */
 .sticky-hover-popover {
   position: fixed;
   z-index: 1000;
   min-width: 200px;
   max-width: 320px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 0; /* 直角 */
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+  /* JS sets --pop-bg to the tab's own colour; everything inside mixes
+     against it, so no surface here is ever translucent. */
+  --pop-bg: var(--surface);
+  background: var(--pop-bg);
+  color: var(--text);
+  border: none;
+  border-radius: 0 4px 4px 4px;
+  /* Offset and drawn in, so the shadow never bleeds up over the join. */
+  box-shadow: 0 8px 16px -6px rgba(0, 0, 0, 0.3);
   padding: 0;
+  overflow: hidden;
   pointer-events: auto;
   animation: 0.12s cubic-bezier(0, 0, 0.2, 1) both popover-fade-in;
 }
@@ -391,17 +486,6 @@
   }
 }
 
-.sticky-hover-popover-header {
-  padding: 6px 10px;
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  border-bottom: 1px solid var(--border);
-  background: var(--surface-subtle);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
 
 .sticky-hover-popover-list {
   max-height: 280px;
@@ -415,24 +499,22 @@
   gap: 6px;
   padding: 6px 12px;
   font-size: 0.78rem;
-  color: var(--text);
+  /* Inherit the tab colour the popover was painted with. */
+  color: inherit;
   text-decoration: none;
   cursor: pointer;
-  transition: background 0.1s ease, color 0.1s ease;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.sticky-hover-item:hover {
-  background: var(--surface-hover);
-  color: var(--link);
-}
+/* ホバー/アクティブは文字色へ寄せた不透明色。地は付箋の色そのもの。 */
+/* ホバーの合図は a:hover の下線だけに任せる。背景まで動かすと、
+   アクティブ項目の背景との区別が弱くなる。 */
 
 .sticky-hover-item.is-active {
-  background: var(--surface-subtle);
+  background: var(--pop-active);
   font-weight: 600;
-  color: var(--link);
 }
 
 .sticky-hover-item .item-text {

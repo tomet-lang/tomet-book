@@ -12,6 +12,10 @@
         } else if (window.innerWidth < 768) {
           document.documentElement.setAttribute('data-view', 'classic');
         }
+        const savedTabs = localStorage.getItem('wiki-tabs-side');
+        if (savedTabs === 'top' || savedTabs === 'right') {
+          document.documentElement.setAttribute('data-tabs', savedTabs);
+        }
         const savedTheme = localStorage.getItem('tmtbook-theme');
         if (savedTheme === 'dark' || savedTheme === 'light') {
           document.documentElement.setAttribute('data-theme', savedTheme);
@@ -62,6 +66,10 @@
           </div>
           <div id="wiki-search-results" class="search-results" hidden></div>
         </div>
+        <div class="view-switcher" role="group" aria-label="{{ t["tabs.side"] }}">
+          <button type="button" class="view-btn" id="btn-tabs-top" title="{{ t["tabs.top_title"] }}">{{ t["tabs.top"] }}</button>
+          <button type="button" class="view-btn" id="btn-tabs-right" title="{{ t["tabs.right_title"] }}">{{ t["tabs.right"] }}</button>
+        </div>
         <div class="view-switcher" role="group" aria-label="{{ t["view.switch"] }}">
           <button type="button" class="view-btn view-btn-book" id="btn-view-book" title="{{ t["view.book_title"] }}">{{ t["view.book"] }}</button>
           <button type="button" class="view-btn view-btn-classic" id="btn-view-classic" title="{{ t["view.classic_title"] }}">{{ t["view.classic"] }}</button>
@@ -85,9 +93,6 @@
 
     <!-- Sticky Tabs Subheadings Hover Popover -->
     <div id="sticky-hover-popover" class="sticky-hover-popover" hidden data-pagefind-ignore>
-      <div class="sticky-hover-popover-header">
-        <span class="sticky-hover-popover-title"></span>
-      </div>
       <div class="sticky-hover-popover-list"></div>
     </div>
 

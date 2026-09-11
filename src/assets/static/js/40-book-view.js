@@ -3,6 +3,24 @@
   const t = (key, fallback) => T.t(key, fallback);
 
   // ==================== BOOK VIEW INTERACTIONS ====================
+
+  /** 付箋バーが右の縦並びになっているか。 */
+  function isVerticalTabs() {
+    return document.documentElement.getAttribute('data-tabs') === 'right';
+  }
+
+  /** `rgb(1, 2, 3)` / `rgba(1, 2, 3, 1)` -> `[1, 2, 3]`. */
+  function parseRgb(colour) {
+    const parts = (colour || '').match(/[\d.]+/g) || [];
+    return [0, 1, 2].map((i) => Number(parts[i]) || 0);
+  }
+
+  /** Blend `amount` of `b` into `a`. Both opaque, so the result is too. */
+  function mixRgb(a, b, amount) {
+    const c = a.map((v, i) => Math.round(v + (b[i] - v) * amount));
+    return `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+  }
+
   function setupBookViewInteraction() {
     const tocLinks = document.querySelectorAll('.book-toc-link');
     const scrollContainer = document.getElementById('book-content-scroll');
@@ -199,15 +217,9 @@
         popover.className = 'sticky-hover-popover';
         popover.hidden = true;
         popover.setAttribute('data-pagefind-ignore', '');
-        popover.innerHTML = `
-          <div class="sticky-hover-popover-header">
-            <span class="sticky-hover-popover-title"></span>
-          </div>
-          <div class="sticky-hover-popover-list"></div>
-        `;
+        popover.innerHTML = `<div class="sticky-hover-popover-list"></div>`;
         document.body.appendChild(popover);
       }
-      const popoverTitle = popover.querySelector('.sticky-hover-popover-title');
       const popoverList = popover.querySelector('.sticky-hover-popover-list');
       let hoverTimer = null;
       let closeTimer = null;
@@ -216,10 +228,14 @@
         if (hoverTimer) clearTimeout(hoverTimer);
         if (closeTimer) clearTimeout(closeTimer);
         if (popover) popover.hidden = true;
+        // The tab stops standing in for a hovered one.
+        tabsBar
+          .querySelectorAll('.sticky-tab-btn.is-popover-open')
+          .forEach((el) => el.classList.remove('is-popover-open'));
       }
 
       function showPopoverForNode(node, btn) {
-        if (!popover || !popoverTitle || !popoverList) return;
+        if (!popover || !popoverList) return;
         const childrenSlot = node.querySelector(':scope > .sticky-children-slot');
         if (!childrenSlot) {
           hidePopover();
@@ -231,11 +247,6 @@
           hidePopover();
           return;
         }
-
-        const parentText = btn.querySelector('.sticky-tab-text')?.textContent || '';
-        const parentLevel = node.getAttribute('data-level') || '1';
-
-        popoverTitle.innerHTML = `<span class="sticky-level-badge level-${parentLevel}">H${parentLevel}</span> <span>${parentText} ${t("sticky.children")} (${childNodes.length})</span>`;
 
         popoverList.innerHTML = '';
         childNodes.forEach((child) => {
@@ -267,14 +278,56 @@
         });
 
         popover.hidden = false;
+
+        // The pointer is about to leave the tab for the popover, which would
+        // drop :hover and change the tab's colour underneath it. This keeps the
+        // tab looking hovered for as long as its popover is open.
+        tabsBar
+          .querySelectorAll('.sticky-tab-btn.is-popover-open')
+          .forEach((el) => el.classList.remove('is-popover-open'));
+        btn.classList.add('is-popover-open');
+
+        // Wear the tab's own colours so the two read as one piece of paper.
+        // Reading the computed value rather than duplicating the palette keeps
+        // this right for every level, for hover and active, and in both themes.
+        // Everything derived from it is mixed here into an opaque colour: the
+        // popover floats over the article, where a translucent surface shows
+        // the text through it.
+        const tabStyle = window.getComputedStyle(btn);
+        const ground = parseRgb(tabStyle.backgroundColor);
+        const ink = parseRgb(tabStyle.color);
+
+        popover.style.setProperty('--pop-bg', tabStyle.backgroundColor);
+        // Toward the text colour, which darkens on a light sticky and lightens
+        // on a dark one without needing a second set of values. Only the active
+        // item takes a background; hover is left to the underline.
+        popover.style.setProperty('--pop-active', mixRgb(ground, ink, 0.18));
+        popover.style.color = tabStyle.color;
+
+        // The badges keep their per-level colour; their background is that
+        // colour mixed into whatever ground this popover happens to carry.
+        popoverList.querySelectorAll('.sticky-level-badge').forEach((badge) => {
+          const badgeInk = parseRgb(window.getComputedStyle(badge).color);
+          badge.style.background = mixRgb(ground, badgeInk, 0.18);
+        });
+
         const rect = btn.getBoundingClientRect();
         const popoverWidth = Math.min(320, Math.max(200, popover.offsetWidth || 220));
-        let left = rect.left;
-        if (left + popoverWidth > window.innerWidth - 12) {
-          left = Math.max(12, window.innerWidth - popoverWidth - 12);
+
+        if (isVerticalTabs()) {
+          // 付箋が右端にあるので、ポップオーバーはその左へ張り出す。
+          const top = Math.max(12, Math.min(rect.top, window.innerHeight - 120));
+          popover.style.top = `${top}px`;
+          popover.style.left = `${Math.max(12, rect.left - popoverWidth)}px`;
+        } else {
+          let left = rect.left;
+          if (left + popoverWidth > window.innerWidth - 12) {
+            left = Math.max(12, window.innerWidth - popoverWidth - 12);
+          }
+          // Flush against the tab: any gap breaks the join.
+          popover.style.top = `${rect.bottom}px`;
+          popover.style.left = `${left}px`;
         }
-        popover.style.top = `${rect.bottom + 2}px`;
-        popover.style.left = `${left}px`;
       }
 
       if (popover && !popover.__hoverBound) {
@@ -319,6 +372,80 @@
       scrollContainer?.addEventListener('scroll', () => {
         hidePopover();
       }, { passive: true });
+
+      // The bar scrolls horizontally but hides its scrollbar, and a wheel only
+      // scrolls vertically by default -- which does nothing here. Turn wheel
+      // movement in either axis into horizontal travel along the tabs.
+      //
+      // Assigning scrollLeft per event would step the bar a notch at a time.
+      // Instead each notch moves a target, and a frame loop eases towards it,
+      // so a burst of notches becomes one continuous glide.
+      if (!tabsBar.__wheelBound) {
+        tabsBar.__wheelBound = true;
+
+        let wheelTarget = null;
+        let wheelFrame = null;
+        const maxScrollLeft = () => Math.max(0, tabsBar.scrollWidth - tabsBar.clientWidth);
+
+        const glide = () => {
+          const remaining = wheelTarget - tabsBar.scrollLeft;
+          if (Math.abs(remaining) < 0.5) {
+            tabsBar.scrollLeft = wheelTarget;
+            wheelTarget = null;
+            wheelFrame = null;
+            return;
+          }
+          tabsBar.scrollLeft += remaining * 0.22;
+          wheelFrame = requestAnimationFrame(glide);
+        };
+
+        tabsBar.addEventListener(
+          'wheel',
+          (e) => {
+            // 縦モードではバーが縦スクロールなので、ブラウザ標準がそのまま効く。
+            if (isVerticalTabs()) return;
+            const delta = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+            if (!delta) return;
+
+            const from = wheelTarget ?? tabsBar.scrollLeft;
+            const to = Math.max(0, Math.min(maxScrollLeft(), from + delta));
+            // At either end, leave the event alone so the page still scrolls.
+            if (to === from) return;
+
+            e.preventDefault();
+            wheelTarget = to;
+            if (wheelFrame === null) wheelFrame = requestAnimationFrame(glide);
+          },
+          { passive: false }
+        );
+      }
+
+      // Jump to the start or the end of the document.
+      //
+      // No markClickScrolling here: a click on a tab suppresses the scrollspy
+      // so the tab you picked stays lit while the page travels, but a jump has
+      // no heading of its own -- the spy should follow the page as it goes.
+      const jumpTo = (position) => {
+        if (!scrollContainer) return;
+        hidePopover();
+        scrollContainer.scrollTo({
+          top: position === 'end' ? scrollContainer.scrollHeight : 0,
+          behavior: 'smooth',
+        });
+      };
+
+      [
+        ['btn-sticky-top', 'start'],
+        ['btn-sticky-bottom', 'end'],
+      ].forEach(([id, position]) => {
+        const button = document.getElementById(id);
+        if (!button || button.__jumpBound) return;
+        button.__jumpBound = true;
+        button.addEventListener('click', (e) => {
+          e.preventDefault();
+          jumpTo(position);
+        });
+      });
 
       // Initial active state: activate the first root node if nothing is active yet
       const firstNode = nodes[0];

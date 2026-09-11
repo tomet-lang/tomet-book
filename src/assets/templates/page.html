@@ -168,6 +168,13 @@
   <main class="book-pane pane-content" data-pagefind-body>
     <div class="pane-header pane-content-header">
       {% if section_tabs and section_tabs | length > 0 %}
+      <button type="button" class="sticky-edge-btn" id="btn-sticky-top" title="{{ t["sticky.to_top"] }}" aria-label="{{ t["sticky.to_top"] }}" data-pagefind-ignore>
+        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 5h14"></path>
+          <path d="M12 20V10"></path>
+          <path d="m7 14 5-5 5 5"></path>
+        </svg>
+      </button>
       <nav class="sticky-tabs-bar" id="sticky-tabs-bar" aria-label="{{ t["sticky.label"] }}" data-pagefind-ignore>
         <div class="sticky-tabs-list">
           {% for h1 in section_tabs %}
@@ -206,6 +213,13 @@
           {% endfor %}
         </div>
       </nav>
+      <button type="button" class="sticky-edge-btn" id="btn-sticky-bottom" title="{{ t["sticky.to_bottom"] }}" aria-label="{{ t["sticky.to_bottom"] }}" data-pagefind-ignore>
+        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 4v10"></path>
+          <path d="m7 10 5 5 5-5"></path>
+          <path d="M5 19h14"></path>
+        </svg>
+      </button>
       {% else %}
       <span class="pane-title">{{ t["pane.content"] }}</span>
       {% endif %}

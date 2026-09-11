@@ -15,6 +15,7 @@ pub const BOOK_CSS: &str = concat!(
     include_str!("../assets/static/css/10-shell.css"),
     include_str!("../assets/static/css/20-panes.css"),
     include_str!("../assets/static/css/30-sticky-tabs.css"),
+    include_str!("../assets/static/css/35-sticky-tabs-vertical.css"),
     include_str!("../assets/static/css/40-hero.css"),
     include_str!("../assets/static/css/50-nav-infobox.css"),
     include_str!("../assets/static/css/60-content.css"),
