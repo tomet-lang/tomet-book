@@ -1,6 +1,7 @@
 pub mod assets;
 pub mod catalog;
 pub mod document;
+pub mod kinds;
 pub mod loader;
 pub mod pagefind;
 pub mod renderer;
@@ -17,7 +18,6 @@ use walkdir::WalkDir;
 use crate::config::BookConfig;
 use assets::{copy_vault_media, write_static_assets};
 use document::ProcessedDoc;
-use document::process_tomet_document;
 use loader::{ScannedVault, scan_vault};
 use pagefind::run_pagefind;
 use renderer::{Backlink, BookRenderer, EntrySummary, SectionSummary};
@@ -73,6 +73,9 @@ pub struct BuildReport {
     /// Who points at each page, keyed by slug. Handed back so the dev server
     /// can re-render one document without reading the whole vault again.
     pub backlinks: HashMap<String, Vec<Backlink>>,
+    /// The documents this build left out, by vault-relative path, so links to
+    /// them keep resolving to nothing between full rebuilds.
+    pub unpublished: HashSet<String>,
 }
 
 enum DocOutcome {
@@ -114,6 +117,9 @@ pub struct RenderContext<'a, 'r> {
     pub vault_index: &'a tomet_links::VaultLinkIndex,
     pub workspace_cfg_src: Option<&'a str>,
     pub renderer: &'a BookRenderer<'r>,
+    /// The documents the last full build left out, so a page re-rendered on
+    /// its own still shows links to them as broken.
+    pub unpublished: &'a HashSet<String>,
 }
 
 pub fn render_single_document(
@@ -122,16 +128,24 @@ pub fn render_single_document(
     out_dir: &Path,
     cx: &RenderContext<'_, '_>,
     backlinks: &[Backlink],
-) -> Result<(bool, String)> {
+) -> Result<Option<(bool, String)>> {
     let config = cx.config;
     let source = fs::read_to_string(abs_path)?;
-    let processed = process_tomet_document(
-        &source,
+    let (doc, kind) = document::parse_tomet_document(&source, rel_path)?;
+
+    // Its `@kind` may be what changed. Nothing to write either way.
+    if !kinds::publishes(kind.as_deref(), &config.build.kinds) {
+        return Ok(None);
+    }
+
+    let processed = document::process_parsed_document(
+        doc,
         rel_path,
         Some(abs_path),
         config,
         cx.vault_index,
         cx.workspace_cfg_src,
+        cx.unpublished,
     )?;
     let html = cx.renderer.render_page(&processed, backlinks)?;
     let out_html_path = out_dir
@@ -140,7 +154,7 @@ pub fn render_single_document(
         .join("index.html");
     let written = write_if_changed(&out_html_path, &html)?;
     let url = format!("{}/{}", config.build.clean_url_prefix(), processed.slug);
-    Ok((written, url))
+    Ok(Some((written, url)))
 }
 
 /// Read the vault's `*.index.tmt` documents into one list, in filename order.
@@ -420,7 +434,10 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
     // Backlinks are what force two passes: a page cannot say who points at it
     // until every other page has been read. Parsing happens once and the
     // results are kept, so the second pass only fills in the template.
-    let processed: Vec<Result<ProcessedDoc, DocFailure>> = scanned
+    // Read every document once, and keep what came back: the `@kind` decides
+    // what the site publishes, and that has to be settled before any link is
+    // resolved, since a link to a document left out has to come out broken.
+    let parsed: Vec<Result<(tomet_ast::Document, Option<String>), DocFailure>> = scanned
         .doc_files
         .par_iter()
         .map(|doc_file| {
@@ -432,15 +449,49 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
             let source = fs::read_to_string(&doc_file.abs_path)
                 .map_err(|e| fail(format!("could not read file: {e}")))?;
 
-            process_tomet_document(
-                &source,
+            document::parse_tomet_document(&source, &doc_file.rel_path)
+                .map_err(|e| fail(format!("could not parse document: {e}")))
+        })
+        .collect();
+
+    let unpublished: HashSet<String> = parsed
+        .iter()
+        .zip(scanned.doc_files.iter())
+        .filter(|(result, _)| match result {
+            Ok((_, kind)) => !kinds::publishes(kind.as_deref(), &config.build.kinds),
+            // A document that would not parse is not published either, but it
+            // is reported as a failure rather than a choice.
+            Err(_) => false,
+        })
+        .map(|(_, doc_file)| doc_file.rel_path.clone())
+        .collect();
+
+    if !unpublished.is_empty() {
+        info!(
+            "Leaving out {} document(s) whose @kind the book does not publish",
+            unpublished.len()
+        );
+    }
+
+    let processed: Vec<Result<ProcessedDoc, DocFailure>> = parsed
+        .into_par_iter()
+        .zip(scanned.doc_files.par_iter())
+        .filter(|(_, doc_file)| !unpublished.contains(&doc_file.rel_path))
+        .map(|(result, doc_file)| {
+            let (doc, _) = result?;
+            document::process_parsed_document(
+                doc,
                 &doc_file.rel_path,
                 Some(&doc_file.abs_path),
                 config,
                 &scanned.vault_index,
                 scanned.workspace_config_src.as_deref(),
+                &unpublished,
             )
-            .map_err(|e| fail(format!("could not process document: {e}")))
+            .map_err(|e| DocFailure {
+                rel_path: doc_file.rel_path.clone(),
+                error: format!("could not process document: {e}"),
+            })
         })
         .collect();
 
@@ -660,6 +711,7 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
         pruned_media,
         scanned,
         backlinks,
+        unpublished,
     };
 
     if report.failures.is_empty() {

@@ -7,6 +7,7 @@ mod toc;
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::path::Path;
 
 use crate::config::BookConfig;
@@ -99,6 +100,91 @@ fn resolve_title(
     }
 }
 
+#[cfg(test)]
+mod kind_tests {
+    use super::*;
+
+    #[test]
+    fn a_document_reports_the_kind_it_declares() {
+        let (_, kind) = parse_tomet_document("@kind(config)\n\n#[ x ]\n", "a.tmt").unwrap();
+        assert_eq!(kind.as_deref(), Some("config"));
+
+        let (_, none) = parse_tomet_document("#[ x ]\n", "b.tmt").unwrap();
+        assert_eq!(none, None);
+    }
+
+    #[test]
+    fn a_link_to_an_unpublished_document_resolves_to_nothing() {
+        let config = BookConfig::default();
+        let vault = tomet_links::VaultLinkIndex::from_paths(&[
+            "page.tmt".to_string(),
+            "secret.tmt".to_string(),
+        ]);
+
+        let unpublished: HashSet<String> = ["secret.tmt".to_string()].into_iter().collect();
+        let out = process_tomet_document(
+            "#[ Page ]\n\n@link(ref:\"secret\")\n",
+            "page.tmt",
+            None,
+            &config,
+            &vault,
+            None,
+            &unpublished,
+        )
+        .unwrap();
+
+        assert!(
+            out.body_html.contains("tm-ref-unresolved"),
+            "a link to a page the book leaves out must read as broken: {}",
+            out.body_html
+        );
+        assert!(out.outgoing.is_empty(), "and must not count as a backlink");
+    }
+
+    #[test]
+    fn the_same_link_resolves_when_the_page_is_published() {
+        let config = BookConfig::default();
+        let vault = tomet_links::VaultLinkIndex::from_paths(&[
+            "page.tmt".to_string(),
+            "secret.tmt".to_string(),
+        ]);
+
+        let out = process_tomet_document(
+            "#[ Page ]\n\n@link(ref:\"secret\")\n",
+            "page.tmt",
+            None,
+            &config,
+            &vault,
+            None,
+            &HashSet::new(),
+        )
+        .unwrap();
+
+        assert!(
+            !out.body_html.contains("tm-ref-unresolved"),
+            "{}",
+            out.body_html
+        );
+        assert_eq!(out.outgoing, ["secret"]);
+    }
+}
+
+/// Read a document far enough to know what it is.
+///
+/// The build has to decide what the site publishes before it resolves a
+/// single link, since a link to a document the site leaves out has to come
+/// out broken. That decision needs the `@kind`, and the `@kind` needs a
+/// parse -- so the parse is done once, here, and handed on.
+pub fn parse_tomet_document(
+    source: &str,
+    rel_path: &str,
+) -> Result<(tomet_ast::Document, Option<String>)> {
+    let doc = tomet_parser::parse_document(source)
+        .map_err(|e| anyhow::anyhow!("Failed to parse {rel_path}: {e}"))?;
+    let kind = tomet_semantics::document_kind(&doc).map(|s| s.to_string());
+    Ok((doc, kind))
+}
+
 pub fn process_tomet_document(
     source: &str,
     rel_path: &str,
@@ -106,10 +192,34 @@ pub fn process_tomet_document(
     config: &BookConfig,
     vault_index: &tomet_links::VaultLinkIndex,
     workspace_cfg_src: Option<&str>,
+    unpublished: &HashSet<String>,
 ) -> Result<ProcessedDoc> {
-    let mut doc = tomet_parser::parse_document(source)
-        .map_err(|e| anyhow::anyhow!("Failed to parse {rel_path}: {e}"))?;
+    let (doc, _) = parse_tomet_document(source, rel_path)?;
+    process_parsed_document(
+        doc,
+        rel_path,
+        abs_path,
+        config,
+        vault_index,
+        workspace_cfg_src,
+        unpublished,
+    )
+}
 
+/// Turn a parsed document into the page it becomes.
+///
+/// `unpublished` names the vault-relative paths the site leaves out; links to
+/// those resolve to nothing, so they render as broken rather than pointing at
+/// a page that was never written.
+pub fn process_parsed_document(
+    mut doc: tomet_ast::Document,
+    rel_path: &str,
+    abs_path: Option<&Path>,
+    config: &BookConfig,
+    vault_index: &tomet_links::VaultLinkIndex,
+    workspace_cfg_src: Option<&str>,
+    unpublished: &HashSet<String>,
+) -> Result<ProcessedDoc> {
     // 1. Bring in the vault-wide config (e.g. default.config.tmt)
     if let Some(cfg_src) = workspace_cfg_src {
         inject_workspace_config(&mut doc, cfg_src);
@@ -122,7 +232,7 @@ pub fn process_tomet_document(
     // 3. Collect outgoing links, then resolve them
     let from_path = Path::new(rel_path);
     let slug = strip_doc_extension(&rel_path.replace('\\', "/")).to_string();
-    let mut outgoing = links::outgoing_page_slugs(&doc, from_path, &slug, vault_index);
+    let mut outgoing = links::outgoing_page_slugs(&doc, from_path, &slug, vault_index, unpublished);
 
     let mode = tomet_transform::TargetMode::WebSlug {
         url_prefix: config.build.clean_url_prefix().to_string(),
@@ -134,6 +244,9 @@ pub fn process_tomet_document(
         |target, from| {
             vault_index
                 .resolve_ref(target, from)
+                // A page the site does not publish is not a page. Resolving
+                // it would print a link to a file that was never written.
+                .filter(|p| !unpublished.contains(&p.to_string_lossy().replace('\\', "/")))
                 .map(|p| p.to_path_buf())
         },
         &mode,

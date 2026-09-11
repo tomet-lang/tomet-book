@@ -157,6 +157,8 @@ pub async fn run_dev_server(
         String,
         Vec<crate::book::renderer::Backlink>,
     > = std::collections::HashMap::new();
+    let mut initial_unpublished: std::collections::HashSet<String> =
+        std::collections::HashSet::new();
     match build_book(&src_dir, &out_dir, &config) {
         Ok(report) => {
             if !report.failures.is_empty() {
@@ -166,6 +168,7 @@ pub async fn run_dev_server(
                 );
             }
             initial_backlinks = report.backlinks;
+            initial_unpublished = report.unpublished;
             initial_scanned = Some(report.scanned);
         }
         Err(e) => error!("Initial build failed: {e}"),
@@ -215,6 +218,7 @@ pub async fn run_dev_server(
         // the index from the last full build. An edit that adds or removes a
         // link shows up on the other page at the next full rebuild.
         let mut cached_backlinks = initial_backlinks;
+        let mut cached_unpublished = initial_unpublished;
 
         // Events are collected until the filesystem goes quiet, then handled as
         // one batch. Dropping events instead would silently skip rebuilds when
@@ -282,6 +286,7 @@ pub async fn run_dev_server(
                         // The build already walked the vault; reuse that scan
                         // rather than doing it a second time.
                         cached_backlinks = report.backlinks;
+                        cached_unpublished = report.unpublished;
                         cached_scanned = report.scanned.into();
                         cached_renderer = crate::book::renderer::BookRenderer::new(&watch_cfg).ok();
                         let _ = watcher_tx.send(ReloadSignal::Full);
@@ -312,13 +317,14 @@ pub async fn run_dev_server(
                         vault_index: &scanned.vault_index,
                         workspace_cfg_src: scanned.workspace_config_src.as_deref(),
                         renderer,
+                        unpublished: &cached_unpublished,
                     },
                     cached_backlinks
                         .get(crate::book::document::strip_doc_extension(rel_path))
                         .map(Vec::as_slice)
                         .unwrap_or(&[]),
                 ) {
-                    Ok((written, doc_url)) => {
+                    Ok(Some((written, doc_url))) => {
                         info!(
                             "⚡ Incremental rebuild: {} in {:?} (written: {}, url: {})",
                             rel_path,
@@ -329,6 +335,24 @@ pub async fn run_dev_server(
                         if written {
                             let _ = watcher_tx.send(ReloadSignal::Doc { url: doc_url });
                         }
+                    }
+                    // Its @kind is not one the book publishes. A kind the
+                    // author just changed needs the whole vault re-read, since
+                    // every link to this document changes with it.
+                    Ok(None) => {
+                        info!("{rel_path} is not published; rebuilding in full");
+                        let mut dev_cfg = watch_cfg.clone();
+                        dev_cfg.build.pagefind = false;
+                        match build_book(&watch_src, &watch_out, &dev_cfg) {
+                            Ok(report) => {
+                                cached_backlinks = report.backlinks;
+                                cached_unpublished = report.unpublished;
+                                cached_scanned = report.scanned.into();
+                                let _ = watcher_tx.send(ReloadSignal::Full);
+                            }
+                            Err(e) => warn!("Rebuild error: {e}"),
+                        }
+                        break;
                     }
                     Err(e) => warn!("Incremental rebuild error for {rel_path}: {e}"),
                 }

@@ -274,6 +274,11 @@ impl Default for InfoboxConfig {
 pub struct BuildConfig {
     #[serde(default = "default_exclude")]
     pub exclude: Vec<String>,
+    /// Which `@kind`s reach the site, as an ordered list where the last
+    /// matching rule wins: `"*"` takes everything, `"!config"` puts one back.
+    /// See `book::kinds`.
+    #[serde(default = "default_kinds")]
+    pub kinds: Vec<String>,
     #[serde(default = "default_true")]
     pub pagefind: bool,
     #[serde(default = "default_url_prefix")]
@@ -294,6 +299,13 @@ fn default_exclude() -> Vec<String> {
         "dist".to_string(),
         "target".to_string(),
     ]
+}
+
+/// Everything except the documents that shape the book rather than belong to
+/// it. Spelled as a value so that `*.config.tmt` not appearing on the site is
+/// a setting the reader can see and change, not a rule buried in the code.
+fn default_kinds() -> Vec<String> {
+    vec!["*".to_string(), "!config".to_string(), "!index".to_string()]
 }
 
 fn default_url_prefix() -> String {
@@ -333,6 +345,7 @@ impl Default for BuildConfig {
     fn default() -> Self {
         Self {
             exclude: default_exclude(),
+            kinds: default_kinds(),
             pagefind: true,
             url_prefix: default_url_prefix(),
             asset_prefix: default_asset_prefix(),

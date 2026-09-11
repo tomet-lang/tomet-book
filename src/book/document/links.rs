@@ -302,6 +302,7 @@ pub fn outgoing_page_slugs(
     from_path: &Path,
     own_slug: &str,
     vault_index: &tomet_links::VaultLinkIndex,
+    unpublished: &std::collections::HashSet<String>,
 ) -> Vec<String> {
     let mut slugs: Vec<String> = Vec::new();
 
@@ -318,6 +319,10 @@ pub fn outgoing_page_slugs(
             continue;
         };
         let path = resolved.to_string_lossy().replace('\\', "/");
+        // A page the book leaves out has nothing to show a backlink on.
+        if unpublished.contains(&path) {
+            continue;
+        }
         let slug = strip_doc_extension(&path);
         // strip_doc_extension leaves non-documents untouched, which is how a
         // link to an image is told apart from a link to a page.
@@ -361,7 +366,13 @@ mod outgoing_tests {
     fn slugs(source: &str, paths: &[&str], own: &str) -> Vec<String> {
         let doc = tomet_parser::parse_document(source).unwrap();
         let index = tomet_links::VaultLinkIndex::from_paths(paths);
-        outgoing_page_slugs(&doc, Path::new(own), strip_doc_extension(own), &index)
+        outgoing_page_slugs(
+            &doc,
+            Path::new(own),
+            strip_doc_extension(own),
+            &index,
+            &std::collections::HashSet::new(),
+        )
     }
 
     #[test]
