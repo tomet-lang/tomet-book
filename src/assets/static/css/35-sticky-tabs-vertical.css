@@ -35,11 +35,11 @@
      隠れない。 */
   position: relative;
   z-index: 2;
-  box-shadow: 4px 0 9px -3px rgba(0, 0, 0, 0.16);
+  box-shadow: 4px 0 9px -3px rgba(0, 0, 0, 0.12);
 }
 
 [data-theme="dark"][data-tabs="right"] .pane-scroll-content {
-  box-shadow: 4px 0 10px -3px rgba(0, 0, 0, 0.5);
+  box-shadow: 4px 0 10px -3px rgba(0, 0, 0, 0.38);
 }
 
 /* --- バー本体 --- */
@@ -197,10 +197,10 @@
 
 /* 影も左向きへ。横版と同じく、どの付箋にも同じだけ落とす。 */
 [data-tabs="right"] .sticky-tab-btn {
-  box-shadow: 2px 0 3px rgba(0, 0, 0, 0.2);
+  box-shadow: 2px 0 3px rgba(0, 0, 0, 0.13);
 }
 [data-theme="dark"][data-tabs="right"] .sticky-tab-btn {
-  box-shadow: 2px 0 3px rgba(0, 0, 0, 0.55);
+  box-shadow: 2px 0 3px rgba(0, 0, 0, 0.4);
 }
 
 /* ポップオーバーを開いている付箋だけ、紙より前へ出す。
@@ -214,6 +214,12 @@
   z-index: auto;
 }
 [data-tabs="right"] .sticky-tab-btn.is-popover-open {
+  z-index: 3;
+}
+/* 子付箋のスロットも z-index: 0 の重ね合わせ文脈なので、その中の付箋を 3 に
+   しても紙 (2) には届かない。開いている付箋を含むスロットを、入れ子の分だけ
+   まとめて持ち上げる。 */
+[data-tabs="right"] .sticky-children-slot:has(.sticky-tab-btn.is-popover-open) {
   z-index: 3;
 }
 /* 横版はアクティブな付箋を z-index: 10 で持ち上げている。帯の文脈を外した

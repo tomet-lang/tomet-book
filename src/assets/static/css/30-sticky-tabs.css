@@ -134,10 +134,10 @@
    ぼかしは小さく、濃さで出す。淡く広いぼかしは紙の縁を溶かしてしまい、
    付箋の切り口が曖昧になる。 */
 .sticky-tab-btn {
-  box-shadow: 0 -2px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 -2px 3px rgba(0, 0, 0, 0.13);
 }
 [data-theme="dark"] .sticky-tab-btn {
-  box-shadow: 0 -2px 3px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 -2px 3px rgba(0, 0, 0, 0.4);
 }
 
 /* --- サイズ階層 & アクティブ時の高さ伸長 (下からひょこっと出る / 下は接地維持) --- */
