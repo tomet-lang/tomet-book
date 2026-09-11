@@ -167,7 +167,7 @@ pub fn render_single_document(
 ///
 /// Returns `None` when the vault has none, which is what keeps the generated
 /// catalog as the default.
-fn read_written_index(scanned: &ScannedVault) -> Option<Vec<catalog::IndexEntry>> {
+fn read_written_index(scanned: &ScannedVault, src_dir: &Path) -> Option<Vec<catalog::IndexEntry>> {
     let index_files: Vec<&loader::DocFileInfo> = scanned
         .control_files
         .iter()
@@ -177,6 +177,12 @@ fn read_written_index(scanned: &ScannedVault) -> Option<Vec<catalog::IndexEntry>
         return None;
     }
 
+    // Built once and shared across every index file this build has, the
+    // same way `vault_index` already is -- each `${filter(...)}` answers
+    // from the vault as this build's own scan sees it, not a second,
+    // independently-filtered walk.
+    let rows = catalog::index_rows(&scanned.doc_files, src_dir);
+
     let mut entries = Vec::new();
     for file in index_files {
         let Ok(source) = fs::read_to_string(&file.abs_path) else {
@@ -185,16 +191,20 @@ fn read_written_index(scanned: &ScannedVault) -> Option<Vec<catalog::IndexEntry>
         };
 
         let from_path = Path::new(&file.rel_path);
-        let outline = catalog::parse_index_document(&source, from_path, &scanned.vault_index);
+        let outline =
+            catalog::parse_index_document(&source, from_path, &scanned.vault_index, &rows);
 
         if outline.kind_missing {
-            warn!("{} does not declare @kind(index)", file.rel_path);
+            warn!("{} does not declare @kind(doc.index)", file.rel_path);
         }
         for target in &outline.unresolved {
             warn!(
                 "{}: nothing in the vault answers to '{target}'",
                 file.rel_path
             );
+        }
+        for err in &outline.query_errors {
+            warn!("{}: {err}", file.rel_path);
         }
 
         entries.extend(outline.entries);
@@ -522,7 +532,7 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
         })
         .collect();
 
-    let written_index = read_written_index(&scanned);
+    let written_index = read_written_index(&scanned, src_dir);
     let book_index: Vec<EntrySummary> = match &written_index {
         Some(index) => arrange_entries(index, &entries_by_slug),
         None => Vec::new(),
