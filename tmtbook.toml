@@ -1,5 +1,0 @@
-[book]
-title = "tmtbook docs"
-lang = "ja"
-src = "tmtroot"
-dest = "dist"

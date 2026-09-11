@@ -21,8 +21,7 @@ pub struct BookMeta {
     pub description: Option<String>,
     #[serde(default = "default_lang")]
     pub lang: String,
-    #[serde(default = "default_src")]
-    pub src: PathBuf,
+    /// Where the built site goes, relative to the vault.
     #[serde(default = "default_dest")]
     pub dest: PathBuf,
 }
@@ -32,9 +31,6 @@ fn default_title() -> String {
 }
 fn default_lang() -> String {
     "ja".to_string()
-}
-fn default_src() -> PathBuf {
-    PathBuf::from(".")
 }
 fn default_dest() -> PathBuf {
     PathBuf::from("dist")
@@ -46,7 +42,6 @@ impl Default for BookMeta {
             title: default_title(),
             description: None,
             lang: default_lang(),
-            src: default_src(),
             dest: default_dest(),
         }
     }
