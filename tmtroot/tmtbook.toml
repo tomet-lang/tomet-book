@@ -1,0 +1,6 @@
+[book]
+title = "tmtbook docs"
+lang = "ja"
+
+[build]
+kinds = ["*", "!config", "!index"]
