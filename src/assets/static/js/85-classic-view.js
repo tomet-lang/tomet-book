@@ -1,5 +1,6 @@
 (() => {
   const T = (window.TMT ??= {});
+  const syncHeadingHash = (...a) => T.syncHeadingHash(...a);
   const t = (key, fallback) => T.t(key, fallback);
 
   // ==================== CLASSIC VIEW INTERACTIONS ====================
@@ -72,6 +73,7 @@
                 link.classList.remove('is-active');
               }
             });
+            syncHeadingHash(currentId);
           }
         });
       },

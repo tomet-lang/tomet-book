@@ -157,10 +157,16 @@ a.hero-chip:hover .chip-val,
   text-decoration: underline;
 }
 
+/* 行き先が無いリンク。@meta 由来は tm-unresolved、本文由来は tomet-html が
+   付ける tm-ref-unresolved で、クラス名が違うだけで意味は同じ。
+   Wikipedia の赤リンクと同じく、踏む前に分かるよう赤くする。 */
 .tm-unresolved,
-a.tm-unresolved {
+a.tm-unresolved,
+.tm-ref-unresolved,
+a.tm-ref-unresolved {
   color: var(--unresolved);
   text-decoration: underline dashed 1px;
+  cursor: not-allowed;
 }
 
 /* ==================== HERO ACTIONS & EDIT DROPDOWN ==================== */

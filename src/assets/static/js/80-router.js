@@ -1,5 +1,8 @@
 (() => {
   const T = (window.TMT ??= {});
+
+  // いま表示しているページのパス。popstate が節の移動だけかを見分けるために持つ。
+  let lastPath = window.location.pathname;
   const initPage = (...a) => T.initPage(...a);
   const syncViewMode = (...a) => T.syncViewMode(...a);
   const t = (key, fallback) => T.t(key, fallback);
@@ -118,6 +121,7 @@
         if (pushState) {
           history.pushState(null, newDoc.title, url);
         }
+        lastPath = window.location.pathname;
 
         // Scroll article container to top
         const scrollBox = document.getElementById('book-content-scroll');
@@ -163,6 +167,13 @@
     });
 
     window.addEventListener('popstate', () => {
+      // 節を行き来しただけならページは同じ。作り直さず、いまの DOM のまま
+      // アドレスに合わせて移動する。
+      if (window.location.pathname === lastPath) {
+        initPage();
+        return;
+      }
+      lastPath = window.location.pathname;
       navigateTo(window.location.href, false);
     });
   }

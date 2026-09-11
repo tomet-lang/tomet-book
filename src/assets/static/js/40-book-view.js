@@ -4,6 +4,33 @@
 
   // ==================== BOOK VIEW INTERACTIONS ====================
 
+  /** いま読んでいる見出しをアドレスバーに映す。節の URL をそのままコピーできる。 */
+  function syncHeadingHash(id) {
+    if (!id) return;
+    if (readHash() === id) return;
+    try {
+      // replaceState: スクロールしただけで戻るボタンが埋まらないようにする。
+      history.replaceState(null, "", `#${encodeURIComponent(id)}`);
+    } catch {}
+  }
+
+  /** いまのアドレスが指している見出し id。壊れた文字列でも落ちない。 */
+  function readHash() {
+    const raw = (window.location.hash || "").slice(1);
+    if (!raw) return "";
+    try {
+      return decodeURIComponent(raw);
+    } catch {
+      return raw;
+    }
+  }
+
+  /** 開いた URL が指していて、かつこのページに実在する見出し。 */
+  function requestedHeadingId() {
+    const id = readHash();
+    return id && document.getElementById(id) ? id : null;
+  }
+
   /** 付箋バーが右の縦並びになっているか。 */
   function isVerticalTabs() {
     return document.documentElement.getAttribute('data-tabs') === 'right';
@@ -64,6 +91,7 @@
             scrollContainer.scrollTo({ top, behavior: 'smooth' });
             tocLinks.forEach((l) => l.classList.remove('is-active'));
             link.classList.add('is-active');
+            syncHeadingHash(targetId);
           }
         });
       });
@@ -117,6 +145,10 @@
         if (updateStickyTabs) {
           updateStickyTabs(currentId);
         }
+        // 縦スクロール版が出ているときはそちらの spy が受け持つ。
+        if (document.documentElement.getAttribute("data-view") !== "classic") {
+          syncHeadingHash(currentId);
+        }
       };
 
       // initPage() runs again on every client-side navigation and hot reload.
@@ -135,9 +167,25 @@
       scrollContainer.__tmtScrollHandler = onScroll;
       scrollContainer.addEventListener('scroll', onScroll, { passive: true });
 
-      updateScrollSpy();
+      // 開いた URL が節を指しているなら、そこから読み始める。本文は内側の
+      // スクロールコンテナなので、ブラウザ標準のアンカー移動は効かない。
+      const requested = requestedHeadingId();
+      const settle = () => {
+        if (requested) {
+          const target = document.getElementById(requested);
+          if (target) {
+            // 読み込み直後なので滑らせない。
+            scrollContainer.scrollTo({
+              top: target.offsetTop - scrollContainer.offsetTop - 16,
+              behavior: 'auto',
+            });
+          }
+        }
+        updateScrollSpy();
+      };
+      settle();
       // Images and fonts settle after first paint and move the headings.
-      setTimeout(updateScrollSpy, 80);
+      setTimeout(settle, 80);
     }
 
     // 付箋見出し (Sticky-Tab Headings: インライン横展開アコーディオン & ScrollSpy完全同期)
@@ -155,6 +203,7 @@
         if (!target) return;
         const top = target.offsetTop - scrollContainer.offsetTop - 16;
         scrollContainer.scrollTo({ top, behavior: 'smooth' });
+        syncHeadingHash(id);
       }
 
       function setActiveHeading(currentId) {
@@ -690,5 +739,5 @@
     updateRecentNotes();
   }
 
-  Object.assign(T, { setupBookViewInteraction });
+  Object.assign(T, { setupBookViewInteraction, syncHeadingHash });
 })();
