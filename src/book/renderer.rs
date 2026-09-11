@@ -34,6 +34,11 @@ impl<'a> BookRenderer<'a> {
             .context("Failed to add page.html template")?;
         env.add_template("index.html", include_str!("../assets/templates/index.html"))
             .context("Failed to add index.html template")?;
+        env.add_template(
+            "macros.html",
+            include_str!("../assets/templates/macros.html"),
+        )
+        .context("Failed to add macros.html template")?;
 
         let rail_title = config
             .ui
