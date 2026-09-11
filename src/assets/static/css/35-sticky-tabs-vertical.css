@@ -29,6 +29,17 @@
 
 [data-tabs="right"] .pane-scroll-content {
   order: 1;
+  /* 紙が帯より手前にあり、その右端が付箋の上に影を落とす。付箋が紙の裏から
+     出ているように見えるのは、この一枚ぶんの奥行きによる。
+     ポップオーバーは body 直下 (z-index 1000) なので、ここを持ち上げても
+     隠れない。 */
+  position: relative;
+  z-index: 2;
+  box-shadow: 4px 0 9px -3px rgba(0, 0, 0, 0.16);
+}
+
+[data-theme="dark"][data-tabs="right"] .pane-scroll-content {
+  box-shadow: 4px 0 10px -3px rgba(0, 0, 0, 0.5);
 }
 
 /* --- バー本体 --- */
@@ -75,7 +86,7 @@
   text-align: left;
   /* 横版が「下端から上へどれだけ出るか」で階層を表すのに対し、縦版は
      「左端から右へどれだけ出るか」で表す。深い見出しほど引っ込む。 */
-  transition: max-width 0.15s ease,
+  transition: width 0.15s ease,
               background 0.15s ease,
               color 0.15s ease,
               box-shadow 0.15s ease;
@@ -93,6 +104,17 @@
   min-width: 0;
   /* 横版の 1 行ぴったりを詰める line-height: 1 のままだと行が重なって読めない。 */
   line-height: 1.35;
+  /* 付箋が右へ 6px 伸びても、文字を組む幅は変わらない。伸びたぶんをそのまま
+     差し引く。付箋と同じ時間・同じ曲線で動かすので、途中の 1 フレームでも
+     (親の内側 + 6t) - 6t = 一定 になり、折り返しはどこでも揺れない。
+     幅が変わると行の切れ目が変わり、読んでいる文字が動いてしまう。 */
+  width: 100%;
+  box-sizing: border-box;
+  transition: width 0.15s ease;
+}
+
+[data-tabs="right"] .sticky-tab-btn.is-active > .sticky-tab-label {
+  width: calc(100% - 6px);
 }
 
 /* 行内に流す。clamp は入れ物が持つので、ここでは折り返しだけ許す。 */
@@ -118,40 +140,40 @@
    幅は中身なりに伸び、深い見出しほど手前で頭打ちになる。全部を帯いっぱいに
    広げると棒が並んだだけになり、付箋に見えない。 */
 [data-tabs="right"] .sticky-tab-btn.level-1 {
-  width: auto;
-  max-width: calc(100% - 14px);
+  width: calc(100% - 14px);
+  max-width: none;
   min-height: 29px;
   height: auto;
   padding: 5px 8px 6px 10px;
 }
 [data-tabs="right"] .sticky-tab-btn.level-1.is-active {
-  max-width: calc(100% - 8px);
+  width: calc(100% - 8px);
   min-height: 29px;
   height: auto;
 }
 
 [data-tabs="right"] .sticky-tab-btn.level-2 {
-  width: auto;
-  max-width: calc(100% - 22px);
+  width: calc(100% - 22px);
+  max-width: none;
   min-height: 26px;
   height: auto;
   padding: 4px 7px 5px 9px;
 }
 [data-tabs="right"] .sticky-tab-btn.level-2.is-active {
-  max-width: calc(100% - 16px);
+  width: calc(100% - 16px);
   min-height: 26px;
   height: auto;
 }
 
 [data-tabs="right"] .sticky-tab-btn.level-3 {
-  width: auto;
-  max-width: calc(100% - 30px);
+  width: calc(100% - 30px);
+  max-width: none;
   min-height: 23px;
   height: auto;
   padding: 4px 6px 4px 8px;
 }
 [data-tabs="right"] .sticky-tab-btn.level-3.is-active {
-  max-width: calc(100% - 24px);
+  width: calc(100% - 24px);
   min-height: 23px;
   height: auto;
 }
@@ -159,8 +181,8 @@
 [data-tabs="right"] .sticky-tab-btn.level-4,
 [data-tabs="right"] .sticky-tab-btn.level-5,
 [data-tabs="right"] .sticky-tab-btn.level-6 {
-  width: auto;
-  max-width: calc(100% - 38px);
+  width: calc(100% - 38px);
+  max-width: none;
   min-height: 20px;
   height: auto;
   padding: 3px 5px 4px 7px;
@@ -168,7 +190,7 @@
 [data-tabs="right"] .sticky-tab-btn.level-4.is-active,
 [data-tabs="right"] .sticky-tab-btn.level-5.is-active,
 [data-tabs="right"] .sticky-tab-btn.level-6.is-active {
-  max-width: calc(100% - 32px);
+  width: calc(100% - 32px);
   min-height: 20px;
   height: auto;
 }
@@ -176,11 +198,11 @@
 /* 影も左向きへ */
 [data-tabs="right"] .sticky-tab-btn.is-active,
 [data-tabs="right"] .sticky-tab-node.is-active-branch > .sticky-tab-btn {
-  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.08);
+  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.16);
 }
 [data-theme="dark"][data-tabs="right"] .sticky-tab-btn.is-active,
 [data-theme="dark"][data-tabs="right"] .sticky-tab-node.is-active-branch > .sticky-tab-btn {
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.35);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.48);
 }
 
 /* --- 子付箋のスロット: 横ではなく下へ開く --- */

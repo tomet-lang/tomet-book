@@ -194,7 +194,7 @@
 .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-1 {
   background: #fcd34d; /* アクティブ時は少し鮮やかに */
   color: #78350f;
-  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.08); /* アイコンのような淡い自然な影 */
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.16); /* アイコンのような淡い自然な影 */
 }
 
 /* H2: 柔らかいミントグリーン */
@@ -211,7 +211,7 @@
 .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-2 {
   background: #6ee7b7;
   color: #064e3b;
-  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.16);
 }
 
 /* H3: 柔らかいパステルスカイブルー */
@@ -228,7 +228,7 @@
 .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-3 {
   background: #7dd3fc;
   color: #0c4a6e;
-  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.16);
 }
 
 /* H4+: 柔らかいラベンダーパープル */
@@ -253,7 +253,7 @@
 .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-4 {
   background: #d8b4fe;
   color: #581c87;
-  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.16);
 }
 
 /* --- ダークモード対応 (目に優しいパステルトーン & 控えめな影) --- */
@@ -269,7 +269,7 @@
 [data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-1 {
   background: #745115;
   color: #fffbeb;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.48);
 }
 
 [data-theme="dark"] .sticky-tab-btn.level-2 {
@@ -284,7 +284,7 @@
 [data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-2 {
   background: #135c47;
   color: #ecfdf5;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.48);
 }
 
 [data-theme="dark"] .sticky-tab-btn.level-3 {
@@ -299,7 +299,7 @@
 [data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-3 {
   background: #135473;
   color: #f0f9ff;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.48);
 }
 
 [data-theme="dark"] .sticky-tab-btn.level-4,
@@ -322,7 +322,7 @@
 [data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-4 {
   background: #533279;
   color: #faf5ff;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.48);
 }
 
 .sticky-tab-text {
