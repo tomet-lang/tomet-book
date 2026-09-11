@@ -1,0 +1,39 @@
+/* ==================== RESPONSIVE / MOBILE ==================== */
+@media (max-width: 768px) {
+  .pane-content {
+    min-width: calc(100vw - 38px);
+    flex-basis: calc(100vw - 38px);
+  }
+  .pane-article-container {
+    padding: 16px 16px 48px 16px;
+  }
+  .book-hero-section {
+    margin: -16px -16px 20px -16px;
+  }
+  .book-hero-section .hero-banner-wrapper {
+    height: 160px;
+  }
+  .hero-content {
+    padding: 12px 14px;
+    gap: 12px;
+  }
+  .hero-avatar {
+    width: 48px;
+    height: 48px;
+    font-size: 1.5rem;
+  }
+  .content-title {
+    font-size: 1.5rem;
+  }
+  .pane-nav, .pane-data {
+    width: calc(100vw - 38px);
+    min-width: calc(100vw - 38px);
+    max-width: calc(100vw - 38px);
+  }
+  .pane-nav > .pane-scroll,
+  .pane-nav > .pane-header,
+  .pane-data > .pane-scroll,
+  .pane-data > .pane-header {
+    width: 100%;
+  }
+}

@@ -1,0 +1,458 @@
+/* ==================== STICKY TABS (付箋見出し: 横展開アコーディオン) ==================== */
+.pane-content-header {
+  background: #dfe3e8; /* 付箋と明確に分ける暗め背景 */
+  padding: 0 8px;
+  overflow: visible;
+  height: 41px;
+  min-height: 41px;
+  display: flex;
+  align-items: flex-end;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* 最前面に必ず通る境界線 (横線): 付箋が線の上に被らず、線の裏からひょこっと出る */
+.pane-content-header::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border);
+  z-index: 10; /* 付箋より確実に前面に通す */
+  pointer-events: none;
+}
+
+[data-theme="dark"] .pane-content-header {
+  background: #16191d;
+}
+
+.sticky-tabs-bar {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: none;
+  position: relative;
+  z-index: 1; /* 境界線 (z-index: 10) の裏側 */
+  margin-bottom: 0;
+}
+.sticky-tabs-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.sticky-tabs-list {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+/* 階層ノード (インラインで横並び) */
+.sticky-tab-node {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 3px;
+  position: relative;
+  height: 100%;
+}
+
+/* 付箋ボタン共通: 枠線なし・四角いインデックス付箋形状 (上丸・下平・柔らかい付箋背景色) */
+.sticky-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 4px 4px 0 0;
+  border: none; /* 枠線なし！ */
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  box-sizing: border-box;
+  align-self: flex-end;
+  margin-bottom: 0;
+  line-height: 1;
+  /* height and colour only: nothing here may change the tab width */
+  transition: height 0.15s ease,
+              background 0.15s ease,
+              color 0.15s ease,
+              box-shadow 0.15s ease;
+}
+
+/* --- サイズ階層 & アクティブ時の高さ伸長 (下からひょこっと出る / 下は接地維持) --- */
+.sticky-tab-btn.level-1 {
+  height: 29px;
+  padding: 2px 10px 2px 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.sticky-tab-btn.level-1.is-active {
+  height: 33px; /* 上方向に伸びるだけ: 幅に触るものは何も変えない */
+  z-index: 10;
+}
+
+.sticky-tab-btn.level-2 {
+  height: 26px;
+  padding: 2px 8px 2px 7px;
+  font-size: 0.76rem;
+  font-weight: 500;
+}
+.sticky-tab-btn.level-2.is-active {
+  height: 30px;
+  z-index: 10;
+}
+
+.sticky-tab-btn.level-3 {
+  height: 23px;
+  padding: 1px 7px 1px 6px;
+  font-size: 0.70rem;
+  font-weight: 500;
+}
+.sticky-tab-btn.level-3.is-active {
+  height: 27px;
+  z-index: 10;
+}
+
+.sticky-tab-btn.level-4,
+.sticky-tab-btn.level-5,
+.sticky-tab-btn.level-6 {
+  height: 20px;
+  padding: 1px 6px 1px 5px;
+  font-size: 0.65rem;
+  font-weight: 500;
+}
+.sticky-tab-btn.level-4.is-active,
+.sticky-tab-btn.level-5.is-active,
+.sticky-tab-btn.level-6.is-active {
+  height: 24px;
+  z-index: 10;
+}
+
+/* --- 柔らかい付箋カラー (枠線なし / ほんのり控えめな影) --- */
+
+/* H1: 柔らかいイエロー (ポストイット定番イエロー) */
+.sticky-tab-btn.level-1 {
+  background: #fef3c7; /* 優しいパステルイエロー */
+  color: #78350f;     /* 落ち着いたアンバーブラウン */
+}
+.sticky-tab-btn.level-1:hover {
+  background: #fde68a;
+  color: #78350f;
+}
+.sticky-tab-btn.level-1.is-active,
+.sticky-tab-node.is-active-branch > .sticky-tab-btn.level-1 {
+  background: #fcd34d; /* アクティブ時は少し鮮やかに */
+  color: #78350f;
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.08); /* アイコンのような淡い自然な影 */
+}
+
+/* H2: 柔らかいミントグリーン */
+.sticky-tab-btn.level-2 {
+  background: #d1fae5; /* 優しいミントグリーン */
+  color: #064e3b;     /* 濃いフォレストグリーン */
+}
+.sticky-tab-btn.level-2:hover {
+  background: #a7f3d0;
+  color: #064e3b;
+}
+.sticky-tab-btn.level-2.is-active,
+.sticky-tab-node.is-active-branch > .sticky-tab-btn.level-2 {
+  background: #6ee7b7;
+  color: #064e3b;
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* H3: 柔らかいパステルスカイブルー */
+.sticky-tab-btn.level-3 {
+  background: #e0f2fe; /* 優しいパステルスカイ */
+  color: #0c4a6e;     /* 濃いネイビーブルー */
+}
+.sticky-tab-btn.level-3:hover {
+  background: #bae6fd;
+  color: #0c4a6e;
+}
+.sticky-tab-btn.level-3.is-active,
+.sticky-tab-node.is-active-branch > .sticky-tab-btn.level-3 {
+  background: #7dd3fc;
+  color: #0c4a6e;
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* H4+: 柔らかいラベンダーパープル */
+.sticky-tab-btn.level-4,
+.sticky-tab-btn.level-5,
+.sticky-tab-btn.level-6 {
+  background: #f3e8ff; /* 優しいラベンダー */
+  color: #581c87;     /* 濃いパープル */
+}
+.sticky-tab-btn.level-4:hover,
+.sticky-tab-btn.level-5:hover,
+.sticky-tab-btn.level-6:hover {
+  background: #e9d5ff;
+  color: #581c87;
+}
+.sticky-tab-btn.level-4.is-active,
+.sticky-tab-btn.level-5.is-active,
+.sticky-tab-btn.level-6.is-active,
+.sticky-tab-node.is-active-branch > .sticky-tab-btn.level-4 {
+  background: #d8b4fe;
+  color: #581c87;
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* --- ダークモード対応 (目に優しいパステルトーン & 控えめな影) --- */
+[data-theme="dark"] .sticky-tab-btn.level-1 {
+  background: rgba(245, 158, 11, 0.22);
+  color: #fef08a;
+}
+[data-theme="dark"] .sticky-tab-btn.level-1:hover {
+  background: rgba(245, 158, 11, 0.32);
+}
+[data-theme="dark"] .sticky-tab-btn.level-1.is-active,
+[data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-1 {
+  background: rgba(245, 158, 11, 0.42);
+  color: #fffbeb;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .sticky-tab-btn.level-2 {
+  background: rgba(16, 185, 129, 0.22);
+  color: #a7f3d0;
+}
+[data-theme="dark"] .sticky-tab-btn.level-2:hover {
+  background: rgba(16, 185, 129, 0.32);
+}
+[data-theme="dark"] .sticky-tab-btn.level-2.is-active,
+[data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-2 {
+  background: rgba(16, 185, 129, 0.42);
+  color: #ecfdf5;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .sticky-tab-btn.level-3 {
+  background: rgba(14, 165, 233, 0.22);
+  color: #bae6fd;
+}
+[data-theme="dark"] .sticky-tab-btn.level-3:hover {
+  background: rgba(14, 165, 233, 0.32);
+}
+[data-theme="dark"] .sticky-tab-btn.level-3.is-active,
+[data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-3 {
+  background: rgba(14, 165, 233, 0.42);
+  color: #f0f9ff;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .sticky-tab-btn.level-4,
+[data-theme="dark"] .sticky-tab-btn.level-5,
+[data-theme="dark"] .sticky-tab-btn.level-6 {
+  background: rgba(168, 85, 247, 0.22);
+  color: #e9d5ff;
+}
+[data-theme="dark"] .sticky-tab-btn.level-4:hover,
+[data-theme="dark"] .sticky-tab-btn.level-5:hover,
+[data-theme="dark"] .sticky-tab-btn.level-6:hover {
+  background: rgba(168, 85, 247, 0.32);
+}
+[data-theme="dark"] .sticky-tab-btn.level-4.is-active,
+[data-theme="dark"] .sticky-tab-btn.level-5.is-active,
+[data-theme="dark"] .sticky-tab-btn.level-6.is-active,
+[data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-4 {
+  background: rgba(168, 85, 247, 0.42);
+  color: #faf5ff;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.sticky-tab-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+}
+
+/* --- 横に展開される子ヘッダーのスロット (アクティブブランチ時にスッと開く) --- */
+.sticky-children-slot {
+  display: inline-flex;
+  align-items: flex-end;
+  height: 100%; /* 親と同じ高さを共有して底面アラインメントを100%一致させる */
+  align-self: flex-end;
+  gap: 3px;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: max-width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+              opacity 0.22s ease,
+              margin 0.2s ease;
+  margin: 0;
+}
+
+/* 親ノードがアクティブまたはアクティブブランチの時、子スロットが横に展開！ */
+.sticky-tab-node.is-active > .sticky-children-slot,
+.sticky-tab-node.is-active-branch > .sticky-children-slot {
+  max-width: 1500px;
+  opacity: 1;
+  pointer-events: auto;
+  overflow: visible; /* 上部の見切れを完全防止！ */
+  margin-left: 3px;
+  margin-right: 3px;
+}
+
+/* --- ヘッダーレベルバッジ (H1, H2, H3, ...) --- */
+.sticky-level-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  padding: 1px 5px;
+  border-radius: 2px;
+  border: none;
+  line-height: 1.15;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* 付箋ボタン内のバッジ: 色を持たず、付箋の文字色をそのまま使う */
+.sticky-tab-btn .sticky-level-badge {
+  background: none;
+  color: inherit;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* ポップオーバー内のバッジ */
+.sticky-hover-item .sticky-level-badge.level-1 {
+  background: rgba(217, 119, 6, 0.15);
+  color: #b45309;
+}
+.sticky-hover-item .sticky-level-badge.level-2 {
+  background: rgba(16, 185, 129, 0.15);
+  color: #047857;
+}
+.sticky-hover-item .sticky-level-badge.level-3 {
+  background: rgba(14, 165, 233, 0.15);
+  color: #0369a1;
+}
+.sticky-hover-item .sticky-level-badge.level-4,
+.sticky-hover-item .sticky-level-badge.level-5,
+.sticky-hover-item .sticky-level-badge.level-6 {
+  background: rgba(168, 85, 247, 0.15);
+  color: #6d28d9;
+}
+
+[data-theme="dark"] .sticky-hover-item .sticky-level-badge.level-1 {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+[data-theme="dark"] .sticky-hover-item .sticky-level-badge.level-2 {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+[data-theme="dark"] .sticky-hover-item .sticky-level-badge.level-3 {
+  background: rgba(14, 165, 233, 0.2);
+  color: #38bdf8;
+}
+[data-theme="dark"] .sticky-hover-item .sticky-level-badge.level-4,
+[data-theme="dark"] .sticky-hover-item .sticky-level-badge.level-5,
+[data-theme="dark"] .sticky-hover-item .sticky-level-badge.level-6 {
+  background: rgba(168, 85, 247, 0.2);
+  color: #c084fc;
+}
+
+/* ==================== HOVER SUBHEADINGS POPOVER ==================== */
+.sticky-hover-popover {
+  position: fixed;
+  z-index: 1000;
+  min-width: 200px;
+  max-width: 320px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0; /* 直角 */
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+  padding: 0;
+  pointer-events: auto;
+  animation: 0.12s cubic-bezier(0, 0, 0.2, 1) both popover-fade-in;
+}
+
+@keyframes popover-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sticky-hover-popover-header {
+  padding: 6px 10px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-subtle);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sticky-hover-popover-list {
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 3px 0;
+}
+
+.sticky-hover-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sticky-hover-item:hover {
+  background: var(--surface-hover);
+  color: var(--link);
+}
+
+.sticky-hover-item.is-active {
+  background: var(--surface-subtle);
+  font-weight: 600;
+  color: var(--link);
+}
+
+.sticky-hover-item .item-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pane-scroll-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+}
+
+.pane-article-container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px 32px 64px 32px;
+  box-sizing: border-box;
+}
+

@@ -8,8 +8,40 @@ use std::sync::LazyLock;
 use super::loader::MediaFileInfo;
 use crate::config::BookConfig;
 
-pub const BOOK_CSS: &str = include_str!("../assets/static/book.css");
-pub const BOOK_JS: &str = include_str!("../assets/static/book.js");
+/// The stylesheet, assembled in cascade order. The numeric prefixes are that
+/// order -- moving a file changes which rule wins.
+pub const BOOK_CSS: &str = concat!(
+    include_str!("../assets/static/css/00-base.css"),
+    include_str!("../assets/static/css/10-shell.css"),
+    include_str!("../assets/static/css/20-panes.css"),
+    include_str!("../assets/static/css/30-sticky-tabs.css"),
+    include_str!("../assets/static/css/40-hero.css"),
+    include_str!("../assets/static/css/50-nav-infobox.css"),
+    include_str!("../assets/static/css/60-content.css"),
+    include_str!("../assets/static/css/70-widgets.css"),
+    include_str!("../assets/static/css/90-responsive.css"),
+);
+/// The script, assembled in load order. Each file is a self-contained IIFE
+/// that registers what others need on `window.TMT`, so the order only has to
+/// put the strings helper first.
+pub const BOOK_JS: &str = concat!(
+    include_str!("../assets/static/js/00-strings.js"),
+    include_str!("../assets/static/js/10-theme.js"),
+    include_str!("../assets/static/js/20-view-mode.js"),
+    include_str!("../assets/static/js/30-floating-controls.js"),
+    include_str!("../assets/static/js/40-book-view.js"),
+    include_str!("../assets/static/js/50-keyboard.js"),
+    include_str!("../assets/static/js/60-search.js"),
+    include_str!("../assets/static/js/70-preview.js"),
+    include_str!("../assets/static/js/75-lightbox.js"),
+    include_str!("../assets/static/js/78-costume.js"),
+    include_str!("../assets/static/js/80-router.js"),
+    include_str!("../assets/static/js/85-classic-view.js"),
+    include_str!("../assets/static/js/90-edit-menu.js"),
+    include_str!("../assets/static/js/95-init.js"),
+    include_str!("../assets/static/js/97-live-reload.js"),
+    include_str!("../assets/static/js/99-bootstrap.js"),
+);
 
 /// A short digest of an asset's contents, for `?v=` cache busting.
 ///

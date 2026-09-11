@@ -1,0 +1,147 @@
+/* ==================== PANE 1: NAV PANE ==================== */
+.pane-nav {
+  width: 260px;
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.book-view.is-ready .pane-nav {
+  transition: width 0.22s cubic-bezier(0.2, 0, 0, 1),
+              min-width 0.22s cubic-bezier(0.2, 0, 0, 1),
+              max-width 0.22s cubic-bezier(0.2, 0, 0, 1),
+              opacity 0.18s ease;
+}
+/* The [data-*-collapsed] forms come from the pre-paint script in base.html
+   and are dropped by book.js once it has set the real classes. */
+[data-nav-collapsed] .pane-nav,
+.pane-nav.is-collapsed {
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  border-right: none !important;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+.pane-nav > .pane-scroll,
+.pane-nav > .pane-header {
+  width: 260px;
+  flex-shrink: 0;
+}
+
+.pane-panel-view {
+  display: block;
+}
+.pane-panel-view[hidden] {
+  display: none !important;
+}
+.pane-tab-inner {
+  padding: 14px;
+}
+
+/* ==================== PANE 2: DATA PROFILE PANE ==================== */
+.pane-collapsed-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 36px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 14px 0;
+  gap: 8px;
+  user-select: none;
+  background: var(--surface);
+  color: var(--text-muted);
+  box-sizing: border-box;
+  opacity: 0;
+  pointer-events: none;
+  cursor: pointer;
+  z-index: 5;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.book-view.is-ready .pane-collapsed-bar {
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.pane-data {
+  width: 340px;
+  min-width: 340px;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+[data-data-collapsed] .pane-data,
+.pane-data.is-collapsed {
+  width: 36px !important;
+  min-width: 36px !important;
+  max-width: 36px !important;
+  flex: 0 0 36px !important;
+  cursor: pointer;
+}
+[data-data-collapsed] .pane-data .pane-collapsed-bar,
+.pane-data.is-collapsed .pane-collapsed-bar {
+  opacity: 1;
+  pointer-events: auto;
+}
+[data-data-collapsed] .pane-data:hover .pane-collapsed-bar,
+.pane-data.is-collapsed:hover .pane-collapsed-bar {
+  background: var(--surface-subtle);
+  color: var(--link);
+}
+[data-data-collapsed] .pane-data .pane-scroll-data,
+[data-data-collapsed] .pane-data .pane-header,
+.pane-data.is-collapsed .pane-scroll-data,
+.pane-data.is-collapsed .pane-header {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+.collapsed-icon {
+  font-size: 0.9rem;
+}
+.collapsed-label {
+  writing-mode: vertical-rl;
+  letter-spacing: 0.18em;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+.collapsed-arrow {
+  font-size: 0.65rem;
+  margin-top: 4px;
+}
+
+.pane-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+
+/* ==================== PANE 3: CONTENT PANE ==================== */
+.pane-content {
+  flex: 1 1 720px;
+  min-width: 580px;
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg);
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
