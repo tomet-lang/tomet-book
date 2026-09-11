@@ -514,6 +514,7 @@
       const titles = {
         toc: t('pane.toc'),
         links: t('pane.links'),
+        index: t('pane.index'),
         graph: t('pane.graph'),
       };
 

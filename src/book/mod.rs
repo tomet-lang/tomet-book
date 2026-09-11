@@ -76,6 +76,8 @@ pub struct BuildReport {
     /// The documents this build left out, by vault-relative path, so links to
     /// them keep resolving to nothing between full rebuilds.
     pub unpublished: HashSet<String>,
+    /// The book's table of contents, for the same reason.
+    pub book_index: Vec<EntrySummary>,
 }
 
 enum DocOutcome {
@@ -120,6 +122,8 @@ pub struct RenderContext<'a, 'r> {
     /// The documents the last full build left out, so a page re-rendered on
     /// its own still shows links to them as broken.
     pub unpublished: &'a HashSet<String>,
+    /// The book's table of contents, as the last full build arranged it.
+    pub book_index: &'a [EntrySummary],
 }
 
 pub fn render_single_document(
@@ -147,7 +151,9 @@ pub fn render_single_document(
         cx.workspace_cfg_src,
         cx.unpublished,
     )?;
-    let html = cx.renderer.render_page(&processed, backlinks)?;
+    let html = cx
+        .renderer
+        .render_page(&processed, backlinks, cx.book_index)?;
     let out_html_path = out_dir
         .join(config.build.wiki_out_rel())
         .join(&processed.slug)
@@ -499,18 +505,40 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
     let docs: Vec<&ProcessedDoc> = processed.iter().filter_map(|r| r.as_ref().ok()).collect();
     let backlinks = build_backlink_index(&docs, clean_url_prefix);
 
+    // The book's own table of contents. Every page shows it, so it has to be
+    // settled before the first one is rendered.
+    let entries_by_slug: HashMap<String, EntrySummary> = docs
+        .iter()
+        .map(|doc| {
+            (
+                doc.slug.clone(),
+                EntrySummary {
+                    url: format!("{clean_url_prefix}/{}", doc.slug),
+                    title: doc.title.clone(),
+                    section: doc.section.clone(),
+                    children: Vec::new(),
+                },
+            )
+        })
+        .collect();
+
+    let written_index = read_written_index(&scanned);
+    let book_index: Vec<EntrySummary> = match &written_index {
+        Some(index) => arrange_entries(index, &entries_by_slug),
+        None => Vec::new(),
+    };
+
     // 7. Render and write.
     let results: Vec<DocOutcome> = processed
         .par_iter()
-        .zip(scanned.doc_files.par_iter())
-        .map(|(result, doc_file)| {
+        .map(|result| {
             let processed = match result {
                 Ok(p) => p,
                 Err(failure) => return DocOutcome::Failed(failure.clone()),
             };
             let fail = |error: String| {
                 DocOutcome::Failed(DocFailure {
-                    rel_path: doc_file.rel_path.clone(),
+                    rel_path: processed.rel_path.clone(),
                     error,
                 })
             };
@@ -520,7 +548,7 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
                 .map(Vec::as_slice)
                 .unwrap_or(&[]);
 
-            let html = match renderer.render_page(processed, incoming) {
+            let html = match renderer.render_page(processed, incoming, &book_index) {
                 Ok(h) => h,
                 Err(e) => return fail(format!("could not render template: {e}")),
             };
@@ -540,7 +568,7 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
                 },
                 section: processed.section.clone(),
                 slug: processed.slug.clone(),
-                rel_path: doc_file.rel_path.clone(),
+                rel_path: processed.rel_path.clone(),
                 written,
             }
         })
@@ -551,8 +579,6 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
     let mut processed_entries = Vec::with_capacity(results.len());
     let mut section_counts: HashMap<String, usize> = HashMap::new();
     let mut slug_owner: HashMap<String, String> = HashMap::new();
-    // A written index names pages by slug, so the catalog needs them that way.
-    let mut entries_by_slug: HashMap<String, EntrySummary> = HashMap::new();
 
     for outcome in results {
         match outcome {
@@ -574,7 +600,6 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
                         "Slug collision: '{previous}' and '{rel_path}' both render to {clean_url_prefix}/{slug}"
                     );
                 }
-                entries_by_slug.insert(slug, entry.clone());
                 processed_entries.push(entry);
             }
             DocOutcome::Failed(failure) => {
@@ -601,8 +626,8 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
     // the author's, and a page they left out is a page they do not want
     // listed. Without one, the catalog stays what it was -- everything, in
     // whatever order the vault walk found it.
-    let catalog_entries = match read_written_index(&scanned) {
-        Some(written_index) => arrange_entries(&written_index, &entries_by_slug),
+    let catalog_entries = match written_index {
+        Some(_) => book_index.clone(),
         None => processed_entries.clone(),
     };
 
@@ -712,6 +737,7 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
         scanned,
         backlinks,
         unpublished,
+        book_index,
     };
 
     if report.failures.is_empty() {

@@ -296,3 +296,50 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ==================== BOOK INDEX (書かれた目次) ==================== */
+.book-index-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* 入れ子は左へ寄せるのではなく、線を引いて親子を見せる。深い索引でも
+   字下げだけが増えて読む幅が痩せていく、ということが起きない。 */
+.book-index-items .book-index-items {
+  margin-left: 7px;
+  padding-left: 7px;
+  border-left: 1px solid var(--border-subtle);
+}
+
+.book-index-item {
+  margin: 0;
+}
+
+.book-index-link {
+  display: block;
+  padding: 5px 8px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  text-decoration: none !important;
+  border-left: 2px solid transparent;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background 0.12s ease, border-left-color 0.12s ease, color 0.12s ease;
+}
+
+.book-index-link:hover {
+  background: var(--surface-subtle);
+  border-left-color: var(--link);
+  color: var(--link);
+}
+
+/* いま読んでいるページ。索引は本全体を映すので、自分の居場所が分からないと
+   どこまで読んだのかが分からなくなる。 */
+.book-index-link.is-here {
+  background: var(--surface-subtle);
+  border-left-color: var(--link);
+  color: var(--text);
+  font-weight: 600;
+}

@@ -67,7 +67,12 @@ impl<'a> BookRenderer<'a> {
         })
     }
 
-    pub fn render_page(&self, doc: &ProcessedDoc, backlinks: &[Backlink]) -> Result<String> {
+    pub fn render_page(
+        &self,
+        doc: &ProcessedDoc,
+        backlinks: &[Backlink],
+        book_index: &[EntrySummary],
+    ) -> Result<String> {
         let tmpl = self.env.get_template("page.html")?;
 
         let ctx = context! {
@@ -95,6 +100,9 @@ impl<'a> BookRenderer<'a> {
             section_tabs => &doc.section_tabs,
             body_html => &doc.body_html,
             backlinks => backlinks,
+            book_index => book_index,
+            // So the index can mark where the reader is standing.
+            page_url => format!("{}/{}", self.config.build.clean_url_prefix(), doc.slug),
         };
 
         let rendered = tmpl.render(ctx)?;

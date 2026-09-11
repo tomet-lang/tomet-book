@@ -91,6 +91,8 @@ fn default_ui_strings() -> HashMap<String, String> {
         ("pane.toc", "目次"),
         ("pane.links", "リンク"),
         ("pane.graph", "グラフ"),
+        ("pane.index", "索引"),
+        ("index.empty", "索引が書かれていません"),
         ("pane.content", "本文"),
         ("pane.data", "データ・プロファイル"),
         ("pane.data_short", "データ"),

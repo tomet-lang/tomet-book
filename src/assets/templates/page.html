@@ -1,4 +1,17 @@
 {% extends "base.html" %}
+
+{# The written index nests, so the panel does too. `here` marks the page being
+   read, which is the only thing this list knows that the catalog does not. #}
+{% macro index_list(items, here) %}
+<ul class="book-index-items">
+  {% for entry in items %}
+  <li class="book-index-item">
+    <a href="{{ entry.url }}" class="book-index-link{% if entry.url == here %} is-here{% endif %}"{% if entry.url == here %} aria-current="page"{% endif %}>{{ entry.title }}</a>
+    {% if entry.children %}{{ index_list(entry.children, here) }}{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endmacro %}
 {% import "macros.html" as ui %}
 
 {% block content %}
@@ -27,6 +40,11 @@
       <button type="button" class="rail-tab rail-tab-nav" id="btn-rail-links" data-panel="links" title="{{ t["pane.links"] }}" aria-label="{{ t["pane.links"] }}">
         <span class="rail-letters">
           {% for ch in t["pane.links"] %}<span>{{ ch }}</span>{% endfor %}
+        </span>
+      </button>
+      <button type="button" class="rail-tab rail-tab-nav" id="btn-rail-index" data-panel="index" title="{{ t["pane.index"] }}" aria-label="{{ t["pane.index"] }}">
+        <span class="rail-letters">
+          {% for ch in t["pane.index"] %}<span>{{ ch }}</span>{% endfor %}
         </span>
       </button>
       <button type="button" class="rail-tab rail-tab-nav" id="btn-rail-graph" data-panel="graph" title="{{ t["pane.graph"] }}" aria-label="{{ t["pane.graph"] }}">
@@ -121,6 +139,20 @@
       </div>
 
       <!-- 3. Local Graph Panel View -->
+      <!-- 3. Book index: the reading order the vault wrote down -->
+      <div class="pane-panel-view" id="pane-panel-index" hidden>
+        <div class="pane-tab-inner">
+          <div class="toc-heading">{{ t["pane.index"] }}</div>
+          {% if book_index and book_index | length > 0 %}
+          {{ index_list(book_index, page_url) }}
+          {% else %}
+          <div class="pane-placeholder-box">
+            <span class="placeholder-text">{{ t["index.empty"] }}</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
       <div class="pane-panel-view" id="pane-panel-graph" hidden>
         <div class="pane-tab-inner">
           <div class="toc-heading">{{ t["graph.heading"] }}</div>

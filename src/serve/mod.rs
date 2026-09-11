@@ -159,6 +159,7 @@ pub async fn run_dev_server(
     > = std::collections::HashMap::new();
     let mut initial_unpublished: std::collections::HashSet<String> =
         std::collections::HashSet::new();
+    let mut initial_book_index: Vec<crate::book::renderer::EntrySummary> = Vec::new();
     match build_book(&src_dir, &out_dir, &config) {
         Ok(report) => {
             if !report.failures.is_empty() {
@@ -169,6 +170,7 @@ pub async fn run_dev_server(
             }
             initial_backlinks = report.backlinks;
             initial_unpublished = report.unpublished;
+            initial_book_index = report.book_index;
             initial_scanned = Some(report.scanned);
         }
         Err(e) => error!("Initial build failed: {e}"),
@@ -219,6 +221,7 @@ pub async fn run_dev_server(
         // link shows up on the other page at the next full rebuild.
         let mut cached_backlinks = initial_backlinks;
         let mut cached_unpublished = initial_unpublished;
+        let mut cached_book_index = initial_book_index;
 
         // Events are collected until the filesystem goes quiet, then handled as
         // one batch. Dropping events instead would silently skip rebuilds when
@@ -287,6 +290,7 @@ pub async fn run_dev_server(
                         // rather than doing it a second time.
                         cached_backlinks = report.backlinks;
                         cached_unpublished = report.unpublished;
+                        cached_book_index = report.book_index;
                         cached_scanned = report.scanned.into();
                         cached_renderer = crate::book::renderer::BookRenderer::new(&watch_cfg).ok();
                         let _ = watcher_tx.send(ReloadSignal::Full);
@@ -318,6 +322,7 @@ pub async fn run_dev_server(
                         workspace_cfg_src: scanned.workspace_config_src.as_deref(),
                         renderer,
                         unpublished: &cached_unpublished,
+                        book_index: &cached_book_index,
                     },
                     cached_backlinks
                         .get(crate::book::document::strip_doc_extension(rel_path))
@@ -347,6 +352,7 @@ pub async fn run_dev_server(
                             Ok(report) => {
                                 cached_backlinks = report.backlinks;
                                 cached_unpublished = report.unpublished;
+                                cached_book_index = report.book_index;
                                 cached_scanned = report.scanned.into();
                                 let _ = watcher_tx.send(ReloadSignal::Full);
                             }
