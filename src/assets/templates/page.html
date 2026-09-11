@@ -180,8 +180,10 @@
           {% for h1 in section_tabs %}
           <div class="sticky-tab-node level-{{ h1.level }}" data-id="{{ h1.id }}" data-level="{{ h1.level }}">
             <button type="button" class="sticky-tab-btn level-{{ h1.level }}" data-target="{{ h1.id }}" title="[H{{ h1.level }}] {{ h1.text }}">
-              <span class="sticky-level-badge level-{{ h1.level }}">H{{ h1.level }}</span>
-              <span class="sticky-tab-text">{{ h1.text }}</span>
+              <span class="sticky-tab-label">
+                <span class="sticky-level-badge level-{{ h1.level }}">H{{ h1.level }}</span>
+                <span class="sticky-tab-text">{{ h1.text }}</span>
+              </span>
             </button>
 
             {% if h1.children and h1.children | length > 0 %}
@@ -189,8 +191,10 @@
               {% for h2 in h1.children %}
               <div class="sticky-tab-node level-{{ h2.level }}" data-id="{{ h2.id }}" data-level="{{ h2.level }}">
                 <button type="button" class="sticky-tab-btn level-{{ h2.level }}" data-target="{{ h2.id }}" title="[H{{ h2.level }}] {{ h2.text }}">
-                  <span class="sticky-level-badge level-{{ h2.level }}">H{{ h2.level }}</span>
-                  <span class="sticky-tab-text">{{ h2.text }}</span>
+                  <span class="sticky-tab-label">
+                    <span class="sticky-level-badge level-{{ h2.level }}">H{{ h2.level }}</span>
+                    <span class="sticky-tab-text">{{ h2.text }}</span>
+                  </span>
                 </button>
 
                 {% if h2.children and h2.children | length > 0 %}
@@ -198,8 +202,10 @@
                   {% for h3 in h2.children %}
                   <div class="sticky-tab-node level-{{ h3.level }}" data-id="{{ h3.id }}" data-level="{{ h3.level }}">
                     <button type="button" class="sticky-tab-btn level-{{ h3.level }}" data-target="{{ h3.id }}" title="[H{{ h3.level }}] {{ h3.text }}">
-                      <span class="sticky-level-badge level-{{ h3.level }}">H{{ h3.level }}</span>
-                      <span class="sticky-tab-text">{{ h3.text }}</span>
+                      <span class="sticky-tab-label">
+                        <span class="sticky-level-badge level-{{ h3.level }}">H{{ h3.level }}</span>
+                        <span class="sticky-tab-text">{{ h3.text }}</span>
+                      </span>
                     </button>
                   </div>
                   {% endfor %}

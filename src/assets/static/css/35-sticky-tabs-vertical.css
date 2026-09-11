@@ -14,13 +14,14 @@
 }
 
 [data-tabs="right"] .pane-content-header {
-  /* 47px の帯が縦になる。高さは本文と同じだけ使う。 */
-  width: 47px;
-  min-width: 47px;
+  /* 文字を横書きのまま読ませるだけの幅を渡す。高さは本文と同じだけ使う。 */
+  width: 96px;
+  min-width: 96px;
   height: 100%;
   min-height: 0;
-  /* 右端は詰めて、スクロールバーが帯の右辺にぴったり立つようにする。 */
-  padding: 8px 0 8px 4px;
+  /* 左右とも詰める。左に余白を入れると付箋が本文から浮いて接地して見えず、
+     右に入れるとスクロールバーが帯の右辺から離れる。 */
+  padding: 8px 0;
   flex-direction: column;
   align-items: flex-start;
   order: 2; /* 本文の右へ */
@@ -64,65 +65,111 @@
 }
 
 [data-tabs="right"] .sticky-tab-btn {
-  /* 文字を縦に組む。本の小口に貼ったインデックスと同じ向き。 */
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  /* 右端に接地し、左の二隅だけ丸い */
+  /* 文字は横書きのまま。読みやすさを幅と引き換えにしている。 */
   border-radius: 0 4px 4px 0;
   align-self: flex-start;
-  justify-content: flex-start;
-  /* 幅と高さの役割が入れ替わる */
-  height: auto;
-  max-height: 260px;
-  transition: width 0.15s ease,
+  /* 中身は .sticky-tab-label 側で組む。付箋はその器で、パディングを持つ。 */
+  display: flex;
+  align-items: center;
+  white-space: normal;
+  text-align: left;
+  /* 横版が「下端から上へどれだけ出るか」で階層を表すのに対し、縦版は
+     「左端から右へどれだけ出るか」で表す。深い見出しほど引っ込む。 */
+  transition: max-width 0.15s ease,
               background 0.15s ease,
               color 0.15s ease,
               box-shadow 0.15s ease;
 }
 
-[data-tabs="right"] .sticky-tab-text {
-  max-height: 200px;
-  max-width: none;
+/* 行数を打ち切る箱。パディングは付箋側が持ち、ここは 0 にする。
+   overflow: hidden はパディングの内側までを見せるので、この箱に padding-bottom が
+   あると、打ち切ったはずの次の行がそこへ覗いてしまう。 */
+[data-tabs="right"] .sticky-tab-label {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  overflow: hidden;
+  padding: 0;
+  min-width: 0;
+  /* 横版の 1 行ぴったりを詰める line-height: 1 のままだと行が重なって読めない。 */
+  line-height: 1.35;
 }
 
-/* サイズ階層: 横版の height が width に、padding が 90 度回る */
+/* 行内に流す。clamp は入れ物が持つので、ここでは折り返しだけ許す。 */
+[data-tabs="right"] .sticky-tab-label > .sticky-level-badge {
+  display: inline;
+  margin-right: 4px;
+  /* 行内要素はベースラインに乗るので、本文より小さいバッジは下に沈んで見える。
+     行の中央に合わせる。 */
+  vertical-align: middle;
+}
+
+[data-tabs="right"] .sticky-tab-text {
+  display: inline;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  overflow: visible;
+  max-width: none;
+  max-height: none;
+  min-width: 0;
+}
+
+/* サイズ階層: 高さと文字の大きさは横版のまま。
+   幅は中身なりに伸び、深い見出しほど手前で頭打ちになる。全部を帯いっぱいに
+   広げると棒が並んだだけになり、付箋に見えない。 */
 [data-tabs="right"] .sticky-tab-btn.level-1 {
-  width: 29px;
-  padding: 8px 2px 10px 2px;
+  width: auto;
+  max-width: calc(100% - 14px);
+  min-height: 29px;
+  height: auto;
+  padding: 5px 8px 6px 10px;
 }
 [data-tabs="right"] .sticky-tab-btn.level-1.is-active {
-  width: 33px;
+  max-width: calc(100% - 8px);
+  min-height: 29px;
   height: auto;
 }
 
 [data-tabs="right"] .sticky-tab-btn.level-2 {
-  width: 26px;
-  padding: 7px 2px 8px 2px;
+  width: auto;
+  max-width: calc(100% - 22px);
+  min-height: 26px;
+  height: auto;
+  padding: 4px 7px 5px 9px;
 }
 [data-tabs="right"] .sticky-tab-btn.level-2.is-active {
-  width: 30px;
+  max-width: calc(100% - 16px);
+  min-height: 26px;
   height: auto;
 }
 
 [data-tabs="right"] .sticky-tab-btn.level-3 {
-  width: 23px;
-  padding: 6px 1px 7px 1px;
+  width: auto;
+  max-width: calc(100% - 30px);
+  min-height: 23px;
+  height: auto;
+  padding: 4px 6px 4px 8px;
 }
 [data-tabs="right"] .sticky-tab-btn.level-3.is-active {
-  width: 27px;
+  max-width: calc(100% - 24px);
+  min-height: 23px;
   height: auto;
 }
 
 [data-tabs="right"] .sticky-tab-btn.level-4,
 [data-tabs="right"] .sticky-tab-btn.level-5,
 [data-tabs="right"] .sticky-tab-btn.level-6 {
-  width: 20px;
-  padding: 5px 1px 6px 1px;
+  width: auto;
+  max-width: calc(100% - 38px);
+  min-height: 20px;
+  height: auto;
+  padding: 3px 5px 4px 7px;
 }
 [data-tabs="right"] .sticky-tab-btn.level-4.is-active,
 [data-tabs="right"] .sticky-tab-btn.level-5.is-active,
 [data-tabs="right"] .sticky-tab-btn.level-6.is-active {
-  width: 24px;
+  max-width: calc(100% - 32px);
+  min-height: 20px;
   height: auto;
 }
 
@@ -140,10 +187,12 @@
 [data-tabs="right"] .sticky-children-slot {
   flex-direction: column;
   align-items: flex-start;
+  width: 100%;
   /* 縦並びでは交差軸が横になる。基底の align-self: flex-end のままだと
      スロットごと右へ寄り、子付箋が親より右にずれる。 */
   align-self: flex-start;
-  width: auto;
+  /* 子付箋は自分の width: calc(100% - N) で出っ張り量を決めるので、
+     スロットは帯いっぱいを基準として渡す。 */
   height: auto;
   max-width: none;
   /* 畳んでいるときは下へ 4px だけ覗く (横版の右へ 4px と同じ考え方) */
@@ -154,8 +203,10 @@
               margin 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 [data-tabs="right"] .sticky-tab-node:not(.is-active):not(.is-active-branch) > .sticky-children-slot {
-  width: auto;
   height: auto;
+  /* 帯いっぱい (width:100%) のままだと、右下の丸みが紙より右の空中に付いて
+     覗きの切り口が直角に見える。子付箋 1 枚ぶんの幅に合わせる。 */
+  width: calc(100% - 22px);
 }
 [data-tabs="right"] .sticky-tab-node.is-active > .sticky-children-slot,
 [data-tabs="right"] .sticky-tab-node.is-active-branch > .sticky-children-slot {
