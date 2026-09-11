@@ -43,8 +43,8 @@ fmt:
 ci: check test
     nix fmt -- --ci
     cargo clippy --all-targets -- -D warnings
-    # The local .cargo/config.toml patch rewrites Cargo.lock behind your back
-    # (rust-analyzer alone is enough to trigger it) and that breaks `nix build`.
+    # nix build reads Cargo.lock to vendor the tomet crates; a lock that drifted
+    # from what cargo resolves here would send it to the network for them.
     git diff --exit-code Cargo.lock
 
 #[ Run ]

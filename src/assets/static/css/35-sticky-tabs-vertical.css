@@ -213,6 +213,17 @@
 [data-tabs="right"] .sticky-tabs-bar {
   z-index: auto;
 }
+/* 横版はアクティブな付箋を z-index: 10 で持ち上げている。帯の文脈を外した
+   いまは、それがそのまま紙 (2) を越えてしまい、アクティブな一枚にだけ紙の影が
+   落ちなくなる。縦版では兄弟と重ならないので、持ち上げる必要もない。 */
+[data-tabs="right"] .sticky-tab-btn.is-active {
+  z-index: 1;
+}
+
+/* ポップオーバーを開いている付箋は紙より前へ。上の .is-active と詳細度が
+   同じ (0,3,0) なので、両方が付いた付箋ではあとに書いたこちらが勝つ。
+   順番を入れ替えると、アクティブな付箋だけポップオーバーを開いても
+   奥に残る。 */
 [data-tabs="right"] .sticky-tab-btn.is-popover-open {
   z-index: 3;
 }
@@ -221,12 +232,6 @@
    まとめて持ち上げる。 */
 [data-tabs="right"] .sticky-children-slot:has(.sticky-tab-btn.is-popover-open) {
   z-index: 3;
-}
-/* 横版はアクティブな付箋を z-index: 10 で持ち上げている。帯の文脈を外した
-   いまは、それがそのまま紙 (2) を越えてしまい、アクティブな一枚にだけ紙の影が
-   落ちなくなる。縦版では兄弟と重ならないので、持ち上げる必要もない。 */
-[data-tabs="right"] .sticky-tab-btn.is-active {
-  z-index: 1;
 }
 
 /* --- 子付箋のスロット: 横ではなく下へ開く --- */
