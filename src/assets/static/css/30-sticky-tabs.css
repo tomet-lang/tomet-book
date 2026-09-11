@@ -189,62 +189,157 @@
   z-index: 10;
 }
 
-/* --- 柔らかい付箋カラー (枠線なし / ほんのり控えめな影) --- */
+/* --- 柔らかい付箋カラー (統一CSSカスタムプロパティ) --- */
+:root {
+  /* H1: 柔らかいイエロー (ポストイット定番イエロー) */
+  --sticky-l1-bg: #fef3c7;
+  --sticky-l1-hover-bg: #fde68a;
+  --sticky-l1-active-bg: #fcd34d;
+  --sticky-l1-color: #78350f;
+  --sticky-l1-active-color: #78350f;
+  --sticky-l1-badge: #b45309;
+
+  /* H2: 柔らかいミントグリーン */
+  --sticky-l2-bg: #d1fae5;
+  --sticky-l2-hover-bg: #a7f3d0;
+  --sticky-l2-active-bg: #6ee7b7;
+  --sticky-l2-color: #064e3b;
+  --sticky-l2-active-color: #064e3b;
+  --sticky-l2-badge: #047857;
+
+  /* H3: 柔らかいパステルスカイブルー */
+  --sticky-l3-bg: #e0f2fe;
+  --sticky-l3-hover-bg: #bae6fd;
+  --sticky-l3-active-bg: #7dd3fc;
+  --sticky-l3-color: #0c4a6e;
+  --sticky-l3-active-color: #0c4a6e;
+  --sticky-l3-badge: #0369a1;
+
+  /* H4+: 柔らかいラベンダーパープル */
+  --sticky-l4-bg: #f3e8ff;
+  --sticky-l4-hover-bg: #e9d5ff;
+  --sticky-l4-active-bg: #d8b4fe;
+  --sticky-l4-color: #581c87;
+  --sticky-l4-active-color: #581c87;
+  --sticky-l4-badge: #6d28d9;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --sticky-l1-bg: #473619;
+    --sticky-l1-hover-bg: #5d4417;
+    --sticky-l1-active-bg: #745115;
+    --sticky-l1-color: #fef08a;
+    --sticky-l1-active-color: #fffbeb;
+    --sticky-l1-badge: #fbbf24;
+
+    --sticky-l2-bg: #153c33;
+    --sticky-l2-hover-bg: #144c3d;
+    --sticky-l2-active-bg: #135c47;
+    --sticky-l2-color: #a7f3d0;
+    --sticky-l2-active-color: #ecfdf5;
+    --sticky-l2-badge: #34d399;
+
+    --sticky-l3-bg: #14384a;
+    --sticky-l3-hover-bg: #13465e;
+    --sticky-l3-active-bg: #135473;
+    --sticky-l3-color: #bae6fd;
+    --sticky-l3-active-color: #f0f9ff;
+    --sticky-l3-badge: #38bdf8;
+
+    --sticky-l4-bg: #36264d;
+    --sticky-l4-hover-bg: #452c63;
+    --sticky-l4-active-bg: #533279;
+    --sticky-l4-color: #e9d5ff;
+    --sticky-l4-active-color: #faf5ff;
+    --sticky-l4-badge: #c084fc;
+  }
+}
+
+:root[data-theme="dark"] {
+  --sticky-l1-bg: #473619;
+  --sticky-l1-hover-bg: #5d4417;
+  --sticky-l1-active-bg: #745115;
+  --sticky-l1-color: #fef08a;
+  --sticky-l1-active-color: #fffbeb;
+  --sticky-l1-badge: #fbbf24;
+
+  --sticky-l2-bg: #153c33;
+  --sticky-l2-hover-bg: #144c3d;
+  --sticky-l2-active-bg: #135c47;
+  --sticky-l2-color: #a7f3d0;
+  --sticky-l2-active-color: #ecfdf5;
+  --sticky-l2-badge: #34d399;
+
+  --sticky-l3-bg: #14384a;
+  --sticky-l3-hover-bg: #13465e;
+  --sticky-l3-active-bg: #135473;
+  --sticky-l3-color: #bae6fd;
+  --sticky-l3-active-color: #f0f9ff;
+  --sticky-l3-badge: #38bdf8;
+
+  --sticky-l4-bg: #36264d;
+  --sticky-l4-hover-bg: #452c63;
+  --sticky-l4-active-bg: #533279;
+  --sticky-l4-color: #e9d5ff;
+  --sticky-l4-active-color: #faf5ff;
+  --sticky-l4-badge: #c084fc;
+}
 
 /* H1: 柔らかいイエロー (ポストイット定番イエロー) */
 .sticky-tab-btn.level-1 {
-  background: #fef3c7; /* 優しいパステルイエロー */
-  color: #78350f;     /* 落ち着いたアンバーブラウン */
+  background: var(--sticky-l1-bg);
+  color: var(--sticky-l1-color);
 }
 .sticky-tab-btn.level-1:hover,
 .sticky-tab-btn.level-1.is-popover-open {
-  background: #fde68a;
-  color: #78350f;
+  background: var(--sticky-l1-hover-bg);
+  color: var(--sticky-l1-color);
 }
 .sticky-tab-btn.level-1.is-active,
 .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-1 {
-  background: #fcd34d; /* アクティブ時は少し鮮やかに */
-  color: #78350f;
+  background: var(--sticky-l1-active-bg);
+  color: var(--sticky-l1-active-color);
 }
 
 /* H2: 柔らかいミントグリーン */
 .sticky-tab-btn.level-2 {
-  background: #d1fae5; /* 優しいミントグリーン */
-  color: #064e3b;     /* 濃いフォレストグリーン */
+  background: var(--sticky-l2-bg);
+  color: var(--sticky-l2-color);
 }
 .sticky-tab-btn.level-2:hover,
 .sticky-tab-btn.level-2.is-popover-open {
-  background: #a7f3d0;
-  color: #064e3b;
+  background: var(--sticky-l2-hover-bg);
+  color: var(--sticky-l2-color);
 }
 .sticky-tab-btn.level-2.is-active,
 .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-2 {
-  background: #6ee7b7;
-  color: #064e3b;
+  background: var(--sticky-l2-active-bg);
+  color: var(--sticky-l2-active-color);
 }
 
 /* H3: 柔らかいパステルスカイブルー */
 .sticky-tab-btn.level-3 {
-  background: #e0f2fe; /* 優しいパステルスカイ */
-  color: #0c4a6e;     /* 濃いネイビーブルー */
+  background: var(--sticky-l3-bg);
+  color: var(--sticky-l3-color);
 }
 .sticky-tab-btn.level-3:hover,
 .sticky-tab-btn.level-3.is-popover-open {
-  background: #bae6fd;
-  color: #0c4a6e;
+  background: var(--sticky-l3-hover-bg);
+  color: var(--sticky-l3-color);
 }
 .sticky-tab-btn.level-3.is-active,
 .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-3 {
-  background: #7dd3fc;
-  color: #0c4a6e;
+  background: var(--sticky-l3-active-bg);
+  color: var(--sticky-l3-active-color);
 }
 
 /* H4+: 柔らかいラベンダーパープル */
 .sticky-tab-btn.level-4,
 .sticky-tab-btn.level-5,
 .sticky-tab-btn.level-6 {
-  background: #f3e8ff; /* 優しいラベンダー */
-  color: #581c87;     /* 濃いパープル */
+  background: var(--sticky-l4-bg);
+  color: var(--sticky-l4-color);
 }
 .sticky-tab-btn.level-4:hover,
 .sticky-tab-btn.level-4.is-popover-open,
@@ -252,80 +347,15 @@
 .sticky-tab-btn.level-5.is-popover-open,
 .sticky-tab-btn.level-6:hover,
 .sticky-tab-btn.level-6.is-popover-open {
-  background: #e9d5ff;
-  color: #581c87;
+  background: var(--sticky-l4-hover-bg);
+  color: var(--sticky-l4-color);
 }
 .sticky-tab-btn.level-4.is-active,
 .sticky-tab-btn.level-5.is-active,
 .sticky-tab-btn.level-6.is-active,
 .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-4 {
-  background: #d8b4fe;
-  color: #581c87;
-}
-
-/* --- ダークモード対応 (目に優しいパステルトーン & 控えめな影) --- */
-[data-theme="dark"] .sticky-tab-btn.level-1 {
-  background: #473619;
-  color: #fef08a;
-}
-[data-theme="dark"] .sticky-tab-btn.level-1:hover,
-[data-theme="dark"] .sticky-tab-btn.level-1.is-popover-open {
-  background: #5d4417;
-}
-[data-theme="dark"] .sticky-tab-btn.level-1.is-active,
-[data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-1 {
-  background: #745115;
-  color: #fffbeb;
-}
-
-[data-theme="dark"] .sticky-tab-btn.level-2 {
-  background: #153c33;
-  color: #a7f3d0;
-}
-[data-theme="dark"] .sticky-tab-btn.level-2:hover,
-[data-theme="dark"] .sticky-tab-btn.level-2.is-popover-open {
-  background: #144c3d;
-}
-[data-theme="dark"] .sticky-tab-btn.level-2.is-active,
-[data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-2 {
-  background: #135c47;
-  color: #ecfdf5;
-}
-
-[data-theme="dark"] .sticky-tab-btn.level-3 {
-  background: #14384a;
-  color: #bae6fd;
-}
-[data-theme="dark"] .sticky-tab-btn.level-3:hover,
-[data-theme="dark"] .sticky-tab-btn.level-3.is-popover-open {
-  background: #13465e;
-}
-[data-theme="dark"] .sticky-tab-btn.level-3.is-active,
-[data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-3 {
-  background: #135473;
-  color: #f0f9ff;
-}
-
-[data-theme="dark"] .sticky-tab-btn.level-4,
-[data-theme="dark"] .sticky-tab-btn.level-5,
-[data-theme="dark"] .sticky-tab-btn.level-6 {
-  background: #36264d;
-  color: #e9d5ff;
-}
-[data-theme="dark"] .sticky-tab-btn.level-4:hover,
-[data-theme="dark"] .sticky-tab-btn.level-4.is-popover-open,
-[data-theme="dark"] .sticky-tab-btn.level-5:hover,
-[data-theme="dark"] .sticky-tab-btn.level-5.is-popover-open,
-[data-theme="dark"] .sticky-tab-btn.level-6:hover,
-[data-theme="dark"] .sticky-tab-btn.level-6.is-popover-open {
-  background: #452c63;
-}
-[data-theme="dark"] .sticky-tab-btn.level-4.is-active,
-[data-theme="dark"] .sticky-tab-btn.level-5.is-active,
-[data-theme="dark"] .sticky-tab-btn.level-6.is-active,
-[data-theme="dark"] .sticky-tab-node.is-active-branch > .sticky-tab-btn.level-4 {
-  background: #533279;
-  color: #faf5ff;
+  background: var(--sticky-l4-active-bg);
+  color: var(--sticky-l4-active-color);
 }
 
 .sticky-tab-text {
@@ -427,42 +457,30 @@
   padding-right: 0;
 }
 
-/* ポップオーバー内のバッジはレベル別の色を持つ。背景は JS が地の色に混ぜて
-   不透明な色として塗る (地は付箋の色で、レベルごとに変わるため)。 */
+/* ポップオーバー内のバッジはレベル別の色を持つ。背景は地の色 (--pop-bg) と currentColor を color-mix する。 */
 .sticky-hover-item .sticky-level-badge.level-1 {
-  color: #b45309;
+  color: var(--sticky-l1-badge);
 }
 .sticky-hover-item .sticky-level-badge.level-2 {
-  color: #047857;
+  color: var(--sticky-l2-badge);
 }
 .sticky-hover-item .sticky-level-badge.level-3 {
-  color: #0369a1;
+  color: var(--sticky-l3-badge);
 }
 .sticky-hover-item .sticky-level-badge.level-4,
 .sticky-hover-item .sticky-level-badge.level-5,
 .sticky-hover-item .sticky-level-badge.level-6 {
-  color: #6d28d9;
+  color: var(--sticky-l4-badge);
 }
 
-[data-theme="dark"] .sticky-hover-item .sticky-level-badge.level-1 {
-  color: #fbbf24;
-}
-[data-theme="dark"] .sticky-hover-item .sticky-level-badge.level-2 {
-  color: #34d399;
-}
-[data-theme="dark"] .sticky-hover-item .sticky-level-badge.level-3 {
-  color: #38bdf8;
-}
-[data-theme="dark"] .sticky-hover-item .sticky-level-badge.level-4,
-[data-theme="dark"] .sticky-hover-item .sticky-level-badge.level-5,
-[data-theme="dark"] .sticky-hover-item .sticky-level-badge.level-6 {
-  color: #c084fc;
+.sticky-hover-item .sticky-level-badge {
+  background: color-mix(in srgb, var(--pop-bg), currentColor 18%);
 }
 
 /* ==================== HOVER SUBHEADINGS POPOVER ==================== */
 /* The popover hangs off the bottom of its tab and should read as the same
-   piece of paper: JS paints it with the tab's own computed colours, the top
-   left corner stays square where the two meet, and the three free corners get
+   piece of paper: styled with the parent tab's matching palette via CSS variables,
+   the top left corner stays square where the two meet, and the three free corners get
    the tab's radius. Everything inside is transparent so that one colour is
    what shows. */
 .sticky-hover-popover {
@@ -470,11 +488,10 @@
   z-index: 1000;
   min-width: 200px;
   max-width: 320px;
-  /* JS sets --pop-bg to the tab's own colour; everything inside mixes
-     against it, so no surface here is ever translucent. */
-  --pop-bg: var(--surface);
+  --pop-bg: var(--sticky-l1-hover-bg);
+  --pop-active: color-mix(in srgb, var(--pop-bg), currentColor 18%);
   background: var(--pop-bg);
-  color: var(--text);
+  color: var(--sticky-l1-color);
   border: none;
   border-radius: 0 4px 4px 4px;
   /* Offset and drawn in, so the shadow never bleeds up over the join. */
@@ -483,6 +500,47 @@
   overflow: hidden;
   pointer-events: auto;
   animation: 0.12s cubic-bezier(0, 0, 0.2, 1) both popover-fade-in;
+}
+
+/* Popover level-specific styles (inherits the exact same colors as parent tab) */
+.sticky-hover-popover.level-1 {
+  --pop-bg: var(--sticky-l1-hover-bg);
+  color: var(--sticky-l1-color);
+}
+.sticky-hover-popover.level-1.is-active {
+  --pop-bg: var(--sticky-l1-active-bg);
+  color: var(--sticky-l1-active-color);
+}
+
+.sticky-hover-popover.level-2 {
+  --pop-bg: var(--sticky-l2-hover-bg);
+  color: var(--sticky-l2-color);
+}
+.sticky-hover-popover.level-2.is-active {
+  --pop-bg: var(--sticky-l2-active-bg);
+  color: var(--sticky-l2-active-color);
+}
+
+.sticky-hover-popover.level-3 {
+  --pop-bg: var(--sticky-l3-hover-bg);
+  color: var(--sticky-l3-color);
+}
+.sticky-hover-popover.level-3.is-active {
+  --pop-bg: var(--sticky-l3-active-bg);
+  color: var(--sticky-l3-active-color);
+}
+
+.sticky-hover-popover.level-4,
+.sticky-hover-popover.level-5,
+.sticky-hover-popover.level-6 {
+  --pop-bg: var(--sticky-l4-hover-bg);
+  color: var(--sticky-l4-color);
+}
+.sticky-hover-popover.level-4.is-active,
+.sticky-hover-popover.level-5.is-active,
+.sticky-hover-popover.level-6.is-active {
+  --pop-bg: var(--sticky-l4-active-bg);
+  color: var(--sticky-l4-active-color);
 }
 
 @keyframes popover-fade-in {

@@ -36,17 +36,6 @@
     return document.documentElement.getAttribute('data-tabs') === 'right';
   }
 
-  /** `rgb(1, 2, 3)` / `rgba(1, 2, 3, 1)` -> `[1, 2, 3]`. */
-  function parseRgb(colour) {
-    const parts = (colour || '').match(/[\d.]+/g) || [];
-    return [0, 1, 2].map((i) => Number(parts[i]) || 0);
-  }
-
-  /** Blend `amount` of `b` into `a`. Both opaque, so the result is too. */
-  function mixRgb(a, b, amount) {
-    const c = a.map((v, i) => Math.round(v + (b[i] - v) * amount));
-    return `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
-  }
 
   function setupBookViewInteraction() {
     const tocLinks = document.querySelectorAll('.book-toc-link');
@@ -336,29 +325,11 @@
           .forEach((el) => el.classList.remove('is-popover-open'));
         btn.classList.add('is-popover-open');
 
-        // Wear the tab's own colours so the two read as one piece of paper.
-        // Reading the computed value rather than duplicating the palette keeps
-        // this right for every level, for hover and active, and in both themes.
-        // Everything derived from it is mixed here into an opaque colour: the
-        // popover floats over the article, where a translucent surface shows
-        // the text through it.
-        const tabStyle = window.getComputedStyle(btn);
-        const ground = parseRgb(tabStyle.backgroundColor);
-        const ink = parseRgb(tabStyle.color);
-
-        popover.style.setProperty('--pop-bg', tabStyle.backgroundColor);
-        // Toward the text colour, which darkens on a light sticky and lightens
-        // on a dark one without needing a second set of values. Only the active
-        // item takes a background; hover is left to the underline.
-        popover.style.setProperty('--pop-active', mixRgb(ground, ink, 0.18));
-        popover.style.color = tabStyle.color;
-
-        // The badges keep their per-level colour; their background is that
-        // colour mixed into whatever ground this popover happens to carry.
-        popoverList.querySelectorAll('.sticky-level-badge').forEach((badge) => {
-          const badgeInk = parseRgb(window.getComputedStyle(badge).color);
-          badge.style.background = mixRgb(ground, badgeInk, 0.18);
-        });
+        // 親ノードのレベルとアクティブ状態に合わせてクラスを設定し、
+        // CSS変数で付箋と完全に同じ配色を適用する
+        const parentLevel = node.getAttribute('data-level') || (btn.classList.contains('level-1') ? '1' : btn.classList.contains('level-2') ? '2' : btn.classList.contains('level-3') ? '3' : '4');
+        const isParentActive = node.classList.contains('is-active') || node.classList.contains('is-active-branch');
+        popover.className = `sticky-hover-popover level-${parentLevel}${isParentActive ? ' is-active' : ''}`;
 
         const rect = btn.getBoundingClientRect();
         const popoverWidth = Math.min(320, Math.max(200, popover.offsetWidth || 220));
