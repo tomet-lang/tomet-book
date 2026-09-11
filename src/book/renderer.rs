@@ -17,6 +17,14 @@ pub struct SectionSummary {
     pub count: usize,
 }
 
+/// A page that points at the one being rendered.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Backlink {
+    pub url: String,
+    pub title: String,
+    pub section: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EntrySummary {
     pub url: String,
@@ -55,7 +63,7 @@ impl<'a> BookRenderer<'a> {
         })
     }
 
-    pub fn render_page(&self, doc: &ProcessedDoc) -> Result<String> {
+    pub fn render_page(&self, doc: &ProcessedDoc, backlinks: &[Backlink]) -> Result<String> {
         let tmpl = self.env.get_template("page.html")?;
 
         let ctx = context! {
@@ -82,6 +90,7 @@ impl<'a> BookRenderer<'a> {
             toc => &doc.toc,
             section_tabs => &doc.section_tabs,
             body_html => &doc.body_html,
+            backlinks => backlinks,
         };
 
         let rendered = tmpl.render(ctx)?;

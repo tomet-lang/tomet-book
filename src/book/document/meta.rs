@@ -34,6 +34,10 @@ pub struct InfoboxRowItem {
 /// Everything the page template reads out of `@meta`.
 #[derive(Debug, Default)]
 pub struct MetaProperties {
+    /// Pages this document points at through its metadata (`parent: "[[unit]]"`
+    /// and the like). Collected here because this is where those references are
+    /// resolved; the body's own links are collected from the parsed document.
+    pub linked_slugs: Vec<String>,
     pub primary_color: Option<String>,
     pub icon: Option<String>,
     pub banner_url: Option<String>,
@@ -122,7 +126,26 @@ pub fn extract(
         config,
     };
 
+    let mut linked_slugs = Vec::new();
+    for value in map.values() {
+        let raws: Vec<&str> = match value {
+            Value::String(s) => vec![s.as_str()],
+            Value::Array(arr) => arr.iter().filter_map(|v| v.as_str()).collect(),
+            _ => continue,
+        };
+        for raw in raws {
+            let (href, _) = cx.link(raw);
+            let Some(href) = href else { continue };
+            if let Some(slug) = super::links::slug_from_href(&href, config.build.clean_url_prefix())
+                && !linked_slugs.contains(&slug)
+            {
+                linked_slugs.push(slug);
+            }
+        }
+    }
+
     MetaProperties {
+        linked_slugs,
         primary_color: primary_color(map),
         icon: map.get("icon").and_then(|v| v.as_str()).map(str::to_string),
         banner_url: map

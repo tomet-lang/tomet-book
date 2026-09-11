@@ -36,6 +36,9 @@ pub struct ProcessedDoc {
     pub toc: Vec<TocItem>,
     pub section_tabs: Vec<SectionTab>,
     pub body_html: String,
+    /// Pages this one links to, as slugs. The build reverses these into the
+    /// backlinks each page shows.
+    pub outgoing: Vec<String>,
 }
 
 /// Prepend the `@config`/`@settings` blocks of a workspace-wide document, so a
@@ -116,8 +119,11 @@ pub fn process_tomet_document(
     let doc_cfg = tomet_semantics::document_config(&doc);
     tomet_transform::expand_document_macros(&mut doc, &doc_cfg);
 
-    // 3. Resolve links
+    // 3. Collect outgoing links, then resolve them
     let from_path = Path::new(rel_path);
+    let slug = strip_doc_extension(&rel_path.replace('\\', "/")).to_string();
+    let mut outgoing = links::outgoing_page_slugs(&doc, from_path, &slug, vault_index);
+
     let mode = tomet_transform::TargetMode::WebSlug {
         url_prefix: config.build.clean_url_prefix().to_string(),
         asset_prefix: config.build.clean_asset_prefix().to_string(),
@@ -165,16 +171,22 @@ pub fn process_tomet_document(
         .and_then(|p| p.iter().next())
         .and_then(|s| s.to_str())
         .map(|s| s.to_string());
-    let slug = strip_doc_extension(&rel_path.replace('\\', "/")).to_string();
 
     // 8. The page's chrome: colours, banner, chips, infobox
-    let props = meta::extract(
+    let mut props = meta::extract(
         meta_json.as_ref(),
         kind.as_deref(),
         from_path,
         vault_index,
         config,
     );
+
+    // 本文のリンクに @meta のリンクを合流させる。自分自身と重複は落とす。
+    for linked in std::mem::take(&mut props.linked_slugs) {
+        if linked != slug && !outgoing.contains(&linked) {
+            outgoing.push(linked);
+        }
+    }
 
     let source_path = abs_path
         .map(|p| p.to_string_lossy().to_string())
@@ -198,6 +210,7 @@ pub fn process_tomet_document(
         toc,
         section_tabs,
         body_html,
+        outgoing,
     })
 }
 

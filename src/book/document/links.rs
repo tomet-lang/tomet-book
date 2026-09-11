@@ -290,3 +290,121 @@ mod tests {
         assert_eq!(strip_doc_extension("plain"), "plain");
     }
 }
+
+/// The pages this document links to, as slugs, in the order they appear.
+///
+/// Collected from the parsed body before link resolution rewrites the targets,
+/// then resolved the same way `@meta` references are. Only links that land on
+/// another Tomet document count -- media and external URLs are not pages, and
+/// a document linking to itself is not a backlink.
+pub fn outgoing_page_slugs(
+    doc: &tomet_ast::Document,
+    from_path: &Path,
+    own_slug: &str,
+    vault_index: &tomet_links::VaultLinkIndex,
+) -> Vec<String> {
+    let mut slugs: Vec<String> = Vec::new();
+
+    for link in tomet_links::collect_links(doc) {
+        // Dir and Embed point at folders and media, never at a page.
+        if !matches!(
+            link.kind,
+            tomet_links::LinkKind::Ref | tomet_links::LinkKind::Tm | tomet_links::LinkKind::File
+        ) {
+            continue;
+        }
+
+        let Some(resolved) = vault_index.resolve_ref(&link.target, Some(from_path)) else {
+            continue;
+        };
+        let path = resolved.to_string_lossy().replace('\\', "/");
+        let slug = strip_doc_extension(&path);
+        // strip_doc_extension leaves non-documents untouched, which is how a
+        // link to an image is told apart from a link to a page.
+        if slug == path || slug == own_slug || slugs.iter().any(|s| s == slug) {
+            continue;
+        }
+        slugs.push(slug.to_string());
+    }
+
+    slugs
+}
+
+/// The slug a resolved `@meta` href points at, if it points at a page at all.
+pub fn slug_from_href(href: &str, url_prefix: &str) -> Option<String> {
+    let clean = url_prefix.trim_end_matches('/');
+    let rest = href.strip_prefix(clean)?.trim_start_matches('/');
+    (!rest.is_empty()).then(|| rest.to_string())
+}
+
+#[cfg(test)]
+mod outgoing_tests {
+    use super::*;
+
+    #[test]
+    fn a_href_under_the_prefix_yields_its_slug() {
+        assert_eq!(
+            slug_from_href("/wiki/30-39 Knowledge/rust", "/wiki").as_deref(),
+            Some("30-39 Knowledge/rust")
+        );
+        assert_eq!(slug_from_href("/wiki/a", "/wiki/").as_deref(), Some("a"));
+    }
+
+    #[test]
+    fn an_href_outside_the_prefix_is_not_a_page() {
+        assert_eq!(slug_from_href("https://example.com", "/wiki"), None);
+        assert_eq!(slug_from_href("/vault/img.png", "/wiki"), None);
+        // The catalog itself is not a page anyone backlinks to.
+        assert_eq!(slug_from_href("/wiki", "/wiki"), None);
+    }
+
+    fn slugs(source: &str, paths: &[&str], own: &str) -> Vec<String> {
+        let doc = tomet_parser::parse_document(source).unwrap();
+        let index = tomet_links::VaultLinkIndex::from_paths(paths);
+        outgoing_page_slugs(&doc, Path::new(own), strip_doc_extension(own), &index)
+    }
+
+    #[test]
+    fn body_references_become_slugs() {
+        // `ref:` targets are names, not paths, so a page in a folder is still
+        // reached by its stem -- and the slug that comes back carries the folder.
+        let out = slugs(
+            "本文 @link(ref:\"other\") と @link(ref:\"page\") へ。\n",
+            &["a.tmt", "other.tmt", "deep/page.tmt"],
+            "a.tmt",
+        );
+        assert_eq!(out, vec!["other", "deep/page"]);
+    }
+
+    #[test]
+    fn a_link_to_itself_is_not_an_outgoing_link() {
+        let out = slugs("@link(ref:\"a\") を指す。\n", &["a.tmt"], "a.tmt");
+        assert!(out.is_empty());
+    }
+
+    #[test]
+    fn the_same_page_twice_is_listed_once() {
+        let out = slugs(
+            "@link(ref:\"other\") と @link(ref:\"other\") へ。\n",
+            &["a.tmt", "other.tmt"],
+            "a.tmt",
+        );
+        assert_eq!(out, vec!["other"]);
+    }
+
+    #[test]
+    fn unresolved_references_are_left_out() {
+        let out = slugs("@link(ref:\"missing\") へ。\n", &["a.tmt"], "a.tmt");
+        assert!(out.is_empty());
+    }
+
+    #[test]
+    fn media_is_not_a_page() {
+        let out = slugs(
+            "@link(ref:\"photo.png\") へ。\n",
+            &["a.tmt", "photo.png"],
+            "a.tmt",
+        );
+        assert!(out.is_empty(), "got {out:?}");
+    }
+}

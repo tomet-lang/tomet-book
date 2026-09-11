@@ -15,10 +15,11 @@ use walkdir::WalkDir;
 
 use crate::config::BookConfig;
 use assets::{copy_vault_media, write_static_assets};
+use document::ProcessedDoc;
 use document::process_tomet_document;
 use loader::{ScannedVault, scan_vault};
 use pagefind::run_pagefind;
-use renderer::{BookRenderer, EntrySummary, SectionSummary};
+use renderer::{Backlink, BookRenderer, EntrySummary, SectionSummary};
 
 use rayon::prelude::*;
 
@@ -68,6 +69,9 @@ pub struct BuildReport {
     /// The vault as this build saw it, so a caller that needs it again -- the
     /// dev server priming its incremental cache -- does not rescan.
     pub scanned: ScannedVault,
+    /// Who points at each page, keyed by slug. Handed back so the dev server
+    /// can re-render one document without reading the whole vault again.
+    pub backlinks: HashMap<String, Vec<Backlink>>,
 }
 
 enum DocOutcome {
@@ -100,25 +104,35 @@ pub fn write_if_changed(path: &Path, content: &str) -> Result<bool> {
     Ok(true)
 }
 
+/// The vault-wide state a single page needs in order to render.
+///
+/// The dev server holds all of this between edits; bundling it keeps the
+/// per-page call about the page.
+pub struct RenderContext<'a, 'r> {
+    pub config: &'a BookConfig,
+    pub vault_index: &'a tomet_links::VaultLinkIndex,
+    pub workspace_cfg_src: Option<&'a str>,
+    pub renderer: &'a BookRenderer<'r>,
+}
+
 pub fn render_single_document(
     abs_path: &Path,
     rel_path: &str,
     out_dir: &Path,
-    config: &BookConfig,
-    vault_index: &tomet_links::VaultLinkIndex,
-    workspace_cfg_src: Option<&str>,
-    renderer: &BookRenderer,
+    cx: &RenderContext<'_, '_>,
+    backlinks: &[Backlink],
 ) -> Result<(bool, String)> {
+    let config = cx.config;
     let source = fs::read_to_string(abs_path)?;
     let processed = process_tomet_document(
         &source,
         rel_path,
         Some(abs_path),
         config,
-        vault_index,
-        workspace_cfg_src,
+        cx.vault_index,
+        cx.workspace_cfg_src,
     )?;
-    let html = renderer.render_page(&processed)?;
+    let html = cx.renderer.render_page(&processed, backlinks)?;
     let out_html_path = out_dir
         .join(config.build.wiki_out_rel())
         .join(&processed.slug)
@@ -126,6 +140,30 @@ pub fn render_single_document(
     let written = write_if_changed(&out_html_path, &html)?;
     let url = format!("{}/{}", config.build.clean_url_prefix(), processed.slug);
     Ok((written, url))
+}
+
+/// Turn every page's outgoing links into the incoming list of its targets.
+///
+/// The result is sorted by title so that an unchanged vault keeps producing
+/// byte-identical pages, which is what lets the writer skip untouched files.
+fn build_backlink_index(
+    docs: &[&ProcessedDoc],
+    clean_url_prefix: &str,
+) -> HashMap<String, Vec<Backlink>> {
+    let mut backlinks: HashMap<String, Vec<Backlink>> = HashMap::new();
+    for doc in docs {
+        for target in &doc.outgoing {
+            backlinks.entry(target.clone()).or_default().push(Backlink {
+                url: format!("{clean_url_prefix}/{}", doc.slug),
+                title: doc.title.clone(),
+                section: doc.section.clone(),
+            });
+        }
+    }
+    for list in backlinks.values_mut() {
+        list.sort_by(|a, b| a.title.cmp(&b.title).then_with(|| a.url.cmp(&b.url)));
+    }
+    backlinks
 }
 
 /// Delete the pages named by `stale_slugs`.
@@ -303,11 +341,48 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
     let wiki_root = out_dir.join(wiki_rel);
     let clean_url_prefix = config.build.clean_url_prefix();
 
-    // 5. Process and render documents in parallel
-    let results: Vec<DocOutcome> = scanned
+    // 5. Process every document.
+    //
+    // Backlinks are what force two passes: a page cannot say who points at it
+    // until every other page has been read. Parsing happens once and the
+    // results are kept, so the second pass only fills in the template.
+    let processed: Vec<Result<ProcessedDoc, DocFailure>> = scanned
         .doc_files
         .par_iter()
         .map(|doc_file| {
+            let fail = |error: String| DocFailure {
+                rel_path: doc_file.rel_path.clone(),
+                error,
+            };
+
+            let source = fs::read_to_string(&doc_file.abs_path)
+                .map_err(|e| fail(format!("could not read file: {e}")))?;
+
+            process_tomet_document(
+                &source,
+                &doc_file.rel_path,
+                Some(&doc_file.abs_path),
+                config,
+                &scanned.vault_index,
+                scanned.workspace_config_src.as_deref(),
+            )
+            .map_err(|e| fail(format!("could not process document: {e}")))
+        })
+        .collect();
+
+    // 6. Reverse the links: who points at each page.
+    let docs: Vec<&ProcessedDoc> = processed.iter().filter_map(|r| r.as_ref().ok()).collect();
+    let backlinks = build_backlink_index(&docs, clean_url_prefix);
+
+    // 7. Render and write.
+    let results: Vec<DocOutcome> = processed
+        .par_iter()
+        .zip(scanned.doc_files.par_iter())
+        .map(|(result, doc_file)| {
+            let processed = match result {
+                Ok(p) => p,
+                Err(failure) => return DocOutcome::Failed(failure.clone()),
+            };
             let fail = |error: String| {
                 DocOutcome::Failed(DocFailure {
                     rel_path: doc_file.rel_path.clone(),
@@ -315,24 +390,12 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
                 })
             };
 
-            let source = match fs::read_to_string(&doc_file.abs_path) {
-                Ok(s) => s,
-                Err(e) => return fail(format!("could not read file: {e}")),
-            };
+            let incoming: &[Backlink] = backlinks
+                .get(&processed.slug)
+                .map(Vec::as_slice)
+                .unwrap_or(&[]);
 
-            let processed = match process_tomet_document(
-                &source,
-                &doc_file.rel_path,
-                Some(&doc_file.abs_path),
-                config,
-                &scanned.vault_index,
-                scanned.workspace_config_src.as_deref(),
-            ) {
-                Ok(p) => p,
-                Err(e) => return fail(format!("could not process document: {e}")),
-            };
-
-            let html = match renderer.render_page(&processed) {
+            let html = match renderer.render_page(processed, incoming) {
                 Ok(h) => h,
                 Err(e) => return fail(format!("could not render template: {e}")),
             };
@@ -346,11 +409,11 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
             DocOutcome::Rendered {
                 entry: EntrySummary {
                     url: format!("{clean_url_prefix}/{}", processed.slug),
-                    title: processed.title,
+                    title: processed.title.clone(),
                     section: processed.section.clone(),
                 },
-                section: processed.section,
-                slug: processed.slug,
+                section: processed.section.clone(),
+                slug: processed.slug.clone(),
                 rel_path: doc_file.rel_path.clone(),
                 written,
             }
@@ -496,6 +559,7 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
         pruned_pages,
         pruned_media,
         scanned,
+        backlinks,
     };
 
     if report.failures.is_empty() {
@@ -531,6 +595,74 @@ mod tests {
     fn touch(path: &Path) {
         fs::create_dir_all(path.parent().unwrap()).unwrap();
         fs::write(path, "x").unwrap();
+    }
+
+    /// A document with only the fields the backlink index reads.
+    fn doc(slug: &str, title: &str, section: Option<&str>, outgoing: &[&str]) -> ProcessedDoc {
+        ProcessedDoc {
+            slug: slug.to_string(),
+            rel_path: format!("{slug}.tmt"),
+            source_path: format!("/vault/{slug}.tmt"),
+            title: title.to_string(),
+            section: section.map(str::to_string),
+            kind: None,
+            primary_color: None,
+            icon: None,
+            banner_url: None,
+            banner_y: None,
+            images: Vec::new(),
+            hero_chips: Vec::new(),
+            infobox_rows: Vec::new(),
+            has_data: false,
+            toc: Vec::new(),
+            section_tabs: Vec::new(),
+            body_html: String::new(),
+            outgoing: outgoing.iter().map(|s| s.to_string()).collect(),
+        }
+    }
+
+    #[test]
+    fn backlinks_point_from_every_linking_page() {
+        let a = doc("a", "Aardvark", Some("Animals"), &["hub"]);
+        let b = doc("b", "Bison", None, &["hub", "a"]);
+        let hub = doc("hub", "Hub", None, &[]);
+        let index = build_backlink_index(&[&a, &b, &hub], "/wiki");
+
+        let into_hub = &index["hub"];
+        assert_eq!(into_hub.len(), 2);
+        assert_eq!(into_hub[0].title, "Aardvark");
+        assert_eq!(into_hub[0].url, "/wiki/a");
+        assert_eq!(into_hub[0].section.as_deref(), Some("Animals"));
+        assert_eq!(into_hub[1].title, "Bison");
+        assert_eq!(into_hub[1].section, None);
+
+        assert_eq!(index["a"].len(), 1, "b links to a");
+        assert!(!index.contains_key("b"), "nothing links to b");
+    }
+
+    #[test]
+    fn backlinks_are_ordered_by_title_then_url() {
+        // Two pages share a title; the url settles the tie.
+        let z = doc("z", "Same", None, &["t"]);
+        let m = doc("m", "Same", None, &["t"]);
+        let first = doc("first", "Alpha", None, &["t"]);
+        let index = build_backlink_index(&[&z, &m, &first], "/wiki");
+
+        let urls: Vec<&str> = index["t"].iter().map(|b| b.url.as_str()).collect();
+        assert_eq!(urls, ["/wiki/first", "/wiki/m", "/wiki/z"]);
+    }
+
+    #[test]
+    fn a_vault_without_links_has_an_empty_index() {
+        let a = doc("a", "A", None, &[]);
+        assert!(build_backlink_index(&[&a], "/wiki").is_empty());
+    }
+
+    #[test]
+    fn the_url_prefix_reaches_the_backlink_urls() {
+        let a = doc("a", "A", None, &["b"]);
+        let index = build_backlink_index(&[&a], "/docs/book");
+        assert_eq!(index["b"][0].url, "/docs/book/a");
     }
 
     #[test]
@@ -611,6 +743,74 @@ mod manifest_tests {
     fn touch(path: &Path) {
         fs::create_dir_all(path.parent().unwrap()).unwrap();
         fs::write(path, "x").unwrap();
+    }
+
+    /// A document with only the fields the backlink index reads.
+    fn doc(slug: &str, title: &str, section: Option<&str>, outgoing: &[&str]) -> ProcessedDoc {
+        ProcessedDoc {
+            slug: slug.to_string(),
+            rel_path: format!("{slug}.tmt"),
+            source_path: format!("/vault/{slug}.tmt"),
+            title: title.to_string(),
+            section: section.map(str::to_string),
+            kind: None,
+            primary_color: None,
+            icon: None,
+            banner_url: None,
+            banner_y: None,
+            images: Vec::new(),
+            hero_chips: Vec::new(),
+            infobox_rows: Vec::new(),
+            has_data: false,
+            toc: Vec::new(),
+            section_tabs: Vec::new(),
+            body_html: String::new(),
+            outgoing: outgoing.iter().map(|s| s.to_string()).collect(),
+        }
+    }
+
+    #[test]
+    fn backlinks_point_from_every_linking_page() {
+        let a = doc("a", "Aardvark", Some("Animals"), &["hub"]);
+        let b = doc("b", "Bison", None, &["hub", "a"]);
+        let hub = doc("hub", "Hub", None, &[]);
+        let index = build_backlink_index(&[&a, &b, &hub], "/wiki");
+
+        let into_hub = &index["hub"];
+        assert_eq!(into_hub.len(), 2);
+        assert_eq!(into_hub[0].title, "Aardvark");
+        assert_eq!(into_hub[0].url, "/wiki/a");
+        assert_eq!(into_hub[0].section.as_deref(), Some("Animals"));
+        assert_eq!(into_hub[1].title, "Bison");
+        assert_eq!(into_hub[1].section, None);
+
+        assert_eq!(index["a"].len(), 1, "b links to a");
+        assert!(!index.contains_key("b"), "nothing links to b");
+    }
+
+    #[test]
+    fn backlinks_are_ordered_by_title_then_url() {
+        // Two pages share a title; the url settles the tie.
+        let z = doc("z", "Same", None, &["t"]);
+        let m = doc("m", "Same", None, &["t"]);
+        let first = doc("first", "Alpha", None, &["t"]);
+        let index = build_backlink_index(&[&z, &m, &first], "/wiki");
+
+        let urls: Vec<&str> = index["t"].iter().map(|b| b.url.as_str()).collect();
+        assert_eq!(urls, ["/wiki/first", "/wiki/m", "/wiki/z"]);
+    }
+
+    #[test]
+    fn a_vault_without_links_has_an_empty_index() {
+        let a = doc("a", "A", None, &[]);
+        assert!(build_backlink_index(&[&a], "/wiki").is_empty());
+    }
+
+    #[test]
+    fn the_url_prefix_reaches_the_backlink_urls() {
+        let a = doc("a", "A", None, &["b"]);
+        let index = build_backlink_index(&[&a], "/docs/book");
+        assert_eq!(index["b"][0].url, "/docs/book/a");
     }
 
     #[test]

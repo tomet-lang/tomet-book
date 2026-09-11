@@ -147,14 +147,24 @@ pub async fn run_dev_server(
 ) -> Result<()> {
     // 1. Initial build
     info!("Performing initial build...");
+    // The watcher needs the vault scan and the backlink index the very first
+    // time it re-renders one document, so keep what this build already found.
+    let mut initial_scanned = None;
+    let mut initial_backlinks: std::collections::HashMap<
+        String,
+        Vec<crate::book::renderer::Backlink>,
+    > = std::collections::HashMap::new();
     match build_book(&src_dir, &out_dir, &config) {
-        Ok(report) if !report.failures.is_empty() => {
-            warn!(
-                "Initial build left out {} document(s)",
-                report.failures.len()
-            );
+        Ok(report) => {
+            if !report.failures.is_empty() {
+                warn!(
+                    "Initial build left out {} document(s)",
+                    report.failures.len()
+                );
+            }
+            initial_backlinks = report.backlinks;
+            initial_scanned = Some(report.scanned);
         }
-        Ok(_) => {}
         Err(e) => error!("Initial build failed: {e}"),
     }
 
@@ -191,9 +201,17 @@ pub async fn run_dev_server(
 
         let excludes = exclude_prefixes(&watch_cfg);
 
-        // Cache for fast incremental rebuilds
-        let mut cached_scanned = crate::book::loader::scan_vault(&watch_src, &watch_cfg).ok();
+        // Cache for fast incremental rebuilds. The initial build already
+        // walked the vault; only scan again if it failed outright.
+        let mut cached_scanned = match initial_scanned {
+            Some(scanned) => Some(scanned),
+            None => crate::book::loader::scan_vault(&watch_src, &watch_cfg).ok(),
+        };
         let mut cached_renderer = crate::book::renderer::BookRenderer::new(&watch_cfg).ok();
+        // Backlinks need the whole vault, so a single-document rebuild reuses
+        // the index from the last full build. An edit that adds or removes a
+        // link shows up on the other page at the next full rebuild.
+        let mut cached_backlinks = initial_backlinks;
 
         // Events are collected until the filesystem goes quiet, then handled as
         // one batch. Dropping events instead would silently skip rebuilds when
@@ -260,7 +278,8 @@ pub async fn run_dev_server(
                         );
                         // The build already walked the vault; reuse that scan
                         // rather than doing it a second time.
-                        cached_scanned = Some(report.scanned);
+                        cached_backlinks = report.backlinks;
+                        cached_scanned = report.scanned.into();
                         cached_renderer = crate::book::renderer::BookRenderer::new(&watch_cfg).ok();
                         let _ = watcher_tx.send(ReloadSignal::Full);
                     }
@@ -285,10 +304,16 @@ pub async fn run_dev_server(
                     abs_path,
                     rel_path,
                     &watch_out,
-                    &watch_cfg,
-                    &scanned.vault_index,
-                    scanned.workspace_config_src.as_deref(),
-                    renderer,
+                    &crate::book::RenderContext {
+                        config: &watch_cfg,
+                        vault_index: &scanned.vault_index,
+                        workspace_cfg_src: scanned.workspace_config_src.as_deref(),
+                        renderer,
+                    },
+                    cached_backlinks
+                        .get(crate::book::document::strip_doc_extension(rel_path))
+                        .map(Vec::as_slice)
+                        .unwrap_or(&[]),
                 ) {
                     Ok((written, doc_url)) => {
                         info!(

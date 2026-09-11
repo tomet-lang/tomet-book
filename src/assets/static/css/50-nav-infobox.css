@@ -249,3 +249,50 @@
   font-weight: bold;
 }
 
+
+/* ==================== BACKLINKS ==================== */
+.backlink-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.backlink-item {
+  margin: 0;
+}
+
+/* 目次の項目と同じ骨格。ここだけ別の見た目にする理由がない。 */
+.backlink-link {
+  display: block;
+  padding: 6px 8px;
+  color: var(--text-muted);
+  text-decoration: none !important;
+  border-left: 2px solid transparent;
+  transition: background 0.12s ease, border-left-color 0.12s ease, color 0.12s ease;
+}
+
+.backlink-link:hover {
+  background: var(--surface-subtle);
+  border-left-color: var(--link);
+  color: var(--link);
+}
+
+.backlink-title {
+  display: block;
+  font-size: 0.82rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* どの分類から来ているのかが、題だけより分かりやすい。 */
+.backlink-section {
+  display: block;
+  margin-top: 1px;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  opacity: 0.75;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

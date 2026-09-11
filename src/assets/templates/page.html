@@ -100,10 +100,23 @@
       <!-- 2. Backlinks Panel View -->
       <div class="pane-panel-view" id="pane-panel-links" hidden>
         <div class="pane-tab-inner">
-          <div class="toc-heading">{{ t["backlinks.heading"] }} (0)</div>
+          <div class="toc-heading">{{ t["backlinks.heading"] }} ({{ backlinks | length }})</div>
+          {% if backlinks and backlinks | length > 0 %}
+          <ul class="backlink-items">
+            {% for link in backlinks %}
+            <li class="backlink-item">
+              <a href="{{ link.url }}" class="backlink-link">
+                <span class="backlink-title">{{ link.title }}</span>
+                {% if link.section %}<span class="backlink-section">{{ link.section }}</span>{% endif %}
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
           <div class="pane-placeholder-box">
             <span class="placeholder-text">{{ t["backlinks.empty"] }}</span>
           </div>
+          {% endif %}
         </div>
       </div>
 
