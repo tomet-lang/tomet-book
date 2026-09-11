@@ -30,7 +30,7 @@ tower-http = { version = "0.5.2", features = ["fs", "cors", "trace"] }
 futures = "0.3.31"
 rayon = "1.10"
 
-# Tomet ecosystem dependencies
+#[ Tomet Ecosystem ]
 tomet-ast = { git = "https://github.com/tomet-lang/tomet.git" }
 tomet-parser = { git = "https://github.com/tomet-lang/tomet.git" }
 tomet-tree = { git = "https://github.com/tomet-lang/tomet.git" }
