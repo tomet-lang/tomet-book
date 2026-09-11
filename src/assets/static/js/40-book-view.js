@@ -60,24 +60,34 @@
 
       // ScrollSpy: the single source of truth for "which heading am I on".
       //
-      // An IntersectionObserver reports each heading as it crosses a line 80px
-      // below the top of the scroll container, and carries the rectangle with
-      // it -- so nothing here reads layout, and nothing runs while scrolling
-      // through a long section. `above` is the heading state we care about:
-      // the current heading is the last one that has passed the line.
-      const above = new Map();
+      // This reads the whole heading list on every scroll frame rather than
+      // watching for crossings with an IntersectionObserver. An observer only
+      // reports a change of intersection state, and a fast scroll carries a
+      // heading from below the trigger line to above it within one frame --
+      // never intersecting, so never reported, leaving the highlight stuck on
+      // wherever the reader used to be.
+      const HEADING_LINE = 80;
 
-      const applyCurrent = () => {
-        if (isClickScrolling) return;
+      const currentHeadingId = () => {
+        const containerTop = scrollContainer.getBoundingClientRect().top;
+        const line = containerTop + HEADING_LINE;
 
         let currentId = null;
-        for (const { id } of headingTargets) {
-          if (above.get(id)) currentId = id;
+        for (const { id, el } of headingTargets) {
+          // Headings are in document order, so the last one above the line wins
+          // and the first one below it ends the search.
+          if (el.getBoundingClientRect().top > line) break;
+          currentId = id;
         }
-        // Before the first heading has scrolled past, the first one is current.
-        if (!currentId && headingTargets.length > 0) {
-          currentId = headingTargets[0].id;
-        }
+        // Before the first heading has reached the line, it is still the one
+        // the reader is under.
+        return currentId ?? headingTargets[0]?.id ?? null;
+      };
+
+      const updateScrollSpy = () => {
+        if (isClickScrolling) return;
+
+        const currentId = currentHeadingId();
         if (!currentId) return;
 
         const active = headingTargets.find((item) => item.id === currentId);
@@ -92,26 +102,24 @@
       };
 
       // initPage() runs again on every client-side navigation and hot reload.
-      scrollContainer.__tmtSpyObserver?.disconnect();
-      const spy = new IntersectionObserver(
-        (entries) => {
-          for (const entry of entries) {
-            // rootBounds is the band below, so its top edge *is* the line.
-            const line = entry.rootBounds?.top ?? 0;
-            above.set(entry.target.id, entry.boundingClientRect.top <= line);
-          }
-          applyCurrent();
-        },
-        {
-          root: scrollContainer,
-          // Shrink the observed area to a band starting 80px down, so crossings
-          // are reported at that line rather than at the container's edge.
-          rootMargin: '-80px 0px -85% 0px',
-          threshold: 0,
-        }
-      );
-      headingTargets.forEach(({ el }) => spy.observe(el));
-      scrollContainer.__tmtSpyObserver = spy;
+      if (scrollContainer.__tmtScrollHandler) {
+        scrollContainer.removeEventListener('scroll', scrollContainer.__tmtScrollHandler);
+      }
+      let scrollTicking = false;
+      const onScroll = () => {
+        if (scrollTicking) return;
+        scrollTicking = true;
+        requestAnimationFrame(() => {
+          scrollTicking = false;
+          updateScrollSpy();
+        });
+      };
+      scrollContainer.__tmtScrollHandler = onScroll;
+      scrollContainer.addEventListener('scroll', onScroll, { passive: true });
+
+      updateScrollSpy();
+      // Images and fonts settle after first paint and move the headings.
+      setTimeout(updateScrollSpy, 80);
     }
 
     // 付箋見出し (Sticky-Tab Headings: インライン横展開アコーディオン & ScrollSpy完全同期)
@@ -150,6 +158,13 @@
         }
 
         if (!targetNode) return;
+
+        // Scrolling calls this on every frame, and the work below rewrites
+        // classes across the whole bar and scrolls it into view. If the bar
+        // already shows this heading there is nothing to do -- asking the DOM
+        // rather than remembering the last id keeps this right when a click
+        // sets the active tab directly.
+        if (targetNode.classList.contains('is-active')) return;
 
         // 2. Clear previous active/branch states
         nodes.forEach((n) => {
