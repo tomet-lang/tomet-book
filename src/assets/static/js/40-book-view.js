@@ -165,17 +165,39 @@
       if (scrollContainer.__tmtScrollHandler) {
         scrollContainer.removeEventListener('scroll', scrollContainer.__tmtScrollHandler);
       }
-      let scrollTicking = false;
+      if (scrollContainer.__tmtScrollEndHandler) {
+        scrollContainer.removeEventListener('scrollend', scrollContainer.__tmtScrollEndHandler);
+      }
+      if (scrollContainer.__tmtScrollSettleTimer) {
+        clearTimeout(scrollContainer.__tmtScrollSettleTimer);
+      }
+
+      // Sticky tabs update once the reader stops scrolling rather than on every
+      // frame while they scroll: an active heading crossing into or out of a
+      // branch opens or closes that branch's children-slot, which reflows the
+      // tabs after it. Doing that continuously during a fast scroll is what
+      // stutters on iPad; settling once per scroll gesture instead means the
+      // scroll itself never competes with that layout work for frame budget.
+      // Native `scrollend` fires exactly once at rest where it exists; older
+      // WebKit falls back to a debounce that resets on every scroll event.
+      const supportsScrollEnd = 'onscrollend' in window;
+      const onScrollSettled = () => {
+        scrollContainer.__tmtScrollSettleTimer = null;
+        updateScrollSpy();
+      };
       const onScroll = () => {
-        if (scrollTicking) return;
-        scrollTicking = true;
-        requestAnimationFrame(() => {
-          scrollTicking = false;
-          updateScrollSpy();
-        });
+        if (supportsScrollEnd) return;
+        if (scrollContainer.__tmtScrollSettleTimer) {
+          clearTimeout(scrollContainer.__tmtScrollSettleTimer);
+        }
+        scrollContainer.__tmtScrollSettleTimer = setTimeout(onScrollSettled, 120);
       };
       scrollContainer.__tmtScrollHandler = onScroll;
       scrollContainer.addEventListener('scroll', onScroll, { passive: true });
+      if (supportsScrollEnd) {
+        scrollContainer.__tmtScrollEndHandler = onScrollSettled;
+        scrollContainer.addEventListener('scrollend', onScrollSettled, { passive: true });
+      }
 
       // If the opened URL targets a section, start reading from there. Native browser
       // anchor jumping does not work automatically inside an inner scroll container.
