@@ -1,10 +1,11 @@
-@kind(index)
+@kind(doc.index)
 
 // この本の読む順。ここに並べた順と入れ子が、そのまま索引ページになる。
 // 載せなかったノートは索引に出ない (ページ自体は作られ、検索にも出る)。
 
 - @link(ref:"readme")
 - @link(ref:"what-is-tmtbook")
+- @link(ref:"doc-index")
 - @link(ref:"roadmap")
   - @link(ref:"idea")
 - @link(ref:"agents")
