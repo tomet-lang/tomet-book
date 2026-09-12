@@ -237,15 +237,26 @@
       // ever plays back an already-known number via `transform`.
       let expandDelta = [];
       function measureExpandDeltas() {
-        expandDelta = topLevelNodes.map((node) => {
-          const slot = node.querySelector(':scope > .sticky-children-slot');
-          if (!slot) return 0;
-          const collapsedWidth = node.offsetWidth;
-          node.classList.add('is-active-branch');
-          const expandedWidth = node.offsetWidth;
-          node.classList.remove('is-active-branch');
-          return expandedWidth - collapsedWidth;
+        // Every read batched together, then every write, then the second
+        // read -- not read-write-read-write per node. Reading offsetWidth
+        // right after a classList change forces the browser to run layout
+        // synchronously right there, so interleaved like that this was one
+        // forced reflow *per top-level tab* on every single navigation, not
+        // just once. A page with many top-level headings (this vault's
+        // pages routinely have eight or more) paid for that many reflows
+        // every time, which is cheap to not notice on a fast desktop GPU
+        // but very much not on a phone or a weaker laptop. Batched, it's
+        // two forced layouts total regardless of how many tabs there are.
+        const slots = topLevelNodes.map((node) => node.querySelector(':scope > .sticky-children-slot'));
+        const collapsedWidths = topLevelNodes.map((node) => node.offsetWidth);
+        topLevelNodes.forEach((node, i) => {
+          if (slots[i]) node.classList.add('is-active-branch');
         });
+        const expandedWidths = topLevelNodes.map((node) => node.offsetWidth);
+        topLevelNodes.forEach((node, i) => {
+          if (slots[i]) node.classList.remove('is-active-branch');
+        });
+        expandDelta = topLevelNodes.map((_, i) => (slots[i] ? expandedWidths[i] - collapsedWidths[i] : 0));
       }
       measureExpandDeltas();
       // Web fonts can still land after this and reflow the text a size
