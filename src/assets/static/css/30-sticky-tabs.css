@@ -419,16 +419,27 @@
   white-space: nowrap;
   pointer-events: none;
   contain: layout;
-  /* Non-overshooting easing: cubic-bezier with control points exceeding 1 causes the peek
-     to momentarily dip below target width and pop back out during collapse. */
-  transition: max-width 0.28s cubic-bezier(0.2, 0, 0, 1),
-              margin 0.2s cubic-bezier(0.2, 0, 0, 1);
   /* Tucked slightly beneath parent to appear stacked behind. */
   margin: 0 0 0 -6px;
   /* Isolated stacking context. Child tabs also use .sticky-tab-btn (z-index: 1),
      so they must be contained here to avoid rendering in front of the parent. */
   position: relative;
   z-index: 0;
+}
+
+/* A browser with View Transitions (see setActiveHeading in 40-book-view.js)
+   already animates this open/close by capturing before/after snapshots of
+   each named .sticky-tab-node and interpolating the difference on the
+   compositor -- the layout pass happens once, not once per frame. Animating
+   max-width here too would just double up with that. Browsers without it
+   fall back to animating it directly, same as before. */
+@supports not (view-transition-name: none) {
+  .sticky-children-slot {
+    /* Non-overshooting easing: cubic-bezier with control points exceeding 1 causes the peek
+       to momentarily dip below target width and pop back out during collapse. */
+    transition: max-width 0.28s cubic-bezier(0.2, 0, 0, 1),
+                margin 0.2s cubic-bezier(0.2, 0, 0, 1);
+  }
 }
 
 /* While collapsed, contract slot height to match child tab height.

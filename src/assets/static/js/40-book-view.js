@@ -222,6 +222,26 @@
       const nodes = Array.from(tabsBar.querySelectorAll('.sticky-tab-node'));
       if (nodes.length === 0) return null;
 
+      // Named so a browser with View Transitions can track each tab's own
+      // position and size across an accordion open/close -- see
+      // setActiveHeading below -- instead of only the layout-affecting CSS
+      // transition every browser falls back to. Harmless on browsers without
+      // support: an unused CSS property.
+      nodes.forEach((node, i) => {
+        node.style.viewTransitionName = `tmt-sticky-tab-${i}`;
+      });
+
+      // The very first activation below runs synchronously during setup,
+      // which -- on a client-side navigation -- is itself already running
+      // inside the router's own document.startViewTransition() callback
+      // (80-router.js). Starting a second, nested one there would abort that
+      // outer transition instead of layering on top of it. Waiting a tick
+      // guarantees we're clear of it before this one is allowed to animate.
+      let readyForTransitions = false;
+      setTimeout(() => {
+        readyForTransitions = true;
+      }, 0);
+
       function scrollToHeading(id) {
         if (!id || !scrollContainer) return;
         const target = document.getElementById(id);
@@ -258,28 +278,51 @@
         // sets the active tab directly.
         if (targetNode.classList.contains('is-active')) return;
 
-        // 2. Clear previous active/branch states
-        nodes.forEach((n) => {
-          n.classList.remove('is-active', 'is-active-branch');
-        });
-        tabsBar.querySelectorAll('.sticky-tab-btn.is-active').forEach((btn) => {
-          btn.classList.remove('is-active');
-        });
+        let directBtn = null;
 
-        // 3. Mark current target as active
-        targetNode.classList.add('is-active');
-        const directBtn = Array.from(targetNode.children).find((el) => el.classList.contains('sticky-tab-btn'));
-        if (directBtn) {
-          directBtn.classList.add('is-active');
-          // Smooth scroll the tab bar horizontally to keep active tab in view
-          directBtn.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
-        }
+        const applyActiveState = () => {
+          // 2. Clear previous active/branch states
+          nodes.forEach((n) => {
+            n.classList.remove('is-active', 'is-active-branch');
+          });
+          tabsBar.querySelectorAll('.sticky-tab-btn.is-active').forEach((btn) => {
+            btn.classList.remove('is-active');
+          });
 
-        // 4. Mark all ancestors as is-active-branch so their children slots expand
-        let parent = targetNode.parentElement ? targetNode.parentElement.closest('.sticky-tab-node') : null;
-        while (parent) {
-          parent.classList.add('is-active-branch');
-          parent = parent.parentElement ? parent.parentElement.closest('.sticky-tab-node') : null;
+          // 3. Mark current target as active
+          targetNode.classList.add('is-active');
+          directBtn = Array.from(targetNode.children).find((el) => el.classList.contains('sticky-tab-btn'));
+          if (directBtn) directBtn.classList.add('is-active');
+
+          // 4. Mark all ancestors as is-active-branch so their children slots expand
+          let parent = targetNode.parentElement ? targetNode.parentElement.closest('.sticky-tab-node') : null;
+          while (parent) {
+            parent.classList.add('is-active-branch');
+            parent = parent.parentElement ? parent.parentElement.closest('.sticky-tab-node') : null;
+          }
+        };
+
+        // Smooth-scroll the tab bar horizontally to keep the active tab in
+        // view once it's settled -- doing it while a view transition is
+        // still animating would desync the transition's snapshot overlay
+        // from the bar moving underneath it.
+        const revealActiveTab = () => {
+          directBtn?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
+        };
+
+        // The accordion opening or closing moves every tab after it -- a
+        // named element lets the browser capture that as a before/after
+        // layout pair and interpolate the difference on the compositor,
+        // computing the actual layout once instead of once per animation
+        // frame the way animating `max-width` directly does (still the
+        // fallback below and in 30-sticky-tabs.css, for a browser without
+        // this or while one navigation's transition is still in flight).
+        if (readyForTransitions && document.startViewTransition) {
+          const transition = document.startViewTransition(applyActiveState);
+          transition.finished.then(revealActiveTab, revealActiveTab);
+        } else {
+          applyActiveState();
+          revealActiveTab();
         }
       }
 
