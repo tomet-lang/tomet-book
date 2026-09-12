@@ -8,6 +8,7 @@
       toc: t('pane.toc'),
       links: t('pane.links'),
       index: t('pane.index'),
+      lookup: t('pane.lookup'),
       graph: t('pane.graph'),
     };
 

@@ -14,12 +14,10 @@
 {% macro edit_menu(source_path, t) %}
 <div class="edit-dropdown">
   <button type="button" class="hero-action-btn btn-edit-open" title="{{ t["edit.editor"] }}" aria-label="{{ t["edit.editor"] }}">
-    <svg class="icon-edit" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <svg class="icon-edit" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <path d="M12 20h9"></path>
       <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
     </svg>
-    <span class="btn-edit-text">{{ t["edit.open"] }}</span>
-    <span class="btn-edit-arrow">▾</span>
   </button>
   <div class="edit-dropdown-menu" hidden>
     <a href="vscode://file{{ source_path }}" class="edit-dropdown-item" title="{{ t["edit.vscode"] }}">

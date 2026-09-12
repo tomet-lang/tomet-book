@@ -11,7 +11,10 @@ use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsStr;
 use std::fs;
+use std::io::{IsTerminal, Write};
 use std::path::Path;
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::time::Instant;
 use tracing::{info, warn};
 use walkdir::WalkDir;
 
@@ -151,9 +154,7 @@ pub fn render_single_document(
         cx.workspace_cfg_src,
         cx.unpublished,
     )?;
-    let html = cx
-        .renderer
-        .render_page(&processed, backlinks, cx.book_index)?;
+    let html = cx.renderer.render_page(&processed, backlinks, cx.book_index)?;
     let out_html_path = out_dir
         .join(config.build.wiki_out_rel())
         .join(&processed.slug)
@@ -398,7 +399,12 @@ fn remove_empty_dirs(root: &Path) {
     }
 }
 
-pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result<BuildReport> {
+pub fn build_book(
+    src_dir: &Path,
+    out_dir: &Path,
+    config: &BookConfig,
+    is_dev: bool,
+) -> Result<BuildReport> {
     info!(
         "Building book from {} to {}",
         src_dir.display(),
@@ -438,7 +444,7 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
     }
 
     // 4. Initialize MiniJinja renderer
-    let renderer = BookRenderer::new(config)?;
+    let renderer = BookRenderer::new(config, is_dev)?;
 
     // Pages live where the links point, so both come from `url_prefix`.
     let wiki_rel = config.build.wiki_out_rel();
@@ -453,6 +459,7 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
     // Read every document once, and keep what came back: the `@kind` decides
     // what the site publishes, and that has to be settled before any link is
     // resolved, since a link to a document left out has to come out broken.
+    info!("Parsing {} document(s)...", scanned.doc_files.len());
     let parsed: Vec<Result<(tomet_ast::Document, Option<String>), DocFailure>> = scanned
         .doc_files
         .par_iter()
@@ -489,6 +496,7 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
         );
     }
 
+    info!("Processing {} document(s)...", scanned.doc_files.len() - unpublished.len());
     let processed: Vec<Result<ProcessedDoc, DocFailure>> = parsed
         .into_par_iter()
         .zip(scanned.doc_files.par_iter())
@@ -538,7 +546,46 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
         None => Vec::new(),
     };
 
+    // The sidebar's A-Z/tag lookup needs every page regardless of whether the
+    // vault has a written index at all, so it is built from the map directly
+    // rather than from `book_index` (empty) or `processed_entries` (not
+    // settled until after the render pass below).
+    //
+    // Written once here as its own static file -- exactly how book.css and
+    // book.js already work -- rather than inlined into every page's own
+    // context. Every page used to carry its own full copy of this (identical
+    // on every page, vault-wide) list rendered straight into its HTML: fine
+    // on a small vault, but on a large one it meant paying to serialize and
+    // re-embed the whole thing once per page, output size growing with the
+    // *square* of the page count. 39-lookup-pane.js fetches this instead.
+    let mut all_entries: Vec<EntrySummary> = entries_by_slug.values().cloned().collect();
+    all_entries.sort_by(|a, b| a.title.cmp(&b.title).then_with(|| a.url.cmp(&b.url)));
+    write_if_changed(
+        &out_dir.join("all-entries.json"),
+        &serde_json::to_string(&all_entries)?,
+    )?;
+
     // 7. Render and write.
+    info!("Rendering {} document(s)...", processed.len());
+    // Reported roughly every 2 seconds of wall time rather than at some
+    // fraction of the total count: a fixed fraction (e.g. every 5%) means a
+    // handful of documents on a small vault, but on a 20,000-document one it
+    // stretched to a full minute of silence between lines -- which is
+    // exactly the "did it hang?" feeling this was meant to fix. A shared
+    // atomic clock (rather than a per-thread timer, or a Mutex every
+    // document) keeps at most one of rayon's worker threads actually
+    // printing at a time, however many are rendering in parallel.
+    //
+    // In an interactive terminal each tick overwrites the last one instead
+    // of appending a new log line -- a few thousand lines of "N/M rendered"
+    // is not progress, it's scrollback. Piped to a file or CI, `\r` is just
+    // noise with nothing to overwrite, so that case keeps one real line per
+    // tick instead.
+    let live_progress = std::io::stdout().is_terminal();
+    let rendered_count = AtomicUsize::new(0);
+    let last_progress_log_ms = AtomicU64::new(0);
+    let render_start = Instant::now();
+    let total_to_render = processed.len();
     let results: Vec<DocOutcome> = processed
         .par_iter()
         .map(|result| {
@@ -568,6 +615,33 @@ pub fn build_book(src_dir: &Path, out_dir: &Path, config: &BookConfig) -> Result
                 Ok(w) => w,
                 Err(e) => return fail(format!("could not write {}: {e}", out_html_path.display())),
             };
+
+            let done = rendered_count.fetch_add(1, Ordering::Relaxed) + 1;
+            if done == total_to_render {
+                // Always shown, win or lose the race below, so the log ends
+                // on a definite "every page accounted for" line.
+                if live_progress {
+                    print!("\r  ...{done}/{total_to_render} rendered\x1b[K\n");
+                    let _ = std::io::stdout().flush();
+                } else {
+                    info!("  ...{done}/{total_to_render} rendered");
+                }
+            } else {
+                let elapsed_ms = render_start.elapsed().as_millis() as u64;
+                let last = last_progress_log_ms.load(Ordering::Relaxed);
+                if elapsed_ms.saturating_sub(last) >= 2000
+                    && last_progress_log_ms
+                        .compare_exchange(last, elapsed_ms, Ordering::Relaxed, Ordering::Relaxed)
+                        .is_ok()
+                {
+                    if live_progress {
+                        print!("\r  ...{done}/{total_to_render} rendered\x1b[K");
+                        let _ = std::io::stdout().flush();
+                    } else {
+                        info!("  ...{done}/{total_to_render} rendered");
+                    }
+                }
+            }
 
             DocOutcome::Rendered {
                 entry: EntrySummary {

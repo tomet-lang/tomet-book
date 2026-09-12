@@ -699,6 +699,7 @@
     // calls back into it), so they live in their own files -- 36-nav-pane.js,
     // 37-data-pane.js, 38-recent-notes.js -- and this just wires them in.
     T.setupNavPane();
+    T.setupLookupPane();
     T.bindDataPaneToggle();
 
     const container = document.getElementById('wiki-book-view');

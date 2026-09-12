@@ -154,6 +154,9 @@ html[data-view="classic"] .classic-view {
   height: 41px;
   background: #dfe3e8; /* Darker header background to distinctly separate from sticky tabs */
   border-bottom: 1px solid var(--border);
+  /* Shelf-edge ledge: a hairline plus a soft shadow falling onto the panel
+     below reads as a physical shelf lip, without a wood texture. */
+  box-shadow: 0 2px 3px -2px rgba(0, 0, 0, 0.18);
   padding: 0 10px;
   display: flex;
   align-items: center;
@@ -165,6 +168,8 @@ html[data-view="classic"] .classic-view {
   user-select: none;
   flex-shrink: 0;
   box-sizing: border-box;
+  position: relative;
+  z-index: 1;
 }
 
 [data-theme="dark"] .pane-header {

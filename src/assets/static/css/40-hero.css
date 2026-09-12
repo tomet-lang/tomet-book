@@ -193,33 +193,23 @@ a.tm-ref-unresolved {
 .hero-action-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
-  font-size: 0.72rem;
-  font-weight: 500;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
   color: var(--text-muted);
   background: var(--surface);
   border: 1px solid var(--border);
+  border-radius: 50%;
   cursor: pointer;
-  border-radius: 0;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-  line-height: 1.2;
+  line-height: 1;
 }
 
 .hero-action-btn:hover {
   color: var(--link);
   border-color: var(--link);
   background: var(--surface-subtle);
-}
-
-.hero-action-btn .btn-edit-arrow {
-  font-size: 0.65rem;
-  color: var(--text-muted);
-  transition: transform 0.15s ease;
-}
-
-.edit-dropdown.is-open .hero-action-btn .btn-edit-arrow {
-  transform: rotate(180deg);
 }
 
 .edit-dropdown-menu {

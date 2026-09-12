@@ -10,6 +10,21 @@
   --link: #3366cc;
   --link-visited: #6b4ba1;
   --unresolved: #ba0000;
+  /* Book-spine accents: cycled across index entries so a list of notes reads
+     as differently-bound volumes rather than one repeated card. Muted,
+     cloth-cover hues -- not saturated enough to compete with --link. */
+  --spine-1: #6b4c35;
+  --spine-2: #2f6b52;
+  --spine-3: #6b2f3f;
+  --spine-4: #2f4f6b;
+  --spine-5: #6b5a2f;
+  --spine-6: #4a3f6b;
+  /* Recent-notes shelf: the books need to read as brighter than the shelf
+     they sit in (see .recent-items/.recent-link, 50-nav-infobox.css), and
+     "brighter" flips which existing token qualifies between themes, so it
+     gets its own variable rather than reusing --bg or --surface-subtle
+     directly. */
+  --recent-book-bg: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -24,6 +39,13 @@
     --link: #6da8e8;
     --link-visited: #b388ff;
     --unresolved: #ff6e6e;
+    --spine-1: #b98a63;
+    --spine-2: #5fb08c;
+    --spine-3: #c17a8a;
+    --spine-4: #7ea8d8;
+    --spine-5: #d1b56a;
+    --spine-6: #a89bd8;
+    --recent-book-bg: #2f3236;
   }
 }
 
@@ -38,6 +60,13 @@
   --link: #6da8e8;
   --link-visited: #b388ff;
   --unresolved: #ff6e6e;
+  --spine-1: #b98a63;
+  --spine-2: #5fb08c;
+  --spine-3: #c17a8a;
+  --spine-4: #7ea8d8;
+  --spine-5: #d1b56a;
+  --spine-6: #a89bd8;
+  --recent-book-bg: #2f3236;
 }
 
 :root[data-theme="light"] {
@@ -51,6 +80,13 @@
   --link: #3366cc;
   --link-visited: #6b4ba1;
   --unresolved: #ba0000;
+  --spine-1: #6b4c35;
+  --spine-2: #2f6b52;
+  --spine-3: #6b2f3f;
+  --spine-4: #2f4f6b;
+  --spine-5: #6b5a2f;
+  --spine-6: #4a3f6b;
+  --recent-book-bg: #ffffff;
 }
 
 *, *::before, *::after {

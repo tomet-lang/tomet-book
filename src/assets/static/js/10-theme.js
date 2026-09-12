@@ -44,5 +44,5 @@
     syncThemeIcons();
   }
 
-  Object.assign(T, { setupThemeToggle });
+  Object.assign(T, { setupThemeToggle, getEffectiveTheme });
 })();

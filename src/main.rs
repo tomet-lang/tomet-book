@@ -27,7 +27,7 @@ async fn main() -> Result<()> {
                 .context("Failed to find source directory")?;
             let out_dir = dest.unwrap_or_else(|| src_dir.join(&config.book.dest));
 
-            let report = book::build_book(&src_dir, &out_dir, &config)?;
+            let report = book::build_book(&src_dir, &out_dir, &config, false)?;
 
             if strict && !report.failures.is_empty() {
                 for failure in &report.failures {

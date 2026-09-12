@@ -9,6 +9,12 @@ pub struct BookRenderer<'a> {
     env: Environment<'a>,
     config: &'a BookConfig,
     rail_letters: Vec<String>,
+    /// Whether this render is happening under `tmtbook serve` rather than
+    /// `tmtbook build`. Gates the edit-in-editor button: `source_path` is an
+    /// absolute path on whoever's machine ran the build, so it's only ever
+    /// useful (and only safe to publish) on the machine currently editing
+    /// the vault, not in output meant to be hosted.
+    is_dev: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -37,7 +43,7 @@ pub struct EntrySummary {
 }
 
 impl<'a> BookRenderer<'a> {
-    pub fn new(config: &'a BookConfig) -> Result<Self> {
+    pub fn new(config: &'a BookConfig, is_dev: bool) -> Result<Self> {
         let mut env = Environment::new();
 
         env.add_template("base.html", include_str!("../assets/templates/base.html"))
@@ -64,6 +70,7 @@ impl<'a> BookRenderer<'a> {
             env,
             config,
             rail_letters,
+            is_dev,
         })
     }
 
@@ -101,6 +108,7 @@ impl<'a> BookRenderer<'a> {
             body_html => &doc.body_html,
             backlinks => backlinks,
             book_index => book_index,
+            is_dev => self.is_dev,
             // So the index can mark where the reader is standing.
             page_url => format!("{}/{}", self.config.build.clean_url_prefix(), doc.slug),
         };

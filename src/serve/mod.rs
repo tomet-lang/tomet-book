@@ -160,7 +160,7 @@ pub async fn run_dev_server(
     let mut initial_unpublished: std::collections::HashSet<String> =
         std::collections::HashSet::new();
     let mut initial_book_index: Vec<crate::book::renderer::EntrySummary> = Vec::new();
-    match build_book(&src_dir, &out_dir, &config) {
+    match build_book(&src_dir, &out_dir, &config, true) {
         Ok(report) => {
             if !report.failures.is_empty() {
                 warn!(
@@ -215,7 +215,7 @@ pub async fn run_dev_server(
             Some(scanned) => Some(scanned),
             None => crate::book::loader::scan_vault(&watch_src, &watch_cfg).ok(),
         };
-        let mut cached_renderer = crate::book::renderer::BookRenderer::new(&watch_cfg).ok();
+        let mut cached_renderer = crate::book::renderer::BookRenderer::new(&watch_cfg, true).ok();
         // Backlinks need the whole vault, so a single-document rebuild reuses
         // the index from the last full build. An edit that adds or removes a
         // link shows up on the other page at the next full rebuild.
@@ -276,7 +276,7 @@ pub async fn run_dev_server(
                 let mut dev_cfg = watch_cfg.clone();
                 dev_cfg.build.pagefind = false;
 
-                match build_book(&watch_src, &watch_out, &dev_cfg) {
+                match build_book(&watch_src, &watch_out, &dev_cfg, true) {
                     Ok(report) => {
                         info!(
                             "Full rebuild complete in {:?} ({} pages, {} written, {} pruned, {} failed), triggering reload",
@@ -292,7 +292,7 @@ pub async fn run_dev_server(
                         cached_unpublished = report.unpublished;
                         cached_book_index = report.book_index;
                         cached_scanned = report.scanned.into();
-                        cached_renderer = crate::book::renderer::BookRenderer::new(&watch_cfg).ok();
+                        cached_renderer = crate::book::renderer::BookRenderer::new(&watch_cfg, true).ok();
                         let _ = watcher_tx.send(ReloadSignal::Full);
                     }
                     Err(e) => warn!("Rebuild error: {e}"),
@@ -348,7 +348,7 @@ pub async fn run_dev_server(
                         info!("{rel_path} is not published; rebuilding in full");
                         let mut dev_cfg = watch_cfg.clone();
                         dev_cfg.build.pagefind = false;
-                        match build_book(&watch_src, &watch_out, &dev_cfg) {
+                        match build_book(&watch_src, &watch_out, &dev_cfg, true) {
                             Ok(report) => {
                                 cached_backlinks = report.backlinks;
                                 cached_unpublished = report.unpublished;

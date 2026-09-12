@@ -2,6 +2,8 @@
 .nav-breadcrumbs {
   padding: 10px 14px;
   border-bottom: 1px solid var(--border-subtle);
+  box-shadow: 0 2px 3px -2px rgba(0, 0, 0, 0.12);
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -68,6 +70,8 @@
 .pane-nav-section {
   padding: 12px 14px;
   border-top: 1px solid var(--border-subtle);
+  box-shadow: 0 2px 3px -2px rgba(0, 0, 0, 0.12);
+  position: relative;
 }
 .pane-placeholder-box {
   padding: 10px 12px;
@@ -88,27 +92,139 @@
   font-size: 1.1rem;
 }
 
+/* Pinned below .pane-scroll (see page.html) rather than living inside one
+   tab's panel view, so it shows under whatever the rail has open. */
 .pane-recent {
-  padding: 12px 14px;
+  flex-shrink: 0;
+  padding: 0;
   border-top: 1px solid var(--border-subtle);
+  box-shadow: 0 2px 3px -2px rgba(0, 0, 0, 0.12);
+  position: relative;
 }
-.recent-link {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 6px;
-  font-size: 0.8rem;
+/* Back to the sidebar's own surface tone (not the sticky-tabs bar's) --
+   only the shelf below borrows that tone, not this heading. The downward
+   shadow follows this sidebar's own ledge convention, the same one
+   .pane-header/.pane-nav-section/.nav-breadcrumbs all use to mark a
+   section break. */
+.pane-recent .toc-heading {
+  margin: 0;
+  padding: 6px 10px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 2px 3px -2px rgba(0, 0, 0, 0.18);
+  position: relative;
+  z-index: 1;
+}
+/* A quiet direction cue rather than a label: older notes sit further left
+   (the strip reads right to left, newest first), the dot just closes it off. */
+.recent-heading-dir {
+  margin-left: 6px;
   color: var(--text-muted);
-  text-decoration: none !important;
-  transition: background 0.12s ease, color 0.12s ease;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  opacity: 0.7;
 }
-.recent-link:hover {
-  color: var(--link);
-  background: var(--surface-subtle);
+
+/* Right-to-left so the newest note sits closest to the reading start (the
+   heading, above) and the strip's default scroll position already shows it
+   -- `direction: rtl` gets both the visual order and the scroll anchor for
+   free, rather than reversing the list in JS.
+   `align-items: flex-end` grounds every spine to a shared bottom edge --
+   their heights (from title length, in JS) vary above that edge the way
+   real book spines do. */
+.recent-items {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  direction: rtl;
+  gap: 1px; /* whole pixel: a fractional value here rounds inconsistently
+               between gaps once laid out at different cumulative offsets
+               and painted to the physical pixel grid */
+  overflow-x: hidden;
+  overflow-y: hidden;
+  padding: 10px 8px 0;
+  /* Same tone and flat, shadow-less treatment as the sticky-tabs bar
+     (.pane-content-header) and its heading above -- the shelf reads as
+     more of that same furniture, not a separate surface with its own
+     simulated depth. */
+  background: #dfe3e8;
 }
-.recent-link.is-current {
-  font-weight: 600;
+[data-theme="dark"] .recent-items {
+  background: #16191d;
+}
+.recent-items > li {
+  flex: 0 0 auto;
+  direction: ltr;
+}
+/* The current page's li is first in DOM, which in this RTL row puts it at
+   the visual right edge with exactly one neighbor, on its physical left
+   side. A little extra room there -- on top of the regular 1px gap, for
+   ~5px total -- sets it apart from the rest of the stack instead of
+   sitting flush against it. Physical margin-left, not margin-inline-end:
+   this li has its own direction: ltr (above, to keep its content normal),
+   and inline-end resolves against an element's *own* direction -- so
+   inline-end here would mean margin-right, the wrong (outer) edge. */
+.recent-items > li:has(.recent-link.is-current) {
+  margin-left: 4px;
+}
+
+/* Same card language as .book-index-link (BOOK INDEX section, above): a
+   squared-off band on a plain surface. No per-note accent color -- every
+   spine's top edge is the same neutral tone as its own border, so the shelf
+   reads as a set of plain, uncolored volumes and the current page (below)
+   is what actually stands out. */
+.recent-link,
+.recent-items .recent-link:visited {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 34px;
+  height: 160px; /* fallback; 38-recent-notes.js sets each spine's own height inline */
+  padding: 8px 4px 6px;
   color: var(--text);
+  text-decoration: none !important;
+  background: var(--recent-book-bg);
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--border);
+  /* Same shadow as .sticky-edge-btn (30-sticky-tabs.css) -- the app's one
+     other small raised element sitting on this same #dfe3e8/#16191d
+     furniture tone -- rather than a shadow invented just for this. */
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.13);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, color 0.12s ease;
+}
+[data-theme="dark"] .recent-link,
+[data-theme="dark"] .recent-items .recent-link:visited {
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
+}
+.recent-title {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-height: 100%;
+  font-size: 0.78rem;
+}
+.recent-link:hover,
+.recent-items .recent-link:visited:hover {
+  z-index: 1;
+  color: var(--link);
+  transform: translateY(-4px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+[data-theme="dark"] .recent-link:hover,
+[data-theme="dark"] .recent-items .recent-link:visited:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+}
+/* The one book actually being read: taller (JS adds a fixed bonus on top of
+   its title-length height) and a bit wider, so it reads as a bigger volume
+   at a glance rather than something you have to notice is tinted. */
+.recent-link.is-current {
+  width: 42px;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--link) 14%, var(--recent-book-bg));
+  border-top-color: var(--link-visited);
 }
 
 /* ==================== INFOBOX (DATA PROFILE) ==================== */
@@ -298,16 +414,38 @@
 }
 
 /* ==================== BOOK INDEX (WRITTEN TOC) ==================== */
+/* Top-level entries render as a stack of obi (帯) -- the printed band a book
+   ships wrapped in, not the cover itself. A flat band reads clearly at this
+   size and has natural room for a blurb or thumbnail later. Bands overlap
+   like a pile set down one after another, each still showing a full band's
+   worth of the last one -- not just a sliver -- so nothing feels cramped. */
+#pane-panel-index .pane-tab-inner {
+  padding: 10px 10px 26px;
+}
+
 .book-index-items {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
+.book-index-items > .book-index-item {
+  position: relative;
+}
+.book-index-items > .book-index-item + .book-index-item {
+  margin-top: -14px;
+}
+/* A book with sub-chapters keeps its nested list fully visible beneath it --
+   the next band in the pile starts fresh below that, not on top of it. */
+.book-index-items > .book-index-item:has(> .book-index-items) + .book-index-item {
+  margin-top: 0;
+}
+
 /* Nesting uses border lines instead of heavy indentation to show parent-child hierarchy,
    preventing deeply nested items from running out of reading width. */
 .book-index-items .book-index-items {
   margin-left: 7px;
+  margin-top: 8px;
   padding-left: 7px;
   border-left: 1px solid var(--border-subtle);
 }
@@ -317,29 +455,169 @@
 }
 
 .book-index-link {
-  display: block;
-  padding: 5px 8px;
-  font-size: 0.82rem;
-  color: var(--text-muted);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 13px 14px 22px;
+  color: var(--text);
   text-decoration: none !important;
-  border-left: 2px solid transparent;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--link);
+  border-radius: 3px 3px 2px 2px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, color 0.12s ease;
+}
+
+.book-index-title {
+  font-family: Georgia, 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.25;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  transition: background 0.12s ease, border-left-color 0.12s ease, color 0.12s ease;
 }
 
-.book-index-link:hover {
-  background: var(--surface-subtle);
-  border-left-color: var(--link);
+/* Section label, when an entry carries one -- a second, quieter line under
+   the title rather than the title-adjacent parenthetical the catalog used
+   before, since a spine only has room for one line of running text. */
+.book-index-meta {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Several entries side by side only reads as a shelf if the books differ --
+   cycle the spine color across siblings instead of repeating --link. The
+   currently-read page (.is-here) keeps its own tinted styling below. */
+.book-index-item:nth-child(6n+1) > .book-index-link:not(.is-here) { border-top-color: var(--spine-1); }
+.book-index-item:nth-child(6n+2) > .book-index-link:not(.is-here) { border-top-color: var(--spine-2); }
+.book-index-item:nth-child(6n+3) > .book-index-link:not(.is-here) { border-top-color: var(--spine-3); }
+.book-index-item:nth-child(6n+4) > .book-index-link:not(.is-here) { border-top-color: var(--spine-4); }
+.book-index-item:nth-child(6n+5) > .book-index-link:not(.is-here) { border-top-color: var(--spine-5); }
+.book-index-item:nth-child(6n+6) > .book-index-link:not(.is-here) { border-top-color: var(--spine-6); }
+
+/* ==================== CATALOG SHELF (index.html entries) ==================== */
+/* Same band styling as the sidebar's written index, but the catalog lists
+   every note in the vault, so the top level fans out into a shelf row
+   instead of piling into a single stack -- there just isn't a "here" to
+   read top-to-bottom toward. Nested children (a written index still nests)
+   keep the normal piled-stack behavior underneath their parent. */
+.book-index-items.is-shelf {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 16px 14px;
+}
+.book-index-items.is-shelf > .book-index-item {
+  margin-top: 0;
+}
+
+/* Hovering (or keyboard focus) draws that one band out of the pile. Since a
+   band is a self-contained rectangle -- not a sliver of a hidden cover --
+   there's nothing awkward to expose underneath it. */
+.book-index-link:hover,
+.book-index-link:focus-visible {
+  z-index: 5;
+  color: var(--link);
+  transform: translateY(-6px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
+}
+
+/* Currently read page: a bookmark ribbon and a tinted band, left in its
+   place in the pile rather than pulled forward -- lifting it would only be
+   noteworthy if something were hidden beneath, and nothing is. */
+.book-index-link.is-here {
+  background: color-mix(in srgb, var(--link) 14%, var(--surface-subtle));
+  border-top-color: var(--link-visited);
+}
+.book-index-link.is-here::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  right: 10px;
+  width: 10px;
+  height: 14px;
+  background: var(--link-visited);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%);
+}
+
+/* ==================== LOOKUP (A-Z / TAG BROWSE + FILTER) ==================== */
+.lookup-controls {
+  padding: 10px 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  box-shadow: 0 2px 3px -2px rgba(0, 0, 0, 0.12);
+  position: relative;
+}
+
+.lookup-filter-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  font-size: 0.8rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0;
+}
+.lookup-filter-input:focus {
+  outline: none;
+  border-color: var(--link);
+}
+
+.lookup-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.lookup-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  font-size: 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.lookup-tag-chip:hover {
+  border-color: var(--link);
   color: var(--link);
 }
-
-/* Currently read page. Since the index reflects the entire book, highlighting current location
-   keeps readers oriented. */
-.book-index-link.is-here {
-  background: var(--surface-subtle);
-  border-left-color: var(--link);
-  color: var(--text);
+.lookup-tag-chip.is-active {
+  background: var(--link);
+  border-color: var(--link);
+  color: #ffffff;
   font-weight: 600;
+}
+
+.lookup-results {
+  padding: 10px 10px 26px;
+}
+
+/* A letter/kana heading over each run of the A-Z index -- the shelf-edge
+   ledge from the pane header, scaled down to mark a run rather than a pane. */
+.lookup-group-heading {
+  font-size: 0.72rem;
+  font-weight: bold;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  margin-top: 14px;
+  padding: 8px 4px 5px;
+  border-bottom: 1px solid var(--border-subtle);
+  box-shadow: 0 2px 3px -2px rgba(0, 0, 0, 0.1);
+  margin-bottom: 8px;
+}
+.lookup-group-heading:first-child {
+  margin-top: 0;
 }

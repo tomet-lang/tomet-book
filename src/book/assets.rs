@@ -34,6 +34,7 @@ pub const BOOK_JS: &str = concat!(
     include_str!("../assets/static/js/36-nav-pane.js"),
     include_str!("../assets/static/js/37-data-pane.js"),
     include_str!("../assets/static/js/38-recent-notes.js"),
+    include_str!("../assets/static/js/39-lookup-pane.js"),
     include_str!("../assets/static/js/40-book-view.js"),
     include_str!("../assets/static/js/50-keyboard.js"),
     include_str!("../assets/static/js/60-search.js"),

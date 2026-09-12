@@ -1,14 +1,18 @@
 {% extends "base.html" %}
 
-{# A written index nests; a generated one never does. One macro serves both. #}
+{# A written index nests; a generated one never does. One macro serves both.
+   Renders with the same book-index-* classes as the sidebar's written index
+   (see page.html) so a note reads as a book here too -- the top level just
+   fans out into a shelf row instead of piling into a stack (see .is-shelf
+   in 50-nav-infobox.css). #}
 {% macro entry_list(items, top) %}
-<ul style="list-style: square; padding-left: 20px; margin: {% if top %}0{% else %}4px 0 2px 0{% endif %};">
+<ul class="book-index-items{% if top %} is-shelf{% endif %}">
   {% for entry in items %}
-  <li style="margin: 6px 0;">
-    <a href="{{ entry.url }}">{{ entry.title }}</a>
-    {% if entry.section %}
-    <span style="color: var(--text-muted); font-size: 0.85em; margin-left: 8px;">({{ entry.section }})</span>
-    {% endif %}
+  <li class="book-index-item">
+    <a href="{{ entry.url }}" class="book-index-link">
+      <span class="book-index-title">{{ entry.title }}</span>
+      {% if entry.section %}<span class="book-index-meta">{{ entry.section }}</span>{% endif %}
+    </a>
     {% if entry.children %}{{ entry_list(entry.children, false) }}{% endif %}
   </li>
   {% endfor %}

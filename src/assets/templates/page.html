@@ -6,7 +6,9 @@
 <ul class="book-index-items">
   {% for entry in items %}
   <li class="book-index-item">
-    <a href="{{ entry.url }}" class="book-index-link{% if entry.url == here %} is-here{% endif %}"{% if entry.url == here %} aria-current="page"{% endif %}>{{ entry.title }}</a>
+    <a href="{{ entry.url }}" class="book-index-link{% if entry.url == here %} is-here{% endif %}"{% if entry.url == here %} aria-current="page"{% endif %}>
+      <span class="book-index-title">{{ entry.title }}</span>
+    </a>
     {% if entry.children %}{{ index_list(entry.children, here) }}{% endif %}
   </li>
   {% endfor %}
@@ -47,6 +49,11 @@
           {% for ch in t["pane.index"] %}<span>{{ ch }}</span>{% endfor %}
         </span>
       </button>
+      <button type="button" class="rail-tab rail-tab-nav" id="btn-rail-lookup" data-panel="lookup" title="{{ t["pane.lookup"] }}" aria-label="{{ t["pane.lookup"] }}">
+        <span class="rail-letters">
+          {% for ch in t["pane.lookup"] %}<span>{{ ch }}</span>{% endfor %}
+        </span>
+      </button>
       <button type="button" class="rail-tab rail-tab-nav" id="btn-rail-graph" data-panel="graph" title="{{ t["pane.graph"] }}" aria-label="{{ t["pane.graph"] }}">
         <span class="rail-letters">
           {% for ch in t["pane.graph"] %}<span>{{ ch }}</span>{% endfor %}
@@ -76,6 +83,15 @@
   </nav>
 
   <div class="book-view" id="wiki-book-view">
+
+  <!-- The vault-wide entry list lives in its own /all-entries.json (written
+       once per build, see build_book in mod.rs) and is fetched by
+       39-lookup-pane.js -- not inlined here, since every page inlining the
+       same whole-vault list once made output size grow with the square of
+       the page count. page_url is cheap (one string) and stays inline. -->
+  <script>
+    window.tmtPageUrl = {{ page_url | tojson }};
+  </script>
 
   <!-- Pane 1: navigation and tools -->
   <aside class="book-pane pane-nav" id="pane-nav" data-pagefind-ignore>
@@ -108,11 +124,6 @@
           </ul>
         </div>
         {% endif %}
-
-        <div class="pane-recent" id="pane-recent-section" hidden>
-          <div class="toc-heading">{{ t["recent.heading"] }}</div>
-          <ul class="recent-items" id="pane-recent-list"></ul>
-        </div>
       </div>
 
       <!-- 2. Backlinks Panel View -->
@@ -153,6 +164,27 @@
         </div>
       </div>
 
+      <!-- 4. Lookup: the whole vault, browsable A-Z or filtered by title/tag.
+           Rendered client-side from /all-entries.json (fetched by
+           39-lookup-pane.js) rather than server-side, since it re-groups on
+           every keystroke. -->
+      <div class="pane-panel-view" id="pane-panel-lookup" hidden>
+        <div class="pane-tab-inner">
+          <div class="lookup-controls">
+            <input
+              type="search"
+              id="lookup-filter-input"
+              class="lookup-filter-input"
+              placeholder="{{ t["lookup.placeholder"] }}"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <div class="lookup-tags" id="lookup-tags" hidden></div>
+          </div>
+          <div class="lookup-results" id="lookup-results"></div>
+        </div>
+      </div>
+
       <div class="pane-panel-view" id="pane-panel-graph" hidden>
         <div class="pane-tab-inner">
           <div class="toc-heading">{{ t["graph.heading"] }}</div>
@@ -168,6 +200,13 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Pinned below pane-scroll rather than inside any one panel view, so
+         it stays visible under whichever tab the rail has open. -->
+    <div class="pane-recent" id="pane-recent-section" hidden>
+      <div class="toc-heading">{{ t["recent.heading"] }}<span class="recent-heading-dir" aria-hidden="true">← ・</span></div>
+      <ul class="recent-items" id="pane-recent-list"></ul>
     </div>
   </aside>
 
@@ -294,7 +333,7 @@
 {{ ui.hero_chips(hero_chips) }}
               {% endif %}
             </div>
-            {% if source_path %}
+            {% if source_path and is_dev %}
             <div class="hero-actions">
 {{ ui.edit_menu(source_path, t) }}
             </div>
@@ -312,7 +351,7 @@
           {% if hero_chips and hero_chips | length > 0 %}
 {{ ui.hero_chips(hero_chips, 'margin-top: 8px;') }}
           {% endif %}
-          {% if source_path %}
+          {% if source_path and is_dev %}
           <div class="hero-actions">
 {{ ui.edit_menu(source_path, t) }}
           </div>
@@ -380,7 +419,7 @@
 {{ ui.hero_chips(hero_chips) }}
         {% endif %}
       </div>
-      {% if source_path %}
+      {% if source_path and is_dev %}
       <div class="hero-actions">
 {{ ui.edit_menu(source_path, t) }}
       </div>
@@ -401,7 +440,7 @@
     {% if hero_chips and hero_chips | length > 0 %}
 {{ ui.hero_chips(hero_chips, 'margin-top: 8px;') }}
     {% endif %}
-    {% if source_path %}
+    {% if source_path and is_dev %}
     <div class="hero-actions">
 {{ ui.edit_menu(source_path, t) }}
     </div>
