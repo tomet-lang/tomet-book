@@ -241,14 +241,13 @@
   border-radius: 0 0 4px 0;
   margin: -6px 0 0 0;
 }
-/* See the matching rule in 30-sticky-tabs.css: a browser with View
-   Transitions animates this open/close itself, so only a browser without
-   one needs the direct max-height transition. */
-@supports not (view-transition-name: none) {
-  [data-tabs="right"] .sticky-children-slot {
-    transition: max-height 0.28s cubic-bezier(0.2, 0, 0, 1),
-                margin 0.2s cubic-bezier(0.2, 0, 0, 1);
-  }
+/* Unlike the horizontal bar (30-sticky-tabs.css), vertical mode's accordion
+   pushes tabs down rather than sideways, and the transform-based slide in
+   40-book-view.js only tracks horizontal shifts -- so this one still
+   animates the layout property directly, same as before. */
+[data-tabs="right"] .sticky-children-slot {
+  transition: max-height 0.28s cubic-bezier(0.2, 0, 0, 1),
+              margin 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 [data-tabs="right"] .sticky-tab-node:not(.is-active):not(.is-active-branch) > .sticky-children-slot {
   height: auto;

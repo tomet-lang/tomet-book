@@ -222,25 +222,118 @@
       const nodes = Array.from(tabsBar.querySelectorAll('.sticky-tab-node'));
       if (nodes.length === 0) return null;
 
-      // Named so a browser with View Transitions can track each tab's own
-      // position and size across an accordion open/close -- see
-      // setActiveHeading below -- instead of only the layout-affecting CSS
-      // transition every browser falls back to. Harmless on browsers without
-      // support: an unused CSS property.
-      nodes.forEach((node, i) => {
-        node.style.viewTransitionName = `tmt-sticky-tab-${i}`;
-      });
+      // Only a top-level tab ever gets pushed aside by a neighbour's slot
+      // opening -- a nested child only ever moves within its own
+      // already-open slot -- so only these need their shift tracked.
+      const topLevelNodes = Array.from(tabsBar.querySelectorAll(':scope > .sticky-tabs-list > .sticky-tab-node'));
 
-      // The very first activation below runs synchronously during setup,
-      // which -- on a client-side navigation -- is itself already running
-      // inside the router's own document.startViewTransition() callback
-      // (80-router.js). Starting a second, nested one there would abort that
-      // outer transition instead of layering on top of it. Waiting a tick
-      // guarantees we're clear of it before this one is allowed to animate.
-      let readyForTransitions = false;
-      setTimeout(() => {
-        readyForTransitions = true;
-      }, 0);
+      // How many pixels every tab after a given one shifts when THAT one's
+      // children-slot opens, measured once instead of asked of the browser
+      // again on every heading crossing. A view-transition-based version of
+      // this (since reverted) still forced a real, synchronous layout at the
+      // moment of the crossing -- once instead of once per frame, but still
+      // once *then*, which on iPad was one large stutter instead of many
+      // small ones. Measuring here, up front, means a later crossing only
+      // ever plays back an already-known number via `transform`.
+      let expandDelta = [];
+      function measureExpandDeltas() {
+        expandDelta = topLevelNodes.map((node) => {
+          const slot = node.querySelector(':scope > .sticky-children-slot');
+          if (!slot) return 0;
+          const collapsedWidth = node.offsetWidth;
+          node.classList.add('is-active-branch');
+          const expandedWidth = node.offsetWidth;
+          node.classList.remove('is-active-branch');
+          return expandedWidth - collapsedWidth;
+        });
+      }
+      measureExpandDeltas();
+      // Web fonts can still land after this and reflow the text a size
+      // wider or narrower, same as the settle() pass below re-checks the
+      // scroll position for the same reason.
+      setTimeout(measureExpandDeltas, 150);
+
+      // Orientation change / resize invalidates every measured width. One
+      // listener for the page's lifetime (window itself outlives any single
+      // SPA navigation, so this must not be re-added every time
+      // setupStickyTabs runs) that always calls whichever instance is
+      // current.
+      window.__tmtRemeasureStickyTabs = measureExpandDeltas;
+      if (!window.__tmtStickyResizeBound) {
+        window.__tmtStickyResizeBound = true;
+        window.addEventListener('resize', () => {
+          clearTimeout(window.__tmtStickyResizeTimer);
+          window.__tmtStickyResizeTimer = setTimeout(() => window.__tmtRemeasureStickyTabs?.(), 150);
+        });
+      }
+
+      // Which top-level tab's slot is currently open, so the next crossing
+      // knows what it's animating *from* as well as *to*. -1 is "none".
+      let activeTopIdx = -1;
+
+      function topLevelIndexOf(node) {
+        let n = node;
+        while (n && !topLevelNodes.includes(n)) {
+          n = n.parentElement ? n.parentElement.closest('.sticky-tab-node') : null;
+        }
+        return n ? topLevelNodes.indexOf(n) : -1;
+      }
+
+      // FLIP the top-level tabs across an accordion open/close using the
+      // deltas measured above, instead of asking the browser to lay
+      // anything out to find the answer. `apply` makes the real DOM change
+      // (synchronously, but nothing here reads a layout property back out
+      // of it, so the browser is free to do that work whenever it likes
+      // rather than being forced to finish it before the next line runs)
+      // and returns whatever `onSettled` needs once the slide finishes.
+      function slideTopLevelTabs(fromIdx, toIdx, apply, onSettled) {
+        const fromDelta = fromIdx >= 0 ? expandDelta[fromIdx] || 0 : 0;
+        const toDelta = toIdx >= 0 ? expandDelta[toIdx] || 0 : 0;
+
+        const affected = [];
+        if (fromIdx !== toIdx) {
+          topLevelNodes.forEach((node, j) => {
+            const oldShift = fromIdx >= 0 && j > fromIdx ? fromDelta : 0;
+            const newShift = toIdx >= 0 && j > toIdx ? toDelta : 0;
+            if (oldShift !== newShift) affected.push({ node, delta: oldShift - newShift });
+          });
+        }
+
+        // Invert: jump every affected tab to where it visually still belongs.
+        affected.forEach(({ node, delta }) => {
+          node.style.transition = 'none';
+          node.style.transform = `translateX(${delta}px)`;
+        });
+
+        const applied = apply();
+
+        if (affected.length === 0) {
+          onSettled(applied);
+          return;
+        }
+
+        // Play: next frame, ease every tab back to its real (already-applied) spot.
+        requestAnimationFrame(() => {
+          let remaining = affected.length;
+          const settleOne = () => {
+            remaining -= 1;
+            if (remaining <= 0) onSettled(applied);
+          };
+          affected.forEach(({ node }) => {
+            node.style.transition = 'transform 0.28s cubic-bezier(0.2, 0, 0, 1)';
+            node.addEventListener(
+              'transitionend',
+              () => {
+                node.style.transition = '';
+                node.style.transform = '';
+                settleOne();
+              },
+              { once: true }
+            );
+            node.style.transform = '';
+          });
+        });
+      }
 
       function scrollToHeading(id) {
         if (!id || !scrollContainer) return;
@@ -278,7 +371,8 @@
         // sets the active tab directly.
         if (targetNode.classList.contains('is-active')) return;
 
-        let directBtn = null;
+        const targetTopIdx = topLevelIndexOf(targetNode);
+        const fromTopIdx = activeTopIdx;
 
         const applyActiveState = () => {
           // 2. Clear previous active/branch states
@@ -291,7 +385,7 @@
 
           // 3. Mark current target as active
           targetNode.classList.add('is-active');
-          directBtn = Array.from(targetNode.children).find((el) => el.classList.contains('sticky-tab-btn'));
+          const directBtn = Array.from(targetNode.children).find((el) => el.classList.contains('sticky-tab-btn'));
           if (directBtn) directBtn.classList.add('is-active');
 
           // 4. Mark all ancestors as is-active-branch so their children slots expand
@@ -300,30 +394,19 @@
             parent.classList.add('is-active-branch');
             parent = parent.parentElement ? parent.parentElement.closest('.sticky-tab-node') : null;
           }
+
+          activeTopIdx = targetTopIdx;
+          return directBtn;
         };
 
         // Smooth-scroll the tab bar horizontally to keep the active tab in
-        // view once it's settled -- doing it while a view transition is
-        // still animating would desync the transition's snapshot overlay
-        // from the bar moving underneath it.
-        const revealActiveTab = () => {
+        // view once the slide settles -- doing it mid-slide would fight the
+        // transform driving the tab there.
+        const revealActiveTab = (directBtn) => {
           directBtn?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
         };
 
-        // The accordion opening or closing moves every tab after it -- a
-        // named element lets the browser capture that as a before/after
-        // layout pair and interpolate the difference on the compositor,
-        // computing the actual layout once instead of once per animation
-        // frame the way animating `max-width` directly does (still the
-        // fallback below and in 30-sticky-tabs.css, for a browser without
-        // this or while one navigation's transition is still in flight).
-        if (readyForTransitions && document.startViewTransition) {
-          const transition = document.startViewTransition(applyActiveState);
-          transition.finished.then(revealActiveTab, revealActiveTab);
-        } else {
-          applyActiveState();
-          revealActiveTab();
-        }
+        slideTopLevelTabs(fromTopIdx, targetTopIdx, applyActiveState, revealActiveTab);
       }
 
       // Hover popover for child subheadings
