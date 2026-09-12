@@ -72,12 +72,20 @@ body {
   min-height: 100vh;
 }
 
-body.is-fluid {
+/* The fixed-100vh, clip-and-let-the-inner-pane-scroll layout below only
+   makes sense on a page that actually has a .book-view pane to do that
+   scrolling -- the catalog page (index.html) never renders one, only a
+   plain .classic-view, so without this :has() guard it was clipped to one
+   screenful with no way to reach the rest of a long note list. A regular
+   page always has a .book-view in the DOM (even hidden by display: none in
+   classic mode -- :has() matches presence, not visibility), so this changes
+   nothing for it. */
+body.is-fluid:has(.book-view) {
   height: 100vh;
   overflow: hidden;
 }
 
-html[data-view="classic"] body.is-fluid {
+html[data-view="classic"] body.is-fluid:has(.book-view) {
   height: auto;
   min-height: 100vh;
   overflow-y: auto;
@@ -95,13 +103,16 @@ html[data-view="classic"] body.is-fluid {
   width: 100vw;
   padding: 0;
   margin: 0;
+}
+
+.container.is-fluid:has(.book-view) {
   height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-html[data-view="classic"] .container.is-fluid {
+html[data-view="classic"] .container.is-fluid:has(.book-view) {
   height: auto;
   min-height: 100vh;
   overflow-y: visible;
