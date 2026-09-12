@@ -12,7 +12,7 @@
 
     function restorePosition() {
       try {
-        const saved = localStorage.getItem('wiki-floating-controls-pos');
+        const saved = T.storage.get('wiki-floating-controls-pos');
         if (saved) {
           const { x, y } = JSON.parse(saved);
           const width = floating.offsetWidth || 280;
@@ -44,10 +44,14 @@
     // causing the element to trail behind the pointer by several frames.
     let dragWidth = 0;
     let dragHeight = 0;
-    // Coalesce renders to once per frame since pointermove fires faster than rAF.
-    let dragFrame = null;
     let offsetLeft = 0;
     let offsetTop = 0;
+    // Coalesce renders to once per frame since pointermove fires faster than rAF.
+    // Use transform during drag so updates run entirely on the compositor
+    // without triggering layout on every frame.
+    const applyDragTransform = T.rafThrottle(() => {
+      floating.style.transform = `translate3d(${offsetLeft}px, ${offsetTop}px, 0)`;
+    });
 
     const onPointerDown = (e) => {
       if (e.button !== 0) return;
@@ -85,14 +89,7 @@
       const top = Math.max(8, Math.min(maxY, startTop + (e.clientY - startY)));
       offsetLeft = left - startLeft;
       offsetTop = top - startTop;
-
-      if (dragFrame !== null) return;
-      dragFrame = requestAnimationFrame(() => {
-        dragFrame = null;
-        // Use transform during drag so updates run entirely on the compositor
-        // without triggering layout on every frame.
-        floating.style.transform = `translate3d(${offsetLeft}px, ${offsetTop}px, 0)`;
-      });
+      applyDragTransform();
     };
 
     const onPointerUp = (e) => {
@@ -103,10 +100,7 @@
         handle.releasePointerCapture(e.pointerId);
       } catch (err) {}
 
-      if (dragFrame !== null) {
-        cancelAnimationFrame(dragFrame);
-        dragFrame = null;
-      }
+      applyDragTransform.cancel();
 
       // Commit the drag transform into definitive left/top positions.
       const finalLeft = Math.round(startLeft + offsetLeft);
@@ -115,12 +109,7 @@
       floating.style.left = `${finalLeft}px`;
       floating.style.top = `${finalTop}px`;
 
-      try {
-        localStorage.setItem(
-          'wiki-floating-controls-pos',
-          JSON.stringify({ x: finalLeft, y: finalTop })
-        );
-      } catch (err) {}
+      T.storage.set('wiki-floating-controls-pos', JSON.stringify({ x: finalLeft, y: finalTop }));
     };
 
     handle.addEventListener('pointerdown', onPointerDown);
@@ -148,9 +137,7 @@
 
     function setView(mode) {
       document.documentElement.setAttribute('data-view', mode);
-      try {
-        localStorage.setItem('wiki-view-mode', mode);
-      } catch {}
+      T.storage.set('wiki-view-mode', mode);
     }
 
     btnBook.onclick = () => setView('book');
@@ -184,9 +171,7 @@
 
     const setSide = (side) => {
       document.documentElement.setAttribute('data-tabs', side);
-      try {
-        localStorage.setItem('wiki-tabs-side', side);
-      } catch {}
+      T.storage.set('wiki-tabs-side', side);
       sync();
     };
 

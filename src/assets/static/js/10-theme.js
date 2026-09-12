@@ -29,9 +29,7 @@
     const current = getEffectiveTheme();
     const nextTheme = current === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', nextTheme);
-    try {
-      localStorage.setItem('tmtbook-theme', nextTheme);
-    } catch {}
+    T.storage.set('tmtbook-theme', nextTheme);
     syncThemeIcons();
   }
 

@@ -24,12 +24,16 @@ pub const BOOK_CSS: &str = concat!(
 );
 /// The script, assembled in load order. Each file is a self-contained IIFE
 /// that registers what others need on `window.TMT`, so the order only has to
-/// put the strings helper first.
+/// put the shared helpers and the strings helper first.
 pub const BOOK_JS: &str = concat!(
+    include_str!("../assets/static/js/00-utils.js"),
     include_str!("../assets/static/js/00-strings.js"),
     include_str!("../assets/static/js/10-theme.js"),
     include_str!("../assets/static/js/20-view-mode.js"),
     include_str!("../assets/static/js/30-floating-controls.js"),
+    include_str!("../assets/static/js/36-nav-pane.js"),
+    include_str!("../assets/static/js/37-data-pane.js"),
+    include_str!("../assets/static/js/38-recent-notes.js"),
     include_str!("../assets/static/js/40-book-view.js"),
     include_str!("../assets/static/js/50-keyboard.js"),
     include_str!("../assets/static/js/60-search.js"),

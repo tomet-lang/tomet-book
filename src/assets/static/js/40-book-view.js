@@ -124,20 +124,35 @@
       // wherever the reader used to be.
       const HEADING_LINE = 80;
 
+      // Scrolling is almost always continuous, so the heading under the line
+      // right now is nearly always the one found last frame, or its immediate
+      // neighbour. Walking out from that cached position -- instead of
+      // rescanning from the top of the document every frame -- turns this
+      // from one forced-layout read per heading above the fold into one or
+      // two, however deep into a long document the reader is.
+      let headingCursor = 0;
+
       const currentHeadingId = () => {
+        const n = headingTargets.length;
+        if (n === 0) return null;
+
         const containerTop = scrollContainer.getBoundingClientRect().top;
         const line = containerTop + HEADING_LINE;
+        if (headingCursor >= n) headingCursor = n - 1;
 
-        let currentId = null;
-        for (const { id, el } of headingTargets) {
-          // Headings are in document order, so the last one above the line wins
-          // and the first one below it ends the search.
-          if (el.getBoundingClientRect().top > line) break;
-          currentId = id;
+        // Retreat: the reader scrolled up past where the cursor thought they were.
+        while (headingCursor > 0 && headingTargets[headingCursor].el.getBoundingClientRect().top > line) {
+          headingCursor--;
         }
-        // Before the first heading has reached the line, it is still the one
-        // the reader is under.
-        return currentId ?? headingTargets[0]?.id ?? null;
+        // Advance: the reader scrolled down past it instead.
+        while (
+          headingCursor < n - 1 &&
+          headingTargets[headingCursor + 1].el.getBoundingClientRect().top <= line
+        ) {
+          headingCursor++;
+        }
+
+        return headingTargets[headingCursor].id;
       };
 
       const updateScrollSpy = () => {
@@ -171,15 +186,7 @@
       // for iPad frame budget and was tried and backed out -- being able to
       // glance at what's coming while scrolling matters more here than
       // matching a plainer wiki's low-end-device ceiling.
-      let scrollTicking = false;
-      const onScroll = () => {
-        if (scrollTicking) return;
-        scrollTicking = true;
-        requestAnimationFrame(() => {
-          scrollTicking = false;
-          updateScrollSpy();
-        });
-      };
+      const onScroll = T.rafThrottle(updateScrollSpy);
       scrollContainer.__tmtScrollHandler = onScroll;
       scrollContainer.addEventListener('scroll', onScroll, { passive: true });
 
@@ -561,235 +568,19 @@
       };
     }
 
-    // 1. Navigation pane and permanent left rail toggle control
-    function setupNavPane() {
-      const titles = {
-        toc: t('pane.toc'),
-        links: t('pane.links'),
-        index: t('pane.index'),
-        graph: t('pane.graph'),
-      };
-
-      function switchPanel(panelName, expandIfCollapsed = true) {
-        const pNav = document.getElementById('pane-nav');
-        if (!pNav) return;
-        pNav.dataset.activePanel = panelName;
-
-        if (expandIfCollapsed) {
-          pNav.classList.remove('is-collapsed');
-          try {
-            localStorage.setItem('wiki-pane-nav-collapsed', 'false');
-          } catch (e) {}
-        }
-
-        const isCollapsed = pNav.classList.contains('is-collapsed');
-        document.querySelectorAll('.rail-tab-nav').forEach((tab) => {
-          if (tab.getAttribute('data-panel') === panelName && !isCollapsed) {
-            tab.classList.add('is-active');
-          } else {
-            tab.classList.remove('is-active');
-          }
-        });
-
-        document.querySelectorAll('.pane-panel-view').forEach((view) => {
-          if (view.id === `pane-panel-${panelName}`) {
-            view.hidden = false;
-            view.classList.add('is-active');
-          } else {
-            view.hidden = true;
-            view.classList.remove('is-active');
-          }
-        });
-
-        const paneTitle = document.getElementById('pane-nav-title');
-        if (paneTitle && titles[panelName]) {
-          paneTitle.textContent = titles[panelName];
-        }
-      }
-
-      function collapsePane() {
-        const pNav = document.getElementById('pane-nav');
-        if (!pNav) return;
-        pNav.classList.add('is-collapsed');
-        document.querySelectorAll('.rail-tab-nav').forEach((tab) => tab.classList.remove('is-active'));
-        try {
-          localStorage.setItem('wiki-pane-nav-collapsed', 'true');
-        } catch (e) {}
-      }
-
-      // Restore collapsed and active state on page load/transition
-      const pNav = document.getElementById('pane-nav');
-      if (pNav) {
-        try {
-          const isNarrow = window.innerWidth <= 900;
-          const navSetting = localStorage.getItem('wiki-pane-nav-collapsed');
-          const isCollapsed = navSetting !== null ? navSetting === 'true' : isNarrow;
-          const currentPanel = pNav.dataset.activePanel || 'toc';
-          if (isCollapsed) {
-            collapsePane();
-          } else {
-            switchPanel(currentPanel, false);
-          }
-          // The pre-paint hint has done its job; the class is authoritative now.
-          document.documentElement.removeAttribute('data-nav-collapsed');
-        } catch (e) {}
-      }
-
-      // Global delegation for rail tabs and collapse buttons
-      if (!window.__navPaneDelegated) {
-        window.__navPaneDelegated = true;
-
-        document.addEventListener('click', (e) => {
-          // Rail tabs
-          const tab = e.target.closest('.rail-tab-nav');
-          if (tab) {
-            e.stopPropagation();
-            const panel = tab.getAttribute('data-panel');
-            if (!panel) return;
-            const currentPane = document.getElementById('pane-nav');
-            if (!currentPane) return;
-
-            const isCollapsed = currentPane.classList.contains('is-collapsed');
-            const active = currentPane.dataset.activePanel || 'toc';
-
-            if (isCollapsed) {
-              switchPanel(panel, true);
-            } else if (active === panel) {
-              collapsePane();
-            } else {
-              switchPanel(panel, true);
-            }
-            return;
-          }
-
-          // Header collapse button
-          const collapseBtn = e.target.closest('#header-collapse-nav');
-          if (collapseBtn) {
-            e.stopPropagation();
-            collapsePane();
-            return;
-          }
-        });
-
-        document.addEventListener('keydown', (e) => {
-          if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('#header-collapse-nav')) {
-            e.preventDefault();
-            collapsePane();
-          }
-        });
-      }
-    }
-
-    setupNavPane();
-
-    // 2. Data pane expand/collapse control
-    function bindDataPaneToggle() {
-      const pane = document.getElementById('pane-data');
-      const btnCollapse = document.getElementById('header-collapse-data');
-      const barExpand = document.getElementById('bar-expand-data');
-      if (!pane) return;
-
-      try {
-        const isNarrow = window.innerWidth <= 900;
-        const dataSetting = localStorage.getItem('wiki-pane-data-collapsed');
-        const isCollapsed = dataSetting !== null ? dataSetting === 'true' : isNarrow;
-        if (isCollapsed) {
-          pane.classList.add('is-collapsed');
-        } else {
-          pane.classList.remove('is-collapsed');
-        }
-        document.documentElement.removeAttribute('data-data-collapsed');
-      } catch (e) {}
-
-      const handleCollapse = (e) => {
-        e.stopPropagation();
-        pane.classList.add('is-collapsed');
-        try {
-          localStorage.setItem('wiki-pane-data-collapsed', 'true');
-        } catch (e) {}
-      };
-
-      btnCollapse?.addEventListener('click', handleCollapse);
-      btnCollapse?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          handleCollapse(e);
-        }
-      });
-
-      const handleExpand = (e) => {
-        e.stopPropagation();
-        pane.classList.remove('is-collapsed');
-        try {
-          localStorage.setItem('wiki-pane-data-collapsed', 'false');
-        } catch (e) {}
-      };
-
-      barExpand?.addEventListener('click', handleExpand);
-      barExpand?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          handleExpand(e);
-        }
-      });
-
-      pane.addEventListener('click', () => {
-        if (pane.classList.contains('is-collapsed')) {
-          handleExpand(new Event('click'));
-        }
-      });
-    }
-
-    bindDataPaneToggle();
+    // The nav pane, the data pane, and recent-notes history are independent
+    // of the scrollspy/sticky-tabs machinery above (no shared state, nothing
+    // calls back into it), so they live in their own files -- 36-nav-pane.js,
+    // 37-data-pane.js, 38-recent-notes.js -- and this just wires them in.
+    T.setupNavPane();
+    T.bindDataPaneToggle();
 
     const container = document.getElementById('wiki-book-view');
     requestAnimationFrame(() => {
       container?.classList.add('is-ready');
     });
 
-    // 4. Recent notes history
-    function updateRecentNotes() {
-      const currentPath = window.location.pathname;
-      const titleEl = document.querySelector('.content-title') || document.querySelector('.article-header h1');
-      const currentTitle = titleEl?.textContent?.trim() || document.title.replace(/\s*\|.*$/, '');
-      const iconEl = document.querySelector('.avatar-icon') || document.querySelector('.title-inline-icon');
-      const currentIcon = iconEl?.textContent?.trim() || '📄';
-
-      if (!currentPath || !currentTitle || currentPath === '/wiki' || currentPath === '/wiki/' || currentPath === '/' || currentPath === '/index.html') return;
-
-      let recents = [];
-      try {
-        recents = JSON.parse(localStorage.getItem('wiki-recent-notes') || '[]');
-      } catch {}
-
-      recents = recents.filter((r) => r.path !== currentPath);
-      recents.unshift({ path: currentPath, title: currentTitle, icon: currentIcon });
-      if (recents.length > 8) recents = recents.slice(0, 8);
-
-      try {
-        localStorage.setItem('wiki-recent-notes', JSON.stringify(recents));
-      } catch {}
-
-      const recentSection = document.getElementById('pane-recent-section');
-      const recentList = document.getElementById('pane-recent-list');
-      if (recentSection && recentList && recents.length > 0) {
-        recentList.innerHTML = recents
-          .map(
-            (r) => `
-          <li>
-            <a href="${r.path}" class="recent-link ${r.path === currentPath ? 'is-current' : ''}">
-              <span class="recent-icon">${r.icon}</span>
-              <span class="recent-title">${r.title}</span>
-            </a>
-          </li>
-        `
-          )
-          .join('');
-        recentSection.hidden = false;
-      }
-    }
-
-    updateRecentNotes();
+    T.updateRecentNotes();
   }
 
   Object.assign(T, { setupBookViewInteraction, syncHeadingHash, hidePopover });

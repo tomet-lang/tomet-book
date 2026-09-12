@@ -25,7 +25,7 @@
       syncViewMode(newDoc);
       try {
         const isNarrow = window.innerWidth <= 900;
-        const navSetting = localStorage.getItem('wiki-pane-nav-collapsed');
+        const navSetting = T.storage.get('wiki-pane-nav-collapsed');
         const navCollapsed = navSetting !== null ? navSetting === 'true' : isNarrow;
         const newPaneNav = newDoc.getElementById('pane-nav');
         if (navCollapsed) {
@@ -34,7 +34,7 @@
           newPaneNav?.classList.remove('is-collapsed');
         }
 
-        const dataSetting = localStorage.getItem('wiki-pane-data-collapsed');
+        const dataSetting = T.storage.get('wiki-pane-data-collapsed');
         const dataCollapsed = dataSetting !== null ? dataSetting === 'true' : isNarrow;
         if (dataCollapsed) {
           newDoc.getElementById('pane-data')?.classList.add('is-collapsed');
