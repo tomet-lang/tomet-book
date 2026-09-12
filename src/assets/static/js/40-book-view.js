@@ -602,10 +602,21 @@
         });
       });
 
-      // Close popover on scroll
-      scrollContainer?.addEventListener('scroll', () => {
-        hidePopover();
-      }, { passive: true });
+      // Close popover on scroll. scrollContainer (#book-content-scroll)
+      // wraps .pane-article-container rather than being replaced by it, so
+      // it survives every SPA navigation -- same reasoning as tabsBar's
+      // __wheelBound guard just below, and popover's __hoverBound above.
+      // Without this, this specific listener (unlike the main scrollspy
+      // handler a bit above, which already removes its old one before
+      // adding a new one) piled up one more copy per navigation, each
+      // still running on every scroll tick after the page that added it
+      // was long gone -- the "gets janky after a while" bug.
+      if (scrollContainer && !scrollContainer.__tmtPopoverCloseBound) {
+        scrollContainer.__tmtPopoverCloseBound = true;
+        scrollContainer.addEventListener('scroll', () => {
+          hidePopover();
+        }, { passive: true });
+      }
 
       // The bar scrolls horizontally but hides its scrollbar, and a wheel only
       // scrolls vertically by default -- which does nothing here. Turn wheel
