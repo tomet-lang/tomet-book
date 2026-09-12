@@ -74,6 +74,11 @@
   position: relative;
   z-index: 1;
   margin-bottom: 0;
+  /* The children-slot expand/collapse below still has to reflow the tabs after
+     it, since the accordion metaphor only works by pushing siblings aside --
+     but nothing outside this bar depends on that, so contain it here instead
+     of letting every reflow re-check the rest of the page. */
+  contain: layout;
 }
 .sticky-tabs-bar > .sticky-tabs-list {
   transform: rotateX(180deg);
@@ -109,6 +114,7 @@
   gap: 3px;
   position: relative;
   height: 100%;
+  contain: layout;
 }
 
 /* Sticky tab button base: borderless, index tab shape (rounded top, flat bottom, soft pastel palette) */
@@ -125,8 +131,14 @@
   align-self: flex-end;
   margin-bottom: 0;
   line-height: 1;
-  /* height and colour only: nothing here may change the tab width */
-  transition: height 0.15s ease,
+  /* The active "pop" grows the tab from this edge, so it stays grounded to the bar
+     while a paint-only transform -- never the box's own layout height -- does the growing. */
+  transform-origin: bottom;
+  /* colour and the pop transform only: layout height never transitions, so the
+     scrollspy toggling .is-active every frame of a scroll never forces layout --
+     it used to animate `height` here, which is exactly what made scrolling on
+     iPad stutter. */
+  transition: transform 0.15s ease,
               background 0.15s ease,
               color 0.15s ease,
               box-shadow 0.15s ease;
@@ -142,7 +154,11 @@
   box-shadow: 0 -2px 3px rgba(0, 0, 0, 0.4);
 }
 
-/* --- Size hierarchy & active height elongation (pops upward / remains grounded) --- */
+/* --- Size hierarchy & active height elongation (pops upward / remains grounded) ---
+   Each `.is-active` scale is the old fixed pop height divided by its level's base
+   height (e.g. level-1's 33px / 29px), reproduced with `transform: scaleY(...)`
+   instead so the box's own layout height never changes: only the painted pixels
+   grow, anchored to `transform-origin: bottom` above. */
 .sticky-tab-btn.level-1 {
   height: 29px;
   padding: 2px 10px 2px 8px;
@@ -150,7 +166,7 @@
   font-weight: 600;
 }
 .sticky-tab-btn.level-1.is-active {
-  height: 33px; /* Extends upward only; never alters tab width */
+  transform: scaleY(1.137931); /* 33 / 29 */
   z-index: 10;
 }
 
@@ -161,7 +177,7 @@
   font-weight: 500;
 }
 .sticky-tab-btn.level-2.is-active {
-  height: 30px;
+  transform: scaleY(1.153846); /* 30 / 26 */
   z-index: 10;
 }
 
@@ -172,7 +188,7 @@
   font-weight: 500;
 }
 .sticky-tab-btn.level-3.is-active {
-  height: 27px;
+  transform: scaleY(1.173913); /* 27 / 23 */
   z-index: 10;
 }
 
@@ -187,7 +203,7 @@
 .sticky-tab-btn.level-4.is-active,
 .sticky-tab-btn.level-5.is-active,
 .sticky-tab-btn.level-6.is-active {
-  height: 24px;
+  transform: scaleY(1.2); /* 24 / 20 */
   z-index: 10;
 }
 
@@ -402,6 +418,7 @@
   overflow: hidden;
   white-space: nowrap;
   pointer-events: none;
+  contain: layout;
   /* Non-overshooting easing: cubic-bezier with control points exceeding 1 causes the peek
      to momentarily dip below target width and pop back out during collapse. */
   transition: max-width 0.28s cubic-bezier(0.2, 0, 0, 1),

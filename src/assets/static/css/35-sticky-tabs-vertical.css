@@ -217,6 +217,9 @@
    Vertical siblings do not overlap, so elevation is unnecessary. */
 [data-tabs="right"] .sticky-tab-btn.is-active {
   z-index: 1;
+  /* Undo horizontal mode's scaleY pop: vertical mode already expresses hierarchy
+     through width (below), and stretching that here would double up. */
+  transform: none;
 }
 
 
