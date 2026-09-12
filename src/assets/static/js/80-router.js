@@ -11,13 +11,19 @@
   // Intercepts in-app link clicks and performs smooth slide animations
   async function navigateTo(url, pushState = true) {
     T.hidePopover?.();
+    T.startPageProgress?.();
     try {
       const res = await fetch(url);
       if (!res.ok) {
+        T.finishPageProgress?.();
         window.location.href = url;
         return;
       }
       const htmlText = await res.text();
+      // The wait this bar stands in for is over now that the response is in
+      // hand -- the View Transition below takes over as the swap's own
+      // feedback from here.
+      T.finishPageProgress?.();
       const parser = new DOMParser();
       const newDoc = parser.parseFromString(htmlText, 'text/html');
 
@@ -139,6 +145,7 @@
         updateDOM();
       }
     } catch (e) {
+      T.finishPageProgress?.();
       console.error('Navigation failed, falling back:', e);
       window.location.href = url;
     }
