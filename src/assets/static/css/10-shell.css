@@ -77,6 +77,23 @@ html[data-view="classic"] .classic-view {
   animation: none;
 }
 
+/* The browser also generates a ::view-transition-group(name) for every named
+   element, wrapping the old/new pair above. Left alone, it runs its own
+   default animation interpolating that wrapper's transform/width/height
+   (and backdrop-filter) from the old element's captured box to the new
+   one's -- on article-content this is a real cost every navigation, since
+   articles routinely differ in height, and width/height can't run on the
+   compositor the way transform can. The old/new pair already gets a
+   complete custom animation below (a plain slide + fade), so the group's
+   own resize/reposition animation on top of that is pure overhead here,
+   not a visible part of the design -- confirmed by screenshotting a
+   navigation between a very short and a very long article with this rule
+   toggled on and off, frame by frame; identical either way. */
+::view-transition-group(root),
+::view-transition-group(article-content) {
+  animation: none;
+}
+
 html[data-view="book"] .pane-article-container {
   view-transition-name: article-content;
 }

@@ -84,9 +84,14 @@
   white-space: normal;
   text-align: left;
   /* While horizontal tabs use height to represent hierarchy, vertical tabs use
-     rightward protrusion. Deeper headings indent further left. */
-  transition: width 0.15s ease,
-              background 0.15s ease,
+     rightward protrusion. Deeper headings indent further left.
+     Width is not transitioned: unlike horizontal's purely decorative scaleY
+     pop, this width change re-wraps the clamped label text, so animating it
+     also forces a real layout recalculation on every frame -- the same cost
+     that made scrolling stutter on iPad before the horizontal version moved
+     its pop onto `transform`. Snapping it instantly avoids the recalculation
+     entirely instead of trying to keep it smooth. */
+  transition: background 0.15s ease,
               color 0.15s ease,
               box-shadow 0.15s ease;
 }
@@ -104,11 +109,11 @@
   /* Horizontal mode uses tight line-height: 1; multiline vertical text needs breathing room. */
   line-height: 1.35;
   /* When the tab expands rightward by 6px, text width remains unchanged by subtracting 6px.
-     Moving with identical duration and easing ensures width stays constant across every frame,
-     preventing text wrapping jitter while reading. */
+     Snapping instantly rather than transitioning keeps this and the tab's own width change
+     (above) landing on the same frame, so the label never re-wraps out of sync with the
+     button around it -- the jitter a matched transition was previously used to avoid. */
   width: 100%;
   box-sizing: border-box;
-  transition: width 0.15s ease;
 }
 
 [data-tabs="right"] .sticky-tab-btn.is-active > .sticky-tab-label {
@@ -241,14 +246,15 @@
   border-radius: 0 0 4px 0;
   margin: -6px 0 0 0;
 }
-/* Unlike the horizontal bar (30-sticky-tabs.css), vertical mode's accordion
-   pushes tabs down rather than sideways, and the transform-based slide in
-   40-book-view.js only tracks horizontal shifts -- so this one still
-   animates the layout property directly, same as before. */
-[data-tabs="right"] .sticky-children-slot {
-  transition: max-height 0.28s cubic-bezier(0.2, 0, 0, 1),
-              margin 0.2s cubic-bezier(0.2, 0, 0, 1);
-}
+/* No transition on max-height/margin here, matching 30-sticky-tabs.css's
+   max-width/margin: animating a layout property forces a real layout
+   recalculation on every frame. 40-book-view.js's measureExpandDeltas /
+   slideTopLevelTabs are axis-aware -- they read offsetHeight and slide
+   later siblings with `transform: translateY(...)` here, mirroring the
+   offsetWidth / translateX it uses for the default horizontal bar -- so
+   the slot itself simply snaps to its new height, and its content still
+   fades in via the opacity transition in 30-sticky-tabs.css, which costs
+   paint, not layout. */
 [data-tabs="right"] .sticky-tab-node:not(.is-active):not(.is-active-branch) > .sticky-children-slot {
   height: auto;
   /* At full width (100%), the bottom-right radius floats in empty space to the right,

@@ -247,16 +247,25 @@
         // every time, which is cheap to not notice on a fast desktop GPU
         // but very much not on a phone or a weaker laptop. Batched, it's
         // two forced layouts total regardless of how many tabs there are.
+        //
+        // The bar lays its top-level tabs out along one axis and an open
+        // slot pushes later siblings aside along that same axis -- sideways
+        // (offsetWidth) in the default horizontal bar, downward
+        // (offsetHeight) once `data-tabs="right"` turns it into a column.
+        // Reading the wrong one here would silently measure a dimension
+        // that never changes and slideTopLevelTabs below would have nothing
+        // to play back.
+        const vertical = isVerticalTabs();
         const slots = topLevelNodes.map((node) => node.querySelector(':scope > .sticky-children-slot'));
-        const collapsedWidths = topLevelNodes.map((node) => node.offsetWidth);
+        const collapsedSizes = topLevelNodes.map((node) => (vertical ? node.offsetHeight : node.offsetWidth));
         topLevelNodes.forEach((node, i) => {
           if (slots[i]) node.classList.add('is-active-branch');
         });
-        const expandedWidths = topLevelNodes.map((node) => node.offsetWidth);
+        const expandedSizes = topLevelNodes.map((node) => (vertical ? node.offsetHeight : node.offsetWidth));
         topLevelNodes.forEach((node, i) => {
           if (slots[i]) node.classList.remove('is-active-branch');
         });
-        expandDelta = topLevelNodes.map((_, i) => (slots[i] ? expandedWidths[i] - collapsedWidths[i] : 0));
+        expandDelta = topLevelNodes.map((_, i) => (slots[i] ? expandedSizes[i] - collapsedSizes[i] : 0));
       }
       measureExpandDeltas();
       // Web fonts can still land after this and reflow the text a size
@@ -298,6 +307,7 @@
       // rather than being forced to finish it before the next line runs)
       // and returns whatever `onSettled` needs once the slide finishes.
       function slideTopLevelTabs(fromIdx, toIdx, apply, onSettled) {
+        const axis = isVerticalTabs() ? 'translateY' : 'translateX';
         const fromDelta = fromIdx >= 0 ? expandDelta[fromIdx] || 0 : 0;
         const toDelta = toIdx >= 0 ? expandDelta[toIdx] || 0 : 0;
 
@@ -313,7 +323,7 @@
         // Invert: jump every affected tab to where it visually still belongs.
         affected.forEach(({ node, delta }) => {
           node.style.transition = 'none';
-          node.style.transform = `translateX(${delta}px)`;
+          node.style.transform = `${axis}(${delta}px)`;
         });
 
         const applied = apply();
