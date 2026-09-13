@@ -413,17 +413,28 @@
 }
 
 /* --- Horizontally expanding child heading slot (smoothly opens on active branch) --- */
+:root {
+  /* How much of a collapsed peek actually shows past whatever it's tucked
+     behind -- the one thing both axes (horizontal mode's width, vertical
+     mode's height, see 35-sticky-tabs-vertical.css) and every level share,
+     so a level-4 peek reads the same "there's more here" hint a level-2
+     one does rather than looking like a different, smaller affordance. */
+  --sticky-peek-reveal: 3px;
+}
 /* When collapsed, .sticky-children-peek (a dedicated element, not a clipped
-   real child -- see below) shows a 4px hint of paper behind the parent so
-   readers can see that child headings exist even when folded. */
+   real child -- see below) shows a --sticky-peek-reveal hint of paper
+   behind the parent so readers can see that child headings exist even when
+   folded. */
 .sticky-children-slot {
   display: inline-flex;
   align-items: flex-end;
   height: 100%; /* Shares parent height for 100% bottom edge alignment */
   align-self: flex-end;
   gap: 3px;
-  /* Tucks 6px beneath the parent and retains 10px, leaving a 4px visible peek to the right. */
-  max-width: 10px;
+  /* Tucked 3px beneath the parent (the -6px margin below, offset by this
+     flex gap, nets to -3px) so retaining 3px + the reveal amount leaves
+     exactly the reveal showing past the parent's edge. */
+  max-width: calc(3px + var(--sticky-peek-reveal));
   opacity: 1;
   overflow: hidden;
   white-space: nowrap;
@@ -461,7 +472,7 @@
      further (see .has-layered-peek below), and if this stretched to match,
      the first peek would grow too and cover the exact same span, leaving
      nothing of the second one visible. */
-  width: 10px;
+  width: calc(3px + var(--sticky-peek-reveal));
   border-radius: 0 4px 0 0;
   /* Same shadow as a real .sticky-tab-btn, so the peek reads as a piece of
      paper rather than a flat color swatch. */
@@ -485,15 +496,16 @@
 
 /* When a slot has more than one thing to hint at (its children have
    children of their own too), a second peek renders behind the first --
-   shifted 4px further outward so a sliver of it shows past the first
-   peek's edge, the same way the first peek shows a sliver of a real tab.
-   The slot has to widen to give that sliver somewhere to be: at the base
-   10px it would be clipped away entirely by the slot's own overflow: hidden. */
+   shifted one more --sticky-peek-reveal outward so a sliver of it shows
+   past the first peek's edge, the same way the first peek shows a sliver
+   of a real tab. The slot has to widen to give that sliver somewhere to
+   be: at the base width it would be clipped away entirely by the slot's
+   own overflow: hidden. */
 .sticky-children-slot.has-layered-peek {
-  max-width: 14px;
+  max-width: calc(3px + var(--sticky-peek-reveal) * 2);
 }
 .sticky-children-peek ~ .sticky-children-peek {
-  left: 4px;
+  left: var(--sticky-peek-reveal);
   /* Must still be a positive integer, not 0: 0 and auto share one painting
      level ordered by DOM position, and the real children -- z-index: auto,
      later in the DOM -- would win it and show through in the sliver only

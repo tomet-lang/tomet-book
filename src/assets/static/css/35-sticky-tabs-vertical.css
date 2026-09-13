@@ -241,8 +241,9 @@
      the slot provides the full rail width as the reference base. */
   height: auto;
   max-width: none;
-  /* Peeks 4px downward when collapsed (analogous to the 4px rightward peek in horizontal layout) */
-  max-height: 10px;
+  /* Peeks --sticky-peek-reveal downward when collapsed, same as the base
+     rule's rightward max-width in horizontal mode (see 30-sticky-tabs.css). */
+  max-height: calc(3px + var(--sticky-peek-reveal));
   margin: -6px 0 0 0;
 }
 /* No transition on max-height/margin here, matching 30-sticky-tabs.css's
@@ -273,9 +274,11 @@
      however tall the slot currently is) for the same reason the width is
      fixed in horizontal mode: a layered slot's second peek needs the slot
      taller than this so it can poke out past this one, and if this filled
-     that extra height too, both peeks would cover the same span. */
+     that extra height too, both peeks would cover the same span. Same
+     --sticky-peek-reveal as horizontal mode's width, so the amount that
+     actually shows is the same regardless of which axis or level it's on. */
   bottom: auto;
-  height: 10px;
+  height: calc(3px + var(--sticky-peek-reveal));
   border-radius: 0 0 4px 0;
   box-shadow: 2px 0 3px rgba(0, 0, 0, 0.13);
 }
@@ -296,13 +299,13 @@
 
 /* A second, layered peek (see 30-sticky-tabs.css) shifts downward here
    instead of rightward -- vertical mode's peek axis is height, not width --
-   so its horizontal-mode left: 4px is undone rather than stacking with it. */
+   so its horizontal-mode left offset is undone rather than stacking with it. */
 [data-tabs="right"] .sticky-children-slot.has-layered-peek {
-  max-height: 14px;
+  max-height: calc(3px + var(--sticky-peek-reveal) * 2);
 }
 [data-tabs="right"] .sticky-children-peek ~ .sticky-children-peek {
   left: 0;
-  top: 4px;
+  top: var(--sticky-peek-reveal);
 }
 [data-tabs="right"] .sticky-tab-node.is-active > .sticky-children-slot,
 [data-tabs="right"] .sticky-tab-node.is-active-branch > .sticky-children-slot {
