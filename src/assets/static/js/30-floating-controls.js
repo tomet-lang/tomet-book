@@ -10,7 +10,16 @@
     const handle = floating.querySelector('.floating-drag-handle');
     if (!handle) return;
 
+    // Matches 90-responsive.css's breakpoint, where .floating-controls
+    // docks to the bottom edge with !important instead of floating.
+    // Positioning it with an inline left/top from a desktop drag -- saved
+    // from back when it *was* a float -- would win over that CSS (inline
+    // style always beats a stylesheet rule, !important or not) and leave
+    // it stranded wherever it last got dragged on a wide screen.
+    const isNarrowViewport = () => window.innerWidth <= 768;
+
     function restorePosition() {
+      if (isNarrowViewport()) return;
       try {
         const saved = T.storage.get('wiki-floating-controls-pos');
         if (saved) {

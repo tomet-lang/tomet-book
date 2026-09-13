@@ -36,4 +36,58 @@
   .pane-data > .pane-header {
     width: 100%;
   }
+
+  /* Floating controls (search + view switchers) float in the content
+     column's right-hand margin on desktop; at this width the content
+     column fills the screen, so a fixed-position float would sit on top
+     of whatever's underneath it -- the sticky-tabs bar included -- for as
+     long as the reader stays on the page. Docked to the bottom edge
+     instead, full width, it never overlaps page content. Dragging it
+     out of the way no longer makes sense once it's docked, so the handle
+     (and any position a desktop drag saved earlier -- see
+     30-floating-controls.js's isNarrowViewport check) is dropped too. */
+  .floating-controls {
+    top: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100%;
+    box-sizing: border-box;
+    border-width: 1px 0 0 0;
+    border-radius: 0;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.12);
+    padding: 6px 10px;
+    justify-content: space-between;
+  }
+  .floating-drag-handle {
+    display: none;
+  }
+  .search-container {
+    flex: 1;
+    min-width: 0;
+  }
+  .search-input-wrapper,
+  #wiki-search-input {
+    width: 100%;
+  }
+  /* Opens upward instead of downward -- downward would run the dropdown
+     off the bottom of the screen from a bar already docked there. */
+  .search-results {
+    top: auto;
+    bottom: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    width: auto;
+    max-width: none;
+    margin-top: 0;
+  }
+
+  /* Every independently-scrolling pane needs enough bottom padding that
+     its last line of content can scroll clear of the bar docked on top
+     of it -- the bar overlays rather than pushing content up, the same
+     way it already did as a float. */
+  .pane-scroll,
+  .pane-scroll-content {
+    padding-bottom: 52px;
+  }
 }
