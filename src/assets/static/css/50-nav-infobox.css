@@ -621,3 +621,39 @@
 .lookup-group-heading:first-child {
   margin-top: 0;
 }
+
+.lookup-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.lookup-page-btn {
+  padding: 5px 10px;
+  font-size: 0.72rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.lookup-page-btn:hover:not(:disabled) {
+  border-color: var(--link);
+  color: var(--link);
+}
+.lookup-page-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.lookup-page-status {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+

@@ -49,6 +49,12 @@ struct BuildManifest {
     media: Vec<String>,
 }
 
+/// `lookup/manifest.json`: the section names Search's tag chips list.
+#[derive(Debug, Serialize)]
+struct LookupManifest {
+    sections: Vec<SectionSummary>,
+}
+
 impl BuildManifest {
     fn read(out_dir: &Path) -> Option<Self> {
         let raw = fs::read_to_string(out_dir.join(MANIFEST_FILE)).ok()?;
@@ -546,24 +552,35 @@ pub fn build_book(
         None => Vec::new(),
     };
 
-    // The sidebar's A-Z/tag lookup needs every page regardless of whether the
-    // vault has a written index at all, so it is built from the map directly
-    // rather than from `book_index` (empty) or `processed_entries` (not
-    // settled until after the render pass below).
-    //
+    // Search's tag chips need the vault's section names regardless of
+    // whether the vault has a written index at all, so this is built from
+    // the map directly rather than from `book_index` (empty) or
+    // `processed_entries` (not settled until after the render pass below).
     // Written once here as its own static file -- exactly how book.css and
     // book.js already work -- rather than inlined into every page's own
-    // context. Every page used to carry its own full copy of this (identical
-    // on every page, vault-wide) list rendered straight into its HTML: fine
-    // on a small vault, but on a large one it meant paying to serialize and
-    // re-embed the whole thing once per page, output size growing with the
-    // *square* of the page count. 39-lookup-pane.js fetches this instead.
-    let mut all_entries: Vec<EntrySummary> = entries_by_slug.values().cloned().collect();
-    all_entries.sort_by(|a, b| a.title.cmp(&b.title).then_with(|| a.url.cmp(&b.url)));
+    // context.
+    let mut lookup_section_totals: HashMap<String, usize> = HashMap::new();
+    for entry in entries_by_slug.values() {
+        if let Some(sec) = &entry.section {
+            *lookup_section_totals.entry(sec.clone()).or_insert(0) += 1;
+        }
+    }
+    let mut lookup_sections: Vec<SectionSummary> = lookup_section_totals
+        .into_iter()
+        .map(|(name, count)| SectionSummary { name, count })
+        .collect();
+    lookup_sections.sort_by(|a, b| a.name.cmp(&b.name));
+
     write_if_changed(
-        &out_dir.join("all-entries.json"),
-        &serde_json::to_string(&all_entries)?,
+        &out_dir.join("lookup/manifest.json"),
+        &serde_json::to_string(&LookupManifest { sections: lookup_sections })?,
     )?;
+    // A-Z browsing (and the per-character lookup/buckets/*.json shards it
+    // used to page through) was tried and dropped -- not worth the added
+    // complexity for this vault's actual usage. Nothing writes that
+    // directory anymore, so a leftover one from before is just removed
+    // rather than left to rot as dead output.
+    let _ = fs::remove_dir_all(out_dir.join("lookup/buckets"));
 
     // 7. Render and write.
     info!("Rendering {} document(s)...", processed.len());

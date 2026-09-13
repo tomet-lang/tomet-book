@@ -84,8 +84,8 @@
 
   <div class="book-view" id="wiki-book-view">
 
-  <!-- The vault-wide entry list lives in its own /all-entries.json (written
-       once per build, see build_book in mod.rs) and is fetched by
+  <!-- Search's tag-chip section names live in their own lookup/manifest.json
+       (written once per build, see build_book in mod.rs) and are fetched by
        39-lookup-pane.js -- not inlined here, since every page inlining the
        same whole-vault list once made output size grow with the square of
        the page count. page_url is cheap (one string) and stays inline. -->
@@ -164,10 +164,9 @@
         </div>
       </div>
 
-      <!-- 4. Lookup: the whole vault, browsable A-Z or filtered by title/tag.
-           Rendered client-side from /all-entries.json (fetched by
-           39-lookup-pane.js) rather than server-side, since it re-groups on
-           every keystroke. -->
+      <!-- 4. Lookup: Pagefind search, paginated from the first render (an
+           empty query with no tags still lists every note, just paged) --
+           see 39-lookup-pane.js's setupLookupPane. -->
       <div class="pane-panel-view" id="pane-panel-lookup" hidden>
         <div class="pane-tab-inner">
           <div class="lookup-controls">

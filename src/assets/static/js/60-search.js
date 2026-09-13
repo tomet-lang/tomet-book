@@ -156,5 +156,5 @@
     }
   });
 
-  Object.assign(T, { setupSearch });
+  Object.assign(T, { setupSearch, getPagefind });
 })();
