@@ -40,3 +40,14 @@ axum = { version = "0.7.9", features = ["ws"] }
 tower-http = { version = "0.5.2", features = ["fs", "cors", "trace"] }
 futures = "0.3.31"
 rayon = "1.10"
+pagefind = { version = "1.5.2", default-features = false, optional = true }
+
+[features]
+# Bundle Pagefind's indexer into the tmtbook binary instead of shelling out to
+# a `pagefind` executable on PATH. Off by default: it adds real compile time
+# and binary size for a capability most dev builds never exercise.
+embedded-search = ["dep:pagefind"]
+# CJK word segmentation (charabia) for the embedded indexer. Costs more build
+# time/size again; compare index quality against plain embedded-search before
+# deciding whether it earns that cost.
+embedded-search-extended = ["embedded-search", "pagefind/extended"]

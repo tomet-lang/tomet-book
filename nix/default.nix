@@ -21,6 +21,9 @@ flake-parts.lib.mkFlake { inherit inputs; } {
       packages = rec {
         default = tmtbook;
         tmtbook = pkgs.callPackage ./pkgs/tmtbook.nix { inherit craneLib; };
+        tmtbook-embedded-search = pkgs.callPackage ./pkgs/tmtbook-embedded-search.nix {
+          inherit craneLib;
+        };
       };
 
       devShells.default = pkgs.callPackage ./dev.nix {

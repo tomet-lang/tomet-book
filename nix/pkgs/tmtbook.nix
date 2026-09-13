@@ -1,6 +1,9 @@
 {
   craneLib,
   lib,
+  # Cargo features to build with, e.g. [ "embedded-search" ]. See
+  # ./tmtbook-embedded-search.nix for the variant that sets this.
+  features ? [ ],
 }:
 let
   root = ../..;
@@ -19,6 +22,9 @@ let
 
   commonArgs = {
     inherit src;
+    cargoExtraArgs = lib.optionalString (
+      features != [ ]
+    ) "--features ${lib.concatStringsSep "," features}";
   }
   // craneLib.crateNameFromCargoToml { cargoToml = root + "/Cargo.toml"; };
 
