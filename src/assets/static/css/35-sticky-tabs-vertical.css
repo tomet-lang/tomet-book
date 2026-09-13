@@ -259,10 +259,13 @@
 }
 
 /* .sticky-children-peek (see 30-sticky-tabs.css) fills the slot's own
-   collapsed box directly rather than trying to look like a real child tab
-   clipped to size, so unlike that former approach it needs no particular
-   width to land its rounded corner in the right place. */
+   collapsed box, which defaults to the full rail width -- fine once
+   expanded (real child tabs live there), but a peek that wide reads as a
+   whole extra row rather than a hint of one, sticking out past the tabs
+   around it. Narrowed to the same width a level-3 child tab uses. */
 [data-tabs="right"] .sticky-children-peek {
+  right: auto;
+  width: calc(100% - 22px);
   border-radius: 0 0 4px 0;
 }
 [data-tabs="right"] .sticky-tab-node.is-active > .sticky-children-slot,
