@@ -25,6 +25,12 @@
      gets its own variable rather than reusing --bg or --surface-subtle
      directly. */
   --recent-book-bg: #ffffff;
+  /* The left sidebar (book-rail-nav + pane-nav) and anything meant to read
+     as part of it (floating-controls, the edit button): a cool, quiet tint
+     a step off --surface, distinct enough to read as its own zone without
+     competing with the page's own near-white background. */
+  --sidebar-bg: #eef2f8;
+  --sidebar-border: #c7d2e0;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -46,6 +52,8 @@
     --spine-5: #d1b56a;
     --spine-6: #a89bd8;
     --recent-book-bg: #2f3236;
+    --sidebar-bg: #1a2130;
+    --sidebar-border: #2e3b52;
   }
 }
 
@@ -67,6 +75,8 @@
   --spine-5: #d1b56a;
   --spine-6: #a89bd8;
   --recent-book-bg: #2f3236;
+  --sidebar-bg: #1a2130;
+  --sidebar-border: #2e3b52;
 }
 
 :root[data-theme="light"] {
@@ -87,6 +97,8 @@
   --spine-5: #6b5a2f;
   --spine-6: #4a3f6b;
   --recent-book-bg: #ffffff;
+  --sidebar-bg: #eef2f8;
+  --sidebar-border: #c7d2e0;
 }
 
 *, *::before, *::after {
@@ -229,12 +241,12 @@ a:visited {
   background: var(--surface);
 }
 
-/* Lives inside .floating-controls, which wears the sticky-tabs jump
-   buttons' post-it black/white accent (--sticky-edge-btn-*) -- .view-btn
-   and .view-switcher match it there; elsewhere (there is currently no
-   other caller) they keep the plain --border/--text-muted look above. */
+/* Lives inside .floating-controls, which wears the left sidebar's own tint
+   (--sidebar-*) -- .view-btn and .view-switcher match it there; elsewhere
+   (there is currently no other caller) they keep the plain
+   --border/--text-muted look above. */
 .floating-controls .view-switcher {
-  border-color: var(--sticky-edge-btn-hover-bg);
+  border-color: var(--sidebar-border);
   background: transparent;
 }
 
@@ -248,17 +260,8 @@ a:visited {
   line-height: 1.2;
 }
 
-.floating-controls .view-btn {
-  color: var(--sticky-edge-btn-color);
-}
-
 .view-btn:hover {
   color: var(--link);
-}
-
-.floating-controls .view-btn:hover {
-  color: var(--sticky-edge-btn-hover-color);
-  background: var(--sticky-edge-btn-hover-bg);
 }
 
 html[data-view="book"] .view-btn-book,
@@ -270,8 +273,8 @@ html[data-view="classic"] .view-btn-classic {
 
 html[data-view="book"] .floating-controls .view-btn-book,
 html[data-view="classic"] .floating-controls .view-btn-classic {
-  background: var(--sticky-edge-btn-hover-bg);
-  color: var(--sticky-edge-btn-hover-color);
+  background: var(--sidebar-border);
+  color: var(--text);
   font-weight: 500;
 }
 

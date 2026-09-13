@@ -5,8 +5,8 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
   flex-shrink: 0;
   overflow: hidden;
   box-sizing: border-box;
@@ -33,6 +33,13 @@
 .pane-nav > .pane-header {
   width: 260px;
   flex-shrink: 0;
+}
+/* .pane-header itself stays the plain surface-derived color for every
+   other pane (10-shell.css) -- scoped here so tinting the sidebar doesn't
+   also reach into .pane-data's identical-looking header on the other side
+   of the screen. */
+.pane-nav > .pane-header {
+  background: color-mix(in srgb, var(--sidebar-bg), black 6%);
 }
 
 .pane-panel-view {

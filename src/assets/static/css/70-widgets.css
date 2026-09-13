@@ -7,28 +7,27 @@
   display: flex;
   align-items: center;
 }
-/* Sits inside .floating-controls, which now wears the sticky-tabs jump
-   buttons' post-it black/white accent (--sticky-edge-btn-*) instead of the
-   page's own surface color -- the hover shade doubles as this field's
-   resting background, one step off the bar's own color so it still reads
-   as a distinct field rather than just more bar. */
+/* Sits inside .floating-controls, which wears the left sidebar's own tint
+   (--sidebar-*) instead of the page's own surface color -- this field gets
+   a background one step off the bar's own, so it still reads as a
+   distinct field rather than just more bar. */
 #wiki-search-input {
   width: 240px;
   height: 32px;
   padding: 0 10px;
-  background: var(--sticky-edge-btn-hover-bg);
-  border: 1px solid transparent;
-  color: var(--sticky-edge-btn-color);
+  background: var(--bg);
+  border: 1px solid var(--sidebar-border);
+  color: var(--text);
   font-size: 0.875rem;
   box-sizing: border-box;
 }
 #wiki-search-input:focus {
   outline: none;
-  border-color: var(--sticky-edge-btn-hover-color);
-  background: var(--sticky-edge-btn-bg);
+  border-color: var(--link);
+  background: var(--bg);
 }
 #wiki-search-input::placeholder {
-  color: color-mix(in srgb, var(--sticky-edge-btn-color), transparent 40%);
+  color: var(--text-muted);
 }
 .search-results {
   position: absolute;

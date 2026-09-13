@@ -190,10 +190,9 @@ a.tm-ref-unresolved {
   display: inline-block;
 }
 
-/* Same post-it black/white accent as the sticky-tabs jump buttons
-   (--sticky-edge-btn-*, defined in 30-sticky-tabs.css), plus a shadow so it
-   reads as a raised control the way those buttons already do rather than
-   sitting flush with the page. */
+/* Same tint as the left sidebar (--sidebar-*, defined in 00-base.css),
+   plus a shadow so it reads as a raised control rather than sitting flush
+   with the page. */
 .hero-action-btn {
   display: inline-flex;
   align-items: center;
@@ -201,9 +200,9 @@ a.tm-ref-unresolved {
   width: 30px;
   height: 30px;
   padding: 0;
-  color: var(--sticky-edge-btn-color);
-  background: var(--sticky-edge-btn-bg);
-  border: 1px solid var(--sticky-edge-btn-bg);
+  color: var(--text-muted);
+  background: var(--sidebar-bg);
+  border: 1px solid var(--sidebar-border);
   border-radius: 50%;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
   cursor: pointer;
@@ -216,9 +215,9 @@ a.tm-ref-unresolved {
 }
 
 .hero-action-btn:hover {
-  color: var(--sticky-edge-btn-hover-color);
-  border-color: var(--sticky-edge-btn-hover-bg);
-  background: var(--sticky-edge-btn-hover-bg);
+  color: var(--link);
+  border-color: var(--link);
+  background: var(--sidebar-border);
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
 }
 
