@@ -419,7 +419,7 @@
      mode's height, see 35-sticky-tabs-vertical.css) and every level share,
      so a level-4 peek reads the same "there's more here" hint a level-2
      one does rather than looking like a different, smaller affordance. */
-  --sticky-peek-reveal: 3px;
+  --sticky-peek-reveal: 5px;
 }
 /* When collapsed, .sticky-children-peek (a dedicated element, not a clipped
    real child -- see below) shows a --sticky-peek-reveal hint of paper
