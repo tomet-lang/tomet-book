@@ -243,7 +243,6 @@
   max-width: none;
   /* Peeks 4px downward when collapsed (analogous to the 4px rightward peek in horizontal layout) */
   max-height: 10px;
-  border-radius: 0 0 4px 0;
   margin: -6px 0 0 0;
 }
 /* No transition on max-height/margin here, matching 30-sticky-tabs.css's
@@ -257,9 +256,14 @@
    paint, not layout. */
 [data-tabs="right"] .sticky-tab-node:not(.is-active):not(.is-active-branch) > .sticky-children-slot {
   height: auto;
-  /* At full width (100%), the bottom-right radius floats in empty space to the right,
-     making the peek look square. Match the width of one child tab. */
-  width: calc(100% - 22px);
+}
+
+/* .sticky-children-peek (see 30-sticky-tabs.css) fills the slot's own
+   collapsed box directly rather than trying to look like a real child tab
+   clipped to size, so unlike that former approach it needs no particular
+   width to land its rounded corner in the right place. */
+[data-tabs="right"] .sticky-children-peek {
+  border-radius: 0 0 4px 0;
 }
 [data-tabs="right"] .sticky-tab-node.is-active > .sticky-children-slot,
 [data-tabs="right"] .sticky-tab-node.is-active-branch > .sticky-children-slot {

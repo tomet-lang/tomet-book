@@ -115,6 +115,17 @@
   position: relative;
   height: 100%;
   contain: layout;
+  /* A collapsed .sticky-children-slot clips to a 10px peek via max-width/
+     max-height + overflow: hidden, meaning to show a sliver of the first
+     child at its real size with the rest simply hidden past the edge --
+     not to squeeze every child in the row down to fit inside 10px. Flex
+     items default to flex-shrink: 1, so without this every sibling in the
+     slot was being compressed instead of clipped: a compressed tab's own
+     border-radius can't render past half its (now tiny) box, reading as a
+     square corner, and several squashed-but-still-visible labels showed as
+     illegible slivers where only the very first child's edge was meant to
+     show. */
+  flex-shrink: 0;
 }
 
 /* Sticky tab button base: borderless, index tab shape (rounded top, flat bottom, soft pastel palette) */
@@ -402,18 +413,17 @@
 }
 
 /* --- Horizontally expanding child heading slot (smoothly opens on active branch) --- */
-/* When collapsed, keep a 4px peek of the first child tab from behind the parent
-   so readers can see that child headings exist even when folded. */
+/* When collapsed, .sticky-children-peek (a dedicated element, not a clipped
+   real child -- see below) shows a 4px hint of paper behind the parent so
+   readers can see that child headings exist even when folded. */
 .sticky-children-slot {
   display: inline-flex;
   align-items: flex-end;
   height: 100%; /* Shares parent height for 100% bottom edge alignment */
   align-self: flex-end;
   gap: 3px;
-  /* Tucks 6px beneath the parent and retains 10px, leaving a 4px visible tab peek to the right.
-     The top-right corner is rounded to match the tab shape so it reads as paper. */
+  /* Tucks 6px beneath the parent and retains 10px, leaving a 4px visible peek to the right. */
   max-width: 10px;
-  border-radius: 0 4px 0 0;
   opacity: 1;
   overflow: hidden;
   white-space: nowrap;
@@ -425,6 +435,47 @@
      so they must be contained here to avoid rendering in front of the parent. */
   position: relative;
   z-index: 0;
+}
+
+/* The collapsed peek used to just be the first real child tab, clipped down
+   to a 4px sliver by the slot's own overflow: hidden -- simple, but that
+   sliver was never actually the child's own corner (the child's true edges
+   sit further out, tucked out of view by the slot's -6px margin) so much as
+   an arbitrary cross-section through its middle, with a rounded corner
+   painted onto the *slot's* edge rather than any real tab's. That read fine
+   by luck as long as the slice happened to look plausible, and broke (a
+   flat edge where a corner should be, or a sliver of legible label) as soon
+   as it didn't. A dedicated element sidesteps the whole problem: nothing
+   here is a clipped view of anything else, so there's no alignment to get
+   wrong -- and it leaves room to show more than one child's worth of
+   information later (e.g. hinting that H3s wait past the H2s) without that
+   needing to somehow also be a real, clickable tab. */
+.sticky-children-peek {
+  display: none;
+  position: absolute;
+  inset: 0;
+  border-radius: 0 4px 0 0;
+  /* .sticky-tab-node (the real children painted after it in the DOM) has
+     its own position: relative, so without an explicit z-index here the
+     default stacking order -- positioned elements paint in DOM order at
+     the same z-index: auto level -- would put those later, equally
+     "positioned" siblings on top of this one instead of the other way
+     around. */
+  z-index: 1;
+}
+.sticky-tab-node:not(.is-active):not(.is-active-branch) > .sticky-children-slot > .sticky-children-peek {
+  display: block;
+}
+.sticky-children-peek.level-2 {
+  background: var(--sticky-l2-bg);
+}
+.sticky-children-peek.level-3 {
+  background: var(--sticky-l3-bg);
+}
+.sticky-children-peek.level-4,
+.sticky-children-peek.level-5,
+.sticky-children-peek.level-6 {
+  background: var(--sticky-l4-bg);
 }
 
 /* No transition on max-width/margin here: animating a layout property forces
