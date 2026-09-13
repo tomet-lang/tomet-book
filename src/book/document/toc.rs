@@ -15,6 +15,14 @@ pub struct TocNode {
     pub text: String,
     pub level: u32,
     pub children: Vec<TocNode>,
+    /// Heading levels this node's own children slot can show a collapsed
+    /// peek for: its direct children's level, plus one level deeper if any
+    /// of them has children of its own. Capped at two entries because
+    /// that's as deep as the sticky-tabs template ever renders a slot --
+    /// a level nested past that exists in the data but has no tab of its
+    /// own for a peek to promise.
+    #[serde(default)]
+    pub peek_levels: Vec<u32>,
 }
 
 pub type SectionTab = TocNode;
@@ -61,6 +69,31 @@ pub fn toc_from_outline(outline: &[tomet_html::HeadingInfo]) -> (Option<String>,
     (first_h1, toc)
 }
 
+/// Fill in `peek_levels` for a node and everything under it.
+///
+/// A node's direct children always share one level (siblings are only ever
+/// inserted at the same depth), so that level is the first entry; if any of
+/// those children themselves has children, their shared level becomes the
+/// second. Never a third: a level nested past that has no slot to peek out
+/// of in the sticky-tabs template, so hinting at it would promise a tab
+/// that clicking through doesn't actually reveal.
+fn annotate_peek_levels(nodes: &mut [TocNode]) {
+    for node in nodes {
+        if let Some(first_child) = node.children.first() {
+            let mut levels = vec![first_child.level];
+            if let Some(grandchild_level) = node
+                .children
+                .iter()
+                .find_map(|c| c.children.first().map(|gc| gc.level))
+            {
+                levels.push(grandchild_level);
+            }
+            node.peek_levels = levels;
+        }
+        annotate_peek_levels(&mut node.children);
+    }
+}
+
 fn insert_node_into(parent: &mut TocNode, node: TocNode) {
     if let Some(last) = parent.children.last_mut()
         && node.level > last.level
@@ -90,6 +123,7 @@ pub fn build_section_tabs(toc: &[TocItem]) -> Vec<TocNode> {
             text: item.text.clone(),
             level: item.level,
             children: Vec::new(),
+            peek_levels: Vec::new(),
         };
 
         if section_tabs.is_empty() || item.level <= top_level {
@@ -103,6 +137,7 @@ pub fn build_section_tabs(toc: &[TocItem]) -> Vec<TocNode> {
         }
     }
 
+    annotate_peek_levels(&mut section_tabs);
     section_tabs
 }
 
@@ -274,5 +309,52 @@ mod tests {
     #[test]
     fn an_empty_toc_yields_no_tabs() {
         assert!(build_section_tabs(&[]).is_empty());
+    }
+
+    // ---- peek_levels ----
+
+    #[test]
+    fn a_leaf_node_has_no_peek_levels() {
+        let tabs = build_section_tabs(&toc(&[(1, "A")]));
+        assert!(tabs[0].peek_levels.is_empty());
+    }
+
+    #[test]
+    fn a_node_with_only_direct_children_peeks_one_level_deep() {
+        let tabs = build_section_tabs(&toc(&[(1, "A"), (2, "A-1"), (2, "A-2")]));
+        assert_eq!(tabs[0].peek_levels, vec![2]);
+        // The children themselves are leaves.
+        assert!(tabs[0].children[0].peek_levels.is_empty());
+    }
+
+    #[test]
+    fn a_node_with_grandchildren_peeks_two_levels_deep() {
+        let tabs = build_section_tabs(&toc(&[(1, "A"), (2, "A-1"), (3, "A-1-a"), (2, "A-2")]));
+        assert_eq!(
+            tabs[0].peek_levels,
+            vec![2, 3],
+            "A-1 has a child (A-1-a), so A's slot can hint at both levels below it"
+        );
+        assert_eq!(
+            tabs[0].children[0].peek_levels,
+            vec![3],
+            "A-1's own slot only ever has H3 children"
+        );
+        assert!(tabs[0].children[1].peek_levels.is_empty(), "A-2 has no children");
+    }
+
+    #[test]
+    fn a_great_grandchild_level_is_not_promised() {
+        // H4 exists in the data (toc_from_outline allows it), but the
+        // sticky-tabs template never renders a slot inside an H3 tab, so
+        // hinting at H4 from A's own collapsed slot would promise a tab
+        // that clicking through never reveals.
+        let tabs = build_section_tabs(&toc(&[
+            (1, "A"),
+            (2, "A-1"),
+            (3, "A-1-a"),
+            (4, "A-1-a-i"),
+        ]));
+        assert_eq!(tabs[0].peek_levels, vec![2, 3]);
     }
 }

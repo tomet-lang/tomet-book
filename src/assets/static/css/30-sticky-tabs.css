@@ -453,24 +453,52 @@
 .sticky-children-peek {
   display: none;
   position: absolute;
-  inset: 0;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  /* A fixed width rather than inset: 0's "fill the slot" -- a layered
+     slot's second peek widens the *slot* to give itself room to poke out
+     further (see .has-layered-peek below), and if this stretched to match,
+     the first peek would grow too and cover the exact same span, leaving
+     nothing of the second one visible. */
+  width: 10px;
   border-radius: 0 4px 0 0;
   /* Same shadow as a real .sticky-tab-btn, so the peek reads as a piece of
      paper rather than a flat color swatch. */
   box-shadow: 0 -2px 3px rgba(0, 0, 0, 0.13);
   /* .sticky-tab-node (the real children painted after it in the DOM) has
-     its own position: relative, so without an explicit z-index here the
-     default stacking order -- positioned elements paint in DOM order at
-     the same z-index: auto level -- would put those later, equally
-     "positioned" siblings on top of this one instead of the other way
-     around. */
-  z-index: 1;
+     its own position: relative, so without a z-index of at least 1 here
+     the default stacking order -- z-index: auto and explicit z-index: 0
+     paint at the *same* level, ordered by DOM position like non-positioned
+     content would be -- would put those later, equally "positioned"
+     siblings on top of this one instead of the other way around. Left at
+     2 (not 1) so a second, layered peek (below) can sit at 1: still above
+     the real children's z-index: auto, but behind this one. */
+  z-index: 2;
 }
 [data-theme="dark"] .sticky-children-peek {
   box-shadow: 0 -2px 3px rgba(0, 0, 0, 0.4);
 }
 .sticky-tab-node:not(.is-active):not(.is-active-branch) > .sticky-children-slot > .sticky-children-peek {
   display: block;
+}
+
+/* When a slot has more than one thing to hint at (its children have
+   children of their own too), a second peek renders behind the first --
+   shifted 4px further outward so a sliver of it shows past the first
+   peek's edge, the same way the first peek shows a sliver of a real tab.
+   The slot has to widen to give that sliver somewhere to be: at the base
+   10px it would be clipped away entirely by the slot's own overflow: hidden. */
+.sticky-children-slot.has-layered-peek {
+  max-width: 14px;
+}
+.sticky-children-peek ~ .sticky-children-peek {
+  left: 4px;
+  /* Must still be a positive integer, not 0: 0 and auto share one painting
+     level ordered by DOM position, and the real children -- z-index: auto,
+     later in the DOM -- would win it and show through in the sliver only
+     this second peek covers. 1 keeps it above them and below the first peek. */
+  z-index: 1;
 }
 .sticky-children-peek.level-2 {
   background: var(--sticky-l2-bg);
@@ -500,14 +528,17 @@
   height: auto;
 }
 
-/* Conceal contents while collapsed so only the tab edge peeks through.
-   Fading opacity with the exact same duration and easing as width prevents
-   text disappearing abruptly before width collapses. */
-.sticky-children-slot .sticky-tab-btn > * {
-  transition: opacity 0.28s cubic-bezier(0.2, 0, 0, 1);
-}
-.sticky-tab-node:not(.is-active):not(.is-active-branch) > .sticky-children-slot .sticky-tab-btn > * {
-  opacity: 0;
+/* Conceal real children entirely while collapsed -- .sticky-children-peek
+   is what's actually meant to show there. visibility: hidden (rather than
+   opacity, which this used to be) takes them out of painting altogether,
+   so there's no stacking order left to get right between a real child and
+   the peek covering it -- unlike z-index, which only ever wins against
+   *lower* values and had to be raised again for the second, layered peek
+   once one existed to lose to. Doesn't affect layout (measureExpandDeltas
+   in 40-book-view.js still needs these laid out normally to measure), just
+   paint. */
+.sticky-tab-node:not(.is-active):not(.is-active-branch) > .sticky-children-slot .sticky-tab-btn {
+  visibility: hidden;
 }
 
 /* Container for badge and heading text. Acts as display: contents in horizontal mode

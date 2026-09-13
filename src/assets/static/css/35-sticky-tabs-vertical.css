@@ -269,6 +269,13 @@
    too (2px 0 3px, cast leftward, not 0 -2px 3px as in horizontal mode). */
 [data-tabs="right"] .sticky-children-peek {
   right: auto;
+  /* A fixed height rather than the base rule's bottom: 0 (which fills
+     however tall the slot currently is) for the same reason the width is
+     fixed in horizontal mode: a layered slot's second peek needs the slot
+     taller than this so it can poke out past this one, and if this filled
+     that extra height too, both peeks would cover the same span. */
+  bottom: auto;
+  height: 10px;
   border-radius: 0 0 4px 0;
   box-shadow: 2px 0 3px rgba(0, 0, 0, 0.13);
 }
@@ -285,6 +292,17 @@
 [data-tabs="right"] .sticky-children-peek.level-5,
 [data-tabs="right"] .sticky-children-peek.level-6 {
   width: calc(100% - 38px);
+}
+
+/* A second, layered peek (see 30-sticky-tabs.css) shifts downward here
+   instead of rightward -- vertical mode's peek axis is height, not width --
+   so its horizontal-mode left: 4px is undone rather than stacking with it. */
+[data-tabs="right"] .sticky-children-slot.has-layered-peek {
+  max-height: 14px;
+}
+[data-tabs="right"] .sticky-children-peek ~ .sticky-children-peek {
+  left: 0;
+  top: 4px;
 }
 [data-tabs="right"] .sticky-tab-node.is-active > .sticky-children-slot,
 [data-tabs="right"] .sticky-tab-node.is-active-branch > .sticky-children-slot {
