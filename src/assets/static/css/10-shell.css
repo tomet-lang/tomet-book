@@ -176,6 +176,20 @@ html[data-view="classic"] .classic-view {
   background: var(--surface-subtle);
   scroll-snap-type: x proximity;
   scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.book-view::-webkit-scrollbar {
+  height: 8px;
+}
+.book-view::-webkit-scrollbar-track {
+  background: transparent;
+}
+.book-view::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+.book-view::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }
 
 .book-pane {

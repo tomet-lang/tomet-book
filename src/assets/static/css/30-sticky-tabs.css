@@ -641,6 +641,20 @@
   overflow-x: hidden;
   scroll-behavior: smooth;
   scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.pane-scroll-content::-webkit-scrollbar {
+  width: 8px;
+}
+.pane-scroll-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.pane-scroll-content::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+.pane-scroll-content::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }
 
 .pane-article-container {
