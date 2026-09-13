@@ -93,6 +93,18 @@
   box-sizing: border-box;
 }
 
+/* Chromium's UA stylesheet gives <button> its own default font (a plain
+   Arial-like control font) instead of inheriting the page's font like every
+   other element -- Firefox inherits it here without being told to. Left
+   alone, .sticky-tab-btn's font-weight: 600 lands on that substitute font
+   in Chromium, which lacks a real 600 weight and synthesizes a heavier,
+   wider bold than the page's actual font renders at the same weight --
+   wide enough that labels which fit on one line elsewhere wrap mid-word
+   only in Chromium. */
+button, input, select, textarea {
+  font-family: inherit;
+}
+
 html {
   line-height: 1.6;
   background-color: var(--bg);
