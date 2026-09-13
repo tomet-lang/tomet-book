@@ -190,6 +190,10 @@ a.tm-ref-unresolved {
   display: inline-block;
 }
 
+/* Same post-it black/white accent as the sticky-tabs jump buttons
+   (--sticky-edge-btn-*, defined in 30-sticky-tabs.css), plus a shadow so it
+   reads as a raised control the way those buttons already do rather than
+   sitting flush with the page. */
 .hero-action-btn {
   display: inline-flex;
   align-items: center;
@@ -197,19 +201,25 @@ a.tm-ref-unresolved {
   width: 30px;
   height: 30px;
   padding: 0;
-  color: var(--text-muted);
-  background: var(--surface);
-  border: 1px solid var(--border);
+  color: var(--sticky-edge-btn-color);
+  background: var(--sticky-edge-btn-bg);
+  border: 1px solid var(--sticky-edge-btn-bg);
   border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
   line-height: 1;
 }
 
+[data-theme="dark"] .hero-action-btn {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
 .hero-action-btn:hover {
-  color: var(--link);
-  border-color: var(--link);
-  background: var(--surface-subtle);
+  color: var(--sticky-edge-btn-hover-color);
+  border-color: var(--sticky-edge-btn-hover-bg);
+  background: var(--sticky-edge-btn-hover-bg);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
 }
 
 .edit-dropdown-menu {

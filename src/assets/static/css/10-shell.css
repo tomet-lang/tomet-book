@@ -109,6 +109,10 @@ html[data-view="classic"] .classic-view {
 }
 
 /* ==================== FLOATING CONTROLS ==================== */
+/* Same post-it black/white accent as the sticky-tabs jump buttons
+   (--sticky-edge-btn-*, defined in 30-sticky-tabs.css) rather than the
+   page's own surface color, so this bar and that one read as the same
+   family of control. */
 .floating-controls {
   position: fixed;
   top: 10px;
@@ -117,8 +121,9 @@ html[data-view="classic"] .classic-view {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--sticky-edge-btn-bg);
+  color: var(--sticky-edge-btn-color);
+  border: 1px solid var(--sticky-edge-btn-bg);
   border-radius: 0;
   padding: 4px 6px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
@@ -137,7 +142,7 @@ html[data-view="classic"] .classic-view {
   justify-content: center;
   width: 14px;
   height: 24px;
-  color: var(--text-muted);
+  color: var(--sticky-edge-btn-color);
   cursor: grab;
   touch-action: none;
   border-radius: 0;
@@ -146,8 +151,8 @@ html[data-view="classic"] .classic-view {
 }
 
 .floating-drag-handle:hover {
-  color: var(--text);
-  background: var(--surface-hover);
+  color: var(--sticky-edge-btn-hover-color);
+  background: var(--sticky-edge-btn-hover-bg);
 }
 
 .floating-controls.is-dragging,

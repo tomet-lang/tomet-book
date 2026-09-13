@@ -229,6 +229,15 @@ a:visited {
   background: var(--surface);
 }
 
+/* Lives inside .floating-controls, which wears the sticky-tabs jump
+   buttons' post-it black/white accent (--sticky-edge-btn-*) -- .view-btn
+   and .view-switcher match it there; elsewhere (there is currently no
+   other caller) they keep the plain --border/--text-muted look above. */
+.floating-controls .view-switcher {
+  border-color: var(--sticky-edge-btn-hover-bg);
+  background: transparent;
+}
+
 .view-btn {
   padding: 3px 8px;
   font-size: 0.75rem;
@@ -239,14 +248,30 @@ a:visited {
   line-height: 1.2;
 }
 
+.floating-controls .view-btn {
+  color: var(--sticky-edge-btn-color);
+}
+
 .view-btn:hover {
   color: var(--link);
+}
+
+.floating-controls .view-btn:hover {
+  color: var(--sticky-edge-btn-hover-color);
+  background: var(--sticky-edge-btn-hover-bg);
 }
 
 html[data-view="book"] .view-btn-book,
 html[data-view="classic"] .view-btn-classic {
   background: var(--surface-subtle);
   color: var(--text);
+  font-weight: 500;
+}
+
+html[data-view="book"] .floating-controls .view-btn-book,
+html[data-view="classic"] .floating-controls .view-btn-classic {
+  background: var(--sticky-edge-btn-hover-bg);
+  color: var(--sticky-edge-btn-hover-color);
   font-weight: 500;
 }
 
