@@ -90,4 +90,64 @@
   .pane-scroll-content {
     padding-bottom: 52px;
   }
+
+  /* Sticky tabs: bigger tap targets. Desktop sizes tabs tightly (down to
+     20px tall) since a mouse pointer is precise; a finger isn't, so every
+     level grows toward a touch-friendly size here. 30-sticky-tabs.css's
+     active-state "pop" is a fixed +4px on every level (33/29, 30/26,
+     27/23, 24/20 all reduce to +4), so the scaleY ratios below just carry
+     that same +4px forward at the new base heights instead of inventing a
+     new pop amount. */
+  .pane-content-header {
+    height: 60px;
+    min-height: 60px;
+  }
+  .sticky-tab-btn.level-1 {
+    height: 40px;
+    padding: 4px 14px 4px 12px;
+  }
+  .sticky-tab-btn.level-1.is-active {
+    transform: scaleY(1.1); /* 44 / 40 */
+  }
+  .sticky-tab-btn.level-2 {
+    height: 37px;
+    padding: 4px 12px 4px 10px;
+  }
+  .sticky-tab-btn.level-2.is-active {
+    transform: scaleY(1.108108); /* 41 / 37 */
+  }
+  .sticky-tab-btn.level-3 {
+    height: 34px;
+    padding: 3px 11px 3px 9px;
+  }
+  .sticky-tab-btn.level-3.is-active {
+    transform: scaleY(1.117647); /* 38 / 34 */
+  }
+  .sticky-tab-btn.level-4,
+  .sticky-tab-btn.level-5,
+  .sticky-tab-btn.level-6 {
+    height: 31px;
+    padding: 3px 10px 3px 8px;
+  }
+  .sticky-tab-btn.level-4.is-active,
+  .sticky-tab-btn.level-5.is-active,
+  .sticky-tab-btn.level-6.is-active {
+    transform: scaleY(1.129032); /* 35 / 31 */
+  }
+  .sticky-edge-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* Fades both edges of the tab row to hint there's more to scroll to --
+     a mouse pointer crossing a scrollbar makes overflow obvious, but a
+     finger doesn't, and the row's own horizontal scrollbar is what this
+     book's touch-scroll design leaves to the browser/OS to show (or hide)
+     on its own. The mask fades on an element already showing its own
+     scrollbar (30-sticky-tabs.css's ::-webkit-scrollbar) just adds a
+     softer edge in addition to it, not instead of it. */
+  .sticky-tabs-bar {
+    -webkit-mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
+    mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
+  }
 }
