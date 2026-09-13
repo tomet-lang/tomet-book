@@ -71,23 +71,27 @@ pub fn toc_from_outline(outline: &[tomet_html::HeadingInfo]) -> (Option<String>,
 
 /// Fill in `peek_levels` for a node and everything under it.
 ///
-/// A node's direct children always share one level (siblings are only ever
-/// inserted at the same depth), so that level is the first entry; if any of
-/// those children themselves has children, their shared level becomes the
-/// second. Never a third: a level nested past that has no slot to peek out
-/// of in the sticky-tabs template, so hinting at it would promise a tab
-/// that clicking through doesn't actually reveal.
+/// Direct children usually all share one level (siblings are normally
+/// inserted at the same depth), but a heading sequence that skips a level
+/// (an H4 arriving before any H3 does, say) can leave one node's children
+/// mixing levels -- so this collects every distinct level actually present
+/// among the children, plus every distinct level one step deeper (any
+/// child's own children), rather than assuming the first child speaks for
+/// all of them. Deeper than that is never included: a level nested past a
+/// grandchild has no slot of its own in the sticky-tabs template to peek
+/// out of, so hinting at it would promise a tab that clicking through
+/// doesn't actually reveal.
 fn annotate_peek_levels(nodes: &mut [TocNode]) {
     for node in nodes {
-        if let Some(first_child) = node.children.first() {
-            let mut levels = vec![first_child.level];
-            if let Some(grandchild_level) = node
-                .children
-                .iter()
-                .find_map(|c| c.children.first().map(|gc| gc.level))
-            {
-                levels.push(grandchild_level);
-            }
+        if !node.children.is_empty() {
+            let mut levels: Vec<u32> = node.children.iter().map(|c| c.level).collect();
+            levels.extend(
+                node.children
+                    .iter()
+                    .flat_map(|c| c.children.iter().map(|gc| gc.level)),
+            );
+            levels.sort_unstable();
+            levels.dedup();
             node.peek_levels = levels;
         }
         annotate_peek_levels(&mut node.children);
@@ -341,6 +345,25 @@ mod tests {
             "A-1's own slot only ever has H3 children"
         );
         assert!(tabs[0].children[1].peek_levels.is_empty(), "A-2 has no children");
+    }
+
+    #[test]
+    fn a_level_skip_does_not_duplicate_a_peek_level() {
+        // A-1 arrives as H4 before any H3 has, so it lands as a direct
+        // child of A alongside the later, properly-nested A-2 (H3, with
+        // its own H4 child) -- A's children end up mixing levels 4 and 3,
+        // not the one shared level annotate_peek_levels used to assume.
+        let tabs = build_section_tabs(&toc(&[
+            (1, "A"),
+            (4, "A-1"),
+            (3, "A-2"),
+            (4, "A-2-i"),
+        ]));
+        assert_eq!(
+            tabs[0].peek_levels,
+            vec![3, 4],
+            "both levels actually present should be hinted at, once each"
+        );
     }
 
     #[test]
