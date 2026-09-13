@@ -262,11 +262,29 @@
    collapsed box, which defaults to the full rail width -- fine once
    expanded (real child tabs live there), but a peek that wide reads as a
    whole extra row rather than a hint of one, sticking out past the tabs
-   around it. Narrowed to the same width a level-3 child tab uses. */
+   around it. Narrowed to whatever width the level it's hinting at already
+   uses (same values as .sticky-tab-btn.level-N above) rather than a single
+   fixed amount, so a level-4+ peek doesn't protrude past a level-3 peek
+   the way a flat width would. Shadow matches a real .sticky-tab-btn's here
+   too (2px 0 3px, cast leftward, not 0 -2px 3px as in horizontal mode). */
 [data-tabs="right"] .sticky-children-peek {
   right: auto;
-  width: calc(100% - 22px);
   border-radius: 0 0 4px 0;
+  box-shadow: 2px 0 3px rgba(0, 0, 0, 0.13);
+}
+[data-theme="dark"][data-tabs="right"] .sticky-children-peek {
+  box-shadow: 2px 0 3px rgba(0, 0, 0, 0.4);
+}
+[data-tabs="right"] .sticky-children-peek.level-2 {
+  width: calc(100% - 22px);
+}
+[data-tabs="right"] .sticky-children-peek.level-3 {
+  width: calc(100% - 30px);
+}
+[data-tabs="right"] .sticky-children-peek.level-4,
+[data-tabs="right"] .sticky-children-peek.level-5,
+[data-tabs="right"] .sticky-children-peek.level-6 {
+  width: calc(100% - 38px);
 }
 [data-tabs="right"] .sticky-tab-node.is-active > .sticky-children-slot,
 [data-tabs="right"] .sticky-tab-node.is-active-branch > .sticky-children-slot {

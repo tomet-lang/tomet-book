@@ -455,6 +455,9 @@
   position: absolute;
   inset: 0;
   border-radius: 0 4px 0 0;
+  /* Same shadow as a real .sticky-tab-btn, so the peek reads as a piece of
+     paper rather than a flat color swatch. */
+  box-shadow: 0 -2px 3px rgba(0, 0, 0, 0.13);
   /* .sticky-tab-node (the real children painted after it in the DOM) has
      its own position: relative, so without an explicit z-index here the
      default stacking order -- positioned elements paint in DOM order at
@@ -462,6 +465,9 @@
      "positioned" siblings on top of this one instead of the other way
      around. */
   z-index: 1;
+}
+[data-theme="dark"] .sticky-children-peek {
+  box-shadow: 0 -2px 3px rgba(0, 0, 0, 0.4);
 }
 .sticky-tab-node:not(.is-active):not(.is-active-branch) > .sticky-children-slot > .sticky-children-peek {
   display: block;
