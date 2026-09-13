@@ -222,10 +222,17 @@
       const nodes = Array.from(tabsBar.querySelectorAll('.sticky-tab-node'));
       if (nodes.length === 0) return null;
 
-      // Only a top-level tab ever gets pushed aside by a neighbour's slot
-      // opening -- a nested child only ever moves within its own
-      // already-open slot -- so only these need their shift tracked.
       const topLevelNodes = Array.from(tabsBar.querySelectorAll(':scope > .sticky-tabs-list > .sticky-tab-node'));
+
+      // Every node whose own children-slot can expand, at any depth -- not
+      // just top-level. A sibling row only ever needs to make room when the
+      // slot belonging to ONE of its own members opens or closes, and that
+      // happens identically at every depth (a level-2 tab's siblings get
+      // pushed aside by its own H3 slot opening exactly the way a level-1
+      // tab's siblings do by its H2 slot) -- so this is measured everywhere
+      // once, and slideAtDivergence below picks whichever single depth
+      // actually changed.
+      const nodesWithSlots = nodes.filter((n) => n.querySelector(':scope > .sticky-children-slot'));
 
       // How many pixels every tab after a given one shifts when THAT one's
       // children-slot opens, measured once instead of asked of the browser
@@ -235,37 +242,43 @@
       // once *then*, which on iPad was one large stutter instead of many
       // small ones. Measuring here, up front, means a later crossing only
       // ever plays back an already-known number via `transform`.
-      let expandDelta = [];
+      let expandDeltaByNode = new Map();
       function measureExpandDeltas() {
         // Every read batched together, then every write, then the second
         // read -- not read-write-read-write per node. Reading offsetWidth
         // right after a classList change forces the browser to run layout
         // synchronously right there, so interleaved like that this was one
-        // forced reflow *per top-level tab* on every single navigation, not
-        // just once. A page with many top-level headings (this vault's
-        // pages routinely have eight or more) paid for that many reflows
-        // every time, which is cheap to not notice on a fast desktop GPU
-        // but very much not on a phone or a weaker laptop. Batched, it's
-        // two forced layouts total regardless of how many tabs there are.
+        // forced reflow *per tab* on every single navigation, not just
+        // once. A page with many headings (this vault's pages routinely
+        // have eight or more) paid for that many reflows every time, which
+        // is cheap to not notice on a fast desktop GPU but very much not on
+        // a phone or a weaker laptop. Batched, it's two forced layouts
+        // total regardless of how many tabs there are.
         //
+        // Whatever branch is genuinely open right now must come out of this
+        // the same way it went in: forcing every slot open to measure it
+        // would otherwise permanently wipe is-active-branch off whatever
+        // tab actually has it, silently collapsing the reader's current
+        // branch the next time a resize retriggers this.
+        const reallyOpen = nodesWithSlots.filter((n) => n.classList.contains('is-active-branch'));
+
         // The bar lays its top-level tabs out along one axis and an open
         // slot pushes later siblings aside along that same axis -- sideways
         // (offsetWidth) in the default horizontal bar, downward
         // (offsetHeight) once `data-tabs="right"` turns it into a column.
-        // Reading the wrong one here would silently measure a dimension
-        // that never changes and slideTopLevelTabs below would have nothing
-        // to play back.
+        // Every nested .sticky-children-slot inherits the same axis (see
+        // 35-sticky-tabs-vertical.css), so one axis choice covers every depth.
         const vertical = isVerticalTabs();
-        const slots = topLevelNodes.map((node) => node.querySelector(':scope > .sticky-children-slot'));
-        const collapsedSizes = topLevelNodes.map((node) => (vertical ? node.offsetHeight : node.offsetWidth));
-        topLevelNodes.forEach((node, i) => {
-          if (slots[i]) node.classList.add('is-active-branch');
-        });
-        const expandedSizes = topLevelNodes.map((node) => (vertical ? node.offsetHeight : node.offsetWidth));
-        topLevelNodes.forEach((node, i) => {
-          if (slots[i]) node.classList.remove('is-active-branch');
-        });
-        expandDelta = topLevelNodes.map((_, i) => (slots[i] ? expandedSizes[i] - collapsedSizes[i] : 0));
+        nodesWithSlots.forEach((n) => n.classList.remove('is-active-branch'));
+        const collapsedSizes = nodesWithSlots.map((n) => (vertical ? n.offsetHeight : n.offsetWidth));
+        nodesWithSlots.forEach((n) => n.classList.add('is-active-branch'));
+        const expandedSizes = nodesWithSlots.map((n) => (vertical ? n.offsetHeight : n.offsetWidth));
+
+        nodesWithSlots.forEach((n) => n.classList.remove('is-active-branch'));
+        reallyOpen.forEach((n) => n.classList.add('is-active-branch'));
+
+        expandDeltaByNode = new Map();
+        nodesWithSlots.forEach((n, i) => expandDeltaByNode.set(n, expandedSizes[i] - collapsedSizes[i]));
       }
       measureExpandDeltas();
       // Web fonts can still land after this and reflow the text a size
@@ -287,33 +300,52 @@
         });
       }
 
-      // Which top-level tab's slot is currently open, so the next crossing
-      // knows what it's animating *from* as well as *to*. -1 is "none".
-      let activeTopIdx = -1;
-
-      function topLevelIndexOf(node) {
+      // Top-level node down to (and including) `node` itself.
+      function chainOf(node) {
+        const chain = [];
         let n = node;
-        while (n && !topLevelNodes.includes(n)) {
+        while (n) {
+          chain.unshift(n);
           n = n.parentElement ? n.parentElement.closest('.sticky-tab-node') : null;
         }
-        return n ? topLevelNodes.indexOf(n) : -1;
+        return chain;
       }
 
-      // FLIP the top-level tabs across an accordion open/close using the
-      // deltas measured above, instead of asking the browser to lay
-      // anything out to find the answer. `apply` makes the real DOM change
-      // (synchronously, but nothing here reads a layout property back out
-      // of it, so the browser is free to do that work whenever it likes
-      // rather than being forced to finish it before the next line runs)
-      // and returns whatever `onSettled` needs once the slide finishes.
-      function slideTopLevelTabs(fromIdx, toIdx, apply, onSettled) {
+      // FLIP whichever single sibling row actually changes across an
+      // accordion open/close, using the deltas measured above, instead of
+      // asking the browser to lay anything out to find the answer. Every
+      // ancestor shared by `oldChain` and `newChain` stays open the whole
+      // time (nothing to slide there); every node past the divergence
+      // point on the new side reveals as a whole, fresh, alongside its own
+      // now-open parent (nothing to slide there either -- it was never
+      // visible a moment ago). So exactly one sibling row can possibly
+      // need to make room: the one right at the first point the two chains
+      // disagree. `apply` makes the real DOM change (synchronously, but
+      // nothing here reads a layout property back out of it, so the
+      // browser is free to do that work whenever it likes rather than
+      // being forced to finish it before the next line runs) and returns
+      // whatever `onSettled` needs once the slide finishes.
+      function slideAtDivergence(oldChain, newChain, apply, onSettled) {
         const axis = isVerticalTabs() ? 'translateY' : 'translateX';
-        const fromDelta = fromIdx >= 0 ? expandDelta[fromIdx] || 0 : 0;
-        const toDelta = toIdx >= 0 ? expandDelta[toIdx] || 0 : 0;
+
+        let k = 0;
+        while (k < oldChain.length && k < newChain.length && oldChain[k] === newChain[k]) k++;
+
+        const siblingNodes =
+          k === 0
+            ? topLevelNodes
+            : Array.from(
+                oldChain[k - 1].querySelectorAll(':scope > .sticky-children-slot > .sticky-tab-node')
+              );
+
+        const fromIdx = oldChain[k] ? siblingNodes.indexOf(oldChain[k]) : -1;
+        const toIdx = newChain[k] ? siblingNodes.indexOf(newChain[k]) : -1;
+        const fromDelta = fromIdx >= 0 ? expandDeltaByNode.get(siblingNodes[fromIdx]) || 0 : 0;
+        const toDelta = toIdx >= 0 ? expandDeltaByNode.get(siblingNodes[toIdx]) || 0 : 0;
 
         const affected = [];
         if (fromIdx !== toIdx) {
-          topLevelNodes.forEach((node, j) => {
+          siblingNodes.forEach((node, j) => {
             const oldShift = fromIdx >= 0 && j > fromIdx ? fromDelta : 0;
             const newShift = toIdx >= 0 && j > toIdx ? toDelta : 0;
             if (oldShift !== newShift) affected.push({ node, delta: oldShift - newShift });
@@ -392,8 +424,9 @@
         // sets the active tab directly.
         if (targetNode.classList.contains('is-active')) return;
 
-        const targetTopIdx = topLevelIndexOf(targetNode);
-        const fromTopIdx = activeTopIdx;
+        const oldActiveNode = nodes.find((n) => n.classList.contains('is-active')) || null;
+        const oldChain = oldActiveNode ? chainOf(oldActiveNode) : [];
+        const newChain = chainOf(targetNode);
 
         const applyActiveState = () => {
           // 2. Clear previous active/branch states
@@ -416,7 +449,6 @@
             parent = parent.parentElement ? parent.parentElement.closest('.sticky-tab-node') : null;
           }
 
-          activeTopIdx = targetTopIdx;
           return directBtn;
         };
 
@@ -427,7 +459,7 @@
           directBtn?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
         };
 
-        slideTopLevelTabs(fromTopIdx, targetTopIdx, applyActiveState, revealActiveTab);
+        slideAtDivergence(oldChain, newChain, applyActiveState, revealActiveTab);
       }
 
       // Hover popover for child subheadings
