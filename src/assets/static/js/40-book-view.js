@@ -81,8 +81,21 @@
         }));
       }
 
-      let isClickScrolling = false;
-      let clickTimer = null;
+      let updateStickyTabs = null;
+
+      const spy = T.createScrollSpy({
+        container: scrollContainer,
+        headingTargets,
+        tocLinks,
+        headingLine: 80,
+        isActiveView: () => document.documentElement.getAttribute('data-view') !== 'classic',
+        onActiveChange: (currentId) => {
+          if (updateStickyTabs) {
+            updateStickyTabs(currentId);
+          }
+          syncHeadingHash(currentId);
+        },
+      });
 
       tocLinks.forEach((link) => {
         link.addEventListener('click', (e) => {
@@ -91,12 +104,7 @@
           if (!targetId) return;
           const targetEl = document.getElementById(targetId);
           if (targetEl && scrollContainer) {
-            isClickScrolling = true;
-            if (clickTimer) clearTimeout(clickTimer);
-            clickTimer = setTimeout(() => {
-              isClickScrolling = false;
-            }, 800);
-
+            spy.markClickScrolling();
             const top = targetEl.offsetTop - scrollContainer.offsetTop - 16;
             scrollContainer.scrollTo({ top, behavior: 'smooth' });
             tocLinks.forEach((l) => l.classList.remove('is-active'));
@@ -106,89 +114,9 @@
         });
       });
 
-      const updateStickyTabs = setupStickyTabs(scrollContainer, headingTargets, () => {
-        isClickScrolling = true;
-        if (clickTimer) clearTimeout(clickTimer);
-        clickTimer = setTimeout(() => {
-          isClickScrolling = false;
-        }, 800);
+      updateStickyTabs = setupStickyTabs(scrollContainer, headingTargets, () => {
+        spy.markClickScrolling();
       });
-
-      // ScrollSpy: the single source of truth for "which heading am I on".
-      //
-      // This reads the whole heading list on every scroll frame rather than
-      // watching for crossings with an IntersectionObserver. An observer only
-      // reports a change of intersection state, and a fast scroll carries a
-      // heading from below the trigger line to above it within one frame --
-      // never intersecting, so never reported, leaving the highlight stuck on
-      // wherever the reader used to be.
-      const HEADING_LINE = 80;
-
-      // Scrolling is almost always continuous, so the heading under the line
-      // right now is nearly always the one found last frame, or its immediate
-      // neighbour. Walking out from that cached position -- instead of
-      // rescanning from the top of the document every frame -- turns this
-      // from one forced-layout read per heading above the fold into one or
-      // two, however deep into a long document the reader is.
-      let headingCursor = 0;
-
-      const currentHeadingId = () => {
-        const n = headingTargets.length;
-        if (n === 0) return null;
-
-        const containerTop = scrollContainer.getBoundingClientRect().top;
-        const line = containerTop + HEADING_LINE;
-        if (headingCursor >= n) headingCursor = n - 1;
-
-        // Retreat: the reader scrolled up past where the cursor thought they were.
-        while (headingCursor > 0 && headingTargets[headingCursor].el.getBoundingClientRect().top > line) {
-          headingCursor--;
-        }
-        // Advance: the reader scrolled down past it instead.
-        while (
-          headingCursor < n - 1 &&
-          headingTargets[headingCursor + 1].el.getBoundingClientRect().top <= line
-        ) {
-          headingCursor++;
-        }
-
-        return headingTargets[headingCursor].id;
-      };
-
-      const updateScrollSpy = () => {
-        if (isClickScrolling) return;
-
-        const currentId = currentHeadingId();
-        if (!currentId) return;
-
-        const active = headingTargets.find((item) => item.id === currentId);
-        if (active?.link && !active.link.classList.contains('is-active')) {
-          tocLinks.forEach((l) => l.classList.remove('is-active'));
-          active.link.classList.add('is-active');
-          active.link.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        }
-        if (updateStickyTabs) {
-          updateStickyTabs(currentId);
-        }
-        // When classic vertical view is active, its own spy handles the hash.
-        if (document.documentElement.getAttribute("data-view") !== "classic") {
-          syncHeadingHash(currentId);
-        }
-      };
-
-      // initPage() runs again on every client-side navigation and hot reload.
-      if (scrollContainer.__tmtScrollHandler) {
-        scrollContainer.removeEventListener('scroll', scrollContainer.__tmtScrollHandler);
-      }
-      // Deliberately live: the reader sees the next heading light up while
-      // still mid-scroll, which is the whole point of a tab bar you can read
-      // ahead on. A scroll-settle version of this traded that liveness away
-      // for iPad frame budget and was tried and backed out -- being able to
-      // glance at what's coming while scrolling matters more here than
-      // matching a plainer wiki's low-end-device ceiling.
-      const onScroll = T.rafThrottle(updateScrollSpy);
-      scrollContainer.__tmtScrollHandler = onScroll;
-      scrollContainer.addEventListener('scroll', onScroll, { passive: true });
 
       // If the opened URL targets a section, start reading from there. Native browser
       // anchor jumping does not work automatically inside an inner scroll container.
@@ -204,7 +132,7 @@
             });
           }
         }
-        updateScrollSpy();
+        spy.update();
       };
       settle();
       // Images and fonts settle after first paint and move the headings.
@@ -744,6 +672,87 @@
           jumpTo(position);
         });
       });
+
+      // Vertical mode (data-tabs="right"): header floats without background bar,
+      // reveals on scroll/hover and automatically fades out after 2 seconds.
+      const header = tabsBar.closest('.pane-content-header');
+      if (header && !header.__verticalFadeBound) {
+        header.__verticalFadeBound = true;
+        let fadeTimer = null;
+        let isHovered = false;
+
+        const showTemporarily = () => {
+          if (!isVerticalTabs()) return;
+          header.classList.add('is-scrolling');
+          if (fadeTimer) {
+            clearTimeout(fadeTimer);
+            fadeTimer = null;
+          }
+          if (!isHovered) {
+            fadeTimer = setTimeout(() => {
+              header.classList.remove('is-scrolling');
+              fadeTimer = null;
+            }, 2000);
+          }
+        };
+
+        header.addEventListener('mouseenter', () => {
+          if (!isVerticalTabs()) return;
+          isHovered = true;
+          header.classList.add('is-hovered');
+          if (fadeTimer) {
+            clearTimeout(fadeTimer);
+            fadeTimer = null;
+          }
+        });
+
+        header.addEventListener('mouseleave', () => {
+          if (!isVerticalTabs()) return;
+          isHovered = false;
+          header.classList.remove('is-hovered');
+          showTemporarily();
+        });
+
+        header.addEventListener('touchstart', () => {
+          if (!isVerticalTabs()) return;
+          isHovered = true;
+          header.classList.add('is-hovered');
+          if (fadeTimer) {
+            clearTimeout(fadeTimer);
+            fadeTimer = null;
+          }
+        }, { passive: true });
+
+        header.addEventListener('touchend', () => {
+          if (!isVerticalTabs()) return;
+          isHovered = false;
+          header.classList.remove('is-hovered');
+          showTemporarily();
+        }, { passive: true });
+
+        if (scrollContainer && !scrollContainer.__verticalTabsScrollBound) {
+          scrollContainer.__verticalTabsScrollBound = true;
+          scrollContainer.addEventListener('scroll', () => {
+            showTemporarily();
+          }, { passive: true });
+        }
+
+        window.addEventListener('tmt:tabs-side-changed', (e) => {
+          if (e.detail?.side === 'right') {
+            showTemporarily();
+          } else {
+            header.classList.remove('is-scrolling', 'is-hovered');
+            if (fadeTimer) {
+              clearTimeout(fadeTimer);
+              fadeTimer = null;
+            }
+          }
+        });
+
+        if (isVerticalTabs()) {
+          showTemporarily();
+        }
+      }
 
       // Initial active state: activate the first root node if nothing is active yet
       const firstNode = nodes[0];

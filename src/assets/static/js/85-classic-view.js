@@ -18,183 +18,7 @@
       }
     };
 
-    // 1. Setup Classic Sticky Tabs
-    const classicTabs = document.getElementById('classic-sticky-tabs');
-    const tabsBar = document.getElementById('classic-sticky-tabs-bar');
-    let classicTabsHelper = null;
-
-    if (classicTabs && tabsBar) {
-      let scrollFadeTimer = null;
-      let isInteracting = false;
-
-      const showTabsTemporarily = () => {
-        if (document.documentElement.getAttribute('data-view') !== 'classic') return;
-        classicTabs.classList.add('is-scrolling');
-        if (scrollFadeTimer) {
-          clearTimeout(scrollFadeTimer);
-          scrollFadeTimer = null;
-        }
-        if (!isInteracting) {
-          scrollFadeTimer = setTimeout(() => {
-            classicTabs.classList.remove('is-scrolling');
-            scrollFadeTimer = null;
-          }, 2000);
-        }
-      };
-
-      const onEnter = () => {
-        if (document.documentElement.getAttribute('data-view') !== 'classic') return;
-        isInteracting = true;
-        classicTabs.classList.add('is-hovered');
-        if (scrollFadeTimer) {
-          clearTimeout(scrollFadeTimer);
-          scrollFadeTimer = null;
-        }
-      };
-
-      const onLeave = () => {
-        if (document.documentElement.getAttribute('data-view') !== 'classic') return;
-        isInteracting = false;
-        classicTabs.classList.remove('is-hovered');
-        if (scrollFadeTimer) clearTimeout(scrollFadeTimer);
-        scrollFadeTimer = setTimeout(() => {
-          classicTabs.classList.remove('is-scrolling');
-          scrollFadeTimer = null;
-        }, 2000);
-      };
-
-      if (!classicTabs.__interactionBound) {
-        classicTabs.__interactionBound = true;
-        classicTabs.addEventListener('mouseenter', onEnter);
-        classicTabs.addEventListener('mouseleave', onLeave);
-        classicTabs.addEventListener('touchstart', onEnter, { passive: true });
-        classicTabs.addEventListener('touchend', onLeave, { passive: true });
-      }
-
-      const nodes = Array.from(tabsBar.querySelectorAll('.sticky-tab-node'));
-
-      // Bind tab clicks
-      nodes.forEach((node) => {
-        const btn = node.querySelector(':scope > .sticky-tab-btn');
-        const targetId = node.getAttribute('data-id');
-        btn?.addEventListener('click', (e) => {
-          e.preventDefault();
-          const targetEl = getClassicHeadingEl(targetId);
-          if (targetEl) {
-            const top = targetEl.getBoundingClientRect().top + window.pageYOffset - 32;
-            window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
-            syncHeadingHash(targetId);
-            setActiveTab(targetId);
-            showTabsTemporarily();
-          }
-        });
-      });
-
-      // Bind jump buttons
-      const btnTop = document.getElementById('btn-classic-sticky-top');
-      if (btnTop && !btnTop.__jumpBound) {
-        btnTop.__jumpBound = true;
-        btnTop.addEventListener('click', (e) => {
-          e.preventDefault();
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-          showTabsTemporarily();
-        });
-      }
-      const btnBottom = document.getElementById('btn-classic-sticky-bottom');
-      if (btnBottom && !btnBottom.__jumpBound) {
-        btnBottom.__jumpBound = true;
-        btnBottom.addEventListener('click', (e) => {
-          e.preventDefault();
-          window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
-          showTabsTemporarily();
-        });
-      }
-
-      // Active tab synchronization
-      function setActiveTab(activeId, allHeadingTargets = []) {
-        if (!activeId) return;
-        let targetNode = nodes.find((n) => n.getAttribute('data-id') === activeId);
-
-        // Fallback: If activeId is deeper (H4+), find closest preceding heading that exists in tabsBar
-        if (!targetNode && allHeadingTargets.length > 0) {
-          const idx = allHeadingTargets.findIndex((h) => h.id === activeId);
-          if (idx > 0) {
-            for (let i = idx - 1; i >= 0; i--) {
-              const prev = nodes.find((n) => n.getAttribute('data-id') === allHeadingTargets[i].id);
-              if (prev) {
-                targetNode = prev;
-                break;
-              }
-            }
-          }
-        }
-
-        if (!targetNode) return;
-
-        // Check if already active
-        if (targetNode.classList.contains('is-active')) return;
-
-        // Update active classes
-        nodes.forEach((n) => {
-          n.classList.remove('is-active', 'is-active-branch');
-          const b = n.querySelector(':scope > .sticky-tab-btn');
-          b?.classList.remove('is-active');
-        });
-
-        targetNode.classList.add('is-active');
-        const activeBtn = targetNode.querySelector(':scope > .sticky-tab-btn');
-        activeBtn?.classList.add('is-active');
-
-        // Expand parent branches
-        let parent = targetNode.parentElement.closest('.sticky-tab-node');
-        while (parent) {
-          parent.classList.add('is-active-branch');
-          const pb = parent.querySelector(':scope > .sticky-tab-btn');
-          pb?.classList.add('is-active');
-          parent = parent.parentElement.closest('.sticky-tab-node');
-        }
-
-        // Keep active tab in view inside the tabs bar
-        targetNode.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      }
-
-      // Initial active tab
-      if (nodes.length > 0 && !tabsBar.querySelector('.sticky-tab-node.is-active')) {
-        const firstId = nodes[0].getAttribute('data-id');
-        setActiveTab(firstId);
-      }
-
-      // Show initially on page load in classic view
-      if (document.documentElement.getAttribute('data-view') === 'classic') {
-        showTabsTemporarily();
-      }
-
-      // Listen to view mode changes
-      if (!document.__classicTabsViewBound) {
-        document.__classicTabsViewBound = true;
-        document.addEventListener('tmt:view-mode-changed', (e) => {
-          if (e.detail?.view === 'classic') {
-            showTabsTemporarily();
-          } else {
-            classicTabs.classList.remove('is-scrolling', 'is-hovered');
-            if (scrollFadeTimer) {
-              clearTimeout(scrollFadeTimer);
-              scrollFadeTimer = null;
-            }
-          }
-        });
-      }
-
-      classicTabsHelper = {
-        onScroll: (currentId, allHeadingTargets) => {
-          showTabsTemporarily();
-          if (currentId) setActiveTab(currentId, allHeadingTargets);
-        },
-        showTemporarily: showTabsTemporarily,
-      };
-    }
-
-    // 2. Setup ScrollSpy targets from headings within classic-view
+    // Setup ScrollSpy targets from headings within classic-view
     const classicTocLinks = Array.from(classicView.querySelectorAll('.toc a'));
     const linkById = new Map();
     classicTocLinks.forEach((link) => {
@@ -222,8 +46,16 @@
       link: linkById.get(el.id) || null,
     }));
 
-    let isClicking = false;
-    let clickTimer = null;
+    const classicSpy = T.createScrollSpy({
+      container: window,
+      headingTargets,
+      tocLinks: classicTocLinks,
+      headingLine: 80,
+      isActiveView: () => document.documentElement.getAttribute('data-view') === 'classic',
+      onActiveChange: (currentId) => {
+        syncHeadingHash(currentId);
+      },
+    });
 
     classicTocLinks.forEach((link) => {
       link.addEventListener('click', (e) => {
@@ -233,87 +65,19 @@
         const targetEl = getClassicHeadingEl(targetId);
         if (targetEl) {
           e.preventDefault();
-          isClicking = true;
-          if (clickTimer) clearTimeout(clickTimer);
-          clickTimer = setTimeout(() => {
-            isClicking = false;
-          }, 800);
+          classicSpy.markClickScrolling();
           const top = targetEl.getBoundingClientRect().top + window.pageYOffset - 32;
           window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
           classicTocLinks.forEach((l) => l.classList.remove('is-active'));
           link.classList.add('is-active');
           history.pushState(null, '', href);
-          if (classicTabsHelper) classicTabsHelper.showTemporarily();
         }
       });
     });
 
-    // ScrollSpy calculation
-    const TRIGGER_LINE = 120;
-    const updateScrollSpy = () => {
-      if (document.documentElement.getAttribute('data-view') !== 'classic') return;
-      if (classicTabsHelper) classicTabsHelper.showTemporarily();
-
-      if (isClicking) return;
-
-      let currentId = null;
-
-      // Bottom of page check
-      const isAtBottom =
-        window.innerHeight + window.pageYOffset >= document.documentElement.scrollHeight - 60;
-      if (isAtBottom && headingTargets.length > 0) {
-        currentId = headingTargets[headingTargets.length - 1].id;
-      } else {
-        for (let i = 0; i < headingTargets.length; i++) {
-          const item = headingTargets[i];
-          const rect = item.el.getBoundingClientRect();
-          if (rect.top <= TRIGGER_LINE) {
-            currentId = item.id;
-          } else {
-            break;
-          }
-        }
-      }
-
-      if (!currentId && headingTargets.length > 0) {
-        currentId = headingTargets[0].id;
-      }
-
-      if (currentId) {
-        headingTargets.forEach(({ id, link }) => {
-          if (link) {
-            if (id === currentId) {
-              link.classList.add('is-active');
-            } else {
-              link.classList.remove('is-active');
-            }
-          }
-        });
-        syncHeadingHash(currentId);
-        if (classicTabsHelper) classicTabsHelper.onScroll(currentId, headingTargets);
-      }
-    };
-
-    let ticking = false;
-    const onScroll = () => {
-      if (document.documentElement.getAttribute('data-view') !== 'classic') return;
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        ticking = false;
-        updateScrollSpy();
-      });
-    };
-
-    if (window.__tmtClassicScrollHandler) {
-      window.removeEventListener('scroll', window.__tmtClassicScrollHandler);
-    }
-    window.__tmtClassicScrollHandler = onScroll;
-    window.addEventListener('scroll', onScroll, { passive: true });
-
     // Initial run
     if (document.documentElement.getAttribute('data-view') === 'classic') {
-      updateScrollSpy();
+      classicSpy.update();
     }
   }
 
