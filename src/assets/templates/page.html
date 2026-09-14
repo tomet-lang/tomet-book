@@ -259,51 +259,7 @@
         </svg>
       </button>
       <nav class="sticky-tabs-bar" id="sticky-tabs-bar" aria-label="{{ t["sticky.label"] }}" data-pagefind-ignore>
-        <div class="sticky-tabs-list">
-          {% for h1 in section_tabs %}
-          <div class="sticky-tab-node level-{{ h1.level }}" data-id="{{ h1.id }}" data-level="{{ h1.level }}">
-            <button type="button" class="sticky-tab-btn level-{{ h1.level }}" data-target="{{ h1.id }}" title="[H{{ h1.level }}] {{ h1.text }}">
-              <span class="sticky-tab-label">
-                <span class="sticky-tab-text">{{ h1.text }}</span>
-              </span>
-            </button>
-
-            {% if h1.children and h1.children | length > 0 %}
-            <div class="sticky-children-slot level-2-slot{% if h1.peek_levels | length > 1 %} has-layered-peek{% endif %}" data-parent-id="{{ h1.id }}">
-              {% for peek_level in h1.peek_levels %}
-              <span class="sticky-children-peek level-{{ peek_level }}" aria-hidden="true"></span>
-              {% endfor %}
-              {% for h2 in h1.children %}
-              <div class="sticky-tab-node level-{{ h2.level }}" data-id="{{ h2.id }}" data-level="{{ h2.level }}">
-                <button type="button" class="sticky-tab-btn level-{{ h2.level }}" data-target="{{ h2.id }}" title="[H{{ h2.level }}] {{ h2.text }}">
-                  <span class="sticky-tab-label">
-                    <span class="sticky-tab-text">{{ h2.text }}</span>
-                  </span>
-                </button>
-
-                {% if h2.children and h2.children | length > 0 %}
-                <div class="sticky-children-slot level-3-slot{% if h2.peek_levels | length > 1 %} has-layered-peek{% endif %}" data-parent-id="{{ h2.id }}">
-                  {% for peek_level in h2.peek_levels %}
-                  <span class="sticky-children-peek level-{{ peek_level }}" aria-hidden="true"></span>
-                  {% endfor %}
-                  {% for h3 in h2.children %}
-                  <div class="sticky-tab-node level-{{ h3.level }}" data-id="{{ h3.id }}" data-level="{{ h3.level }}">
-                    <button type="button" class="sticky-tab-btn level-{{ h3.level }}" data-target="{{ h3.id }}" title="[H{{ h3.level }}] {{ h3.text }}">
-                      <span class="sticky-tab-label">
-                        <span class="sticky-tab-text">{{ h3.text }}</span>
-                      </span>
-                    </button>
-                  </div>
-                  {% endfor %}
-                </div>
-                {% endif %}
-              </div>
-              {% endfor %}
-            </div>
-            {% endif %}
-          </div>
-          {% endfor %}
-        </div>
+{{ ui.sticky_tabs_tree(section_tabs) }}
       </nav>
       <button type="button" class="sticky-edge-btn" id="btn-sticky-bottom" title="{{ t["sticky.to_bottom"] }}" aria-label="{{ t["sticky.to_bottom"] }}" data-pagefind-ignore>
         <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -375,6 +331,27 @@
 
 <!-- ==================== 2. CLASSIC VIEW (single column) ==================== -->
 <div class="classic-view" id="wiki-classic-view" data-pagefind-ignore>
+  {% if section_tabs and section_tabs | length > 0 %}
+  <aside class="classic-sticky-tabs" id="classic-sticky-tabs" aria-label="{{ t["sticky.label"] }}" data-pagefind-ignore>
+    <button type="button" class="sticky-edge-btn" id="btn-classic-sticky-top" title="{{ t["sticky.to_top"] }}" aria-label="{{ t["sticky.to_top"] }}">
+      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M5 5h14"></path>
+        <path d="M12 20V10"></path>
+        <path d="m7 14 5-5 5 5"></path>
+      </svg>
+    </button>
+    <nav class="sticky-tabs-bar" id="classic-sticky-tabs-bar">
+{{ ui.sticky_tabs_tree(section_tabs) }}
+    </nav>
+    <button type="button" class="sticky-edge-btn" id="btn-classic-sticky-bottom" title="{{ t["sticky.to_bottom"] }}" aria-label="{{ t["sticky.to_bottom"] }}">
+      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 4v10"></path>
+        <path d="m7 10 5 5 5-5"></path>
+        <path d="M5 19h14"></path>
+      </svg>
+    </button>
+  </aside>
+  {% endif %}
   <nav class="breadcrumb breadcrumb-classic" style="display: flex; justify-content: space-between; align-items: center;">
     <div>
       <a href="/wiki">← Home</a>{% if section %} / <span class="breadcrumb-section">{{ section }}</span>{% endif %} / <span>{{ page_title }}</span>

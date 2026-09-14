@@ -160,7 +160,9 @@ pub fn render_single_document(
         cx.workspace_cfg_src,
         cx.unpublished,
     )?;
-    let html = cx.renderer.render_page(&processed, backlinks, cx.book_index)?;
+    let html = cx
+        .renderer
+        .render_page(&processed, backlinks, cx.book_index)?;
     let out_html_path = out_dir
         .join(config.build.wiki_out_rel())
         .join(&processed.slug)
@@ -502,7 +504,10 @@ pub fn build_book(
         );
     }
 
-    info!("Processing {} document(s)...", scanned.doc_files.len() - unpublished.len());
+    info!(
+        "Processing {} document(s)...",
+        scanned.doc_files.len() - unpublished.len()
+    );
     let processed: Vec<Result<ProcessedDoc, DocFailure>> = parsed
         .into_par_iter()
         .zip(scanned.doc_files.par_iter())
@@ -573,7 +578,9 @@ pub fn build_book(
 
     write_if_changed(
         &out_dir.join("lookup/manifest.json"),
-        &serde_json::to_string(&LookupManifest { sections: lookup_sections })?,
+        &serde_json::to_string(&LookupManifest {
+            sections: lookup_sections,
+        })?,
     )?;
     // A-Z browsing (and the per-character lookup/buckets/*.json shards it
     // used to page through) was tried and dropped -- not worth the added

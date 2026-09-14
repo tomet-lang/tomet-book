@@ -774,3 +774,270 @@
   padding: 0;
   overflow: hidden;
 }
+
+/* ==================== CLASSIC VIEW (VERTICAL MODE) FLOATING STICKY TABS ==================== *
+   In classic vertical mode, tabs float over the left edge of the viewport with NO background bar.
+   They fade in during scrolling or left-edge hover, and automatically fade out after ~2 seconds. */
+.classic-sticky-tabs {
+  display: none;
+}
+
+html[data-view="book"] .classic-sticky-tabs,
+html.no-js .classic-sticky-tabs,
+html[data-view="classic"].no-js .classic-sticky-tabs {
+  display: none;
+}
+
+html[data-view="classic"] .classic-sticky-tabs {
+  position: fixed;
+  left: 0;
+  top: 72px;
+  bottom: 72px;
+  width: 108px;
+  z-index: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-16px);
+  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* PC invisible hover trigger rail on the left edge */
+@media (hover: hover) and (pointer: fine) {
+  html[data-view="classic"] .classic-sticky-tabs::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 24px;
+    pointer-events: auto;
+    z-index: -1;
+  }
+}
+
+html[data-view="classic"] .classic-sticky-tabs.is-scrolling,
+html[data-view="classic"] .classic-sticky-tabs.is-hovered,
+html[data-view="classic"] .classic-sticky-tabs:hover {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
+}
+
+html[data-view="classic"] .classic-sticky-tabs .sticky-tabs-bar {
+  width: 100%;
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+  transform: none;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+html[data-view="classic"] .classic-sticky-tabs .sticky-tabs-bar::-webkit-scrollbar {
+  display: none;
+}
+
+html[data-view="classic"] .classic-sticky-tabs .sticky-edge-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  color: var(--text-muted);
+  box-shadow: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: 2px;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+html[data-view="classic"] .classic-sticky-tabs .sticky-edge-btn:hover {
+  background: var(--surface-subtle);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+html[data-view="classic"][data-theme="dark"] .classic-sticky-tabs .sticky-edge-btn {
+  box-shadow: none;
+}
+
+#btn-classic-sticky-top {
+  margin-bottom: 6px;
+}
+
+#btn-classic-sticky-bottom {
+  margin-top: 6px;
+}
+
+html[data-view="classic"] .classic-sticky-tabs .sticky-tabs-list {
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  transform: none;
+}
+
+html[data-view="classic"] .classic-sticky-tabs .sticky-tab-node {
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  height: auto;
+}
+
+html[data-view="classic"] .classic-sticky-tabs .sticky-tab-btn {
+  border-radius: 0 4px 4px 0;
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  white-space: normal;
+  text-align: left;
+  box-shadow: none;
+  margin: 2px 0;
+  transition: background 0.15s ease,
+              color 0.15s ease;
+}
+
+html[data-view="classic"][data-theme="dark"] .classic-sticky-tabs .sticky-tab-btn {
+  box-shadow: none;
+}
+
+html[data-view="classic"] .classic-sticky-tabs .sticky-tab-label {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+  padding: 0;
+  min-width: 0;
+  line-height: 1.35;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+html[data-view="classic"] .classic-sticky-tabs .sticky-tab-btn.is-active > .sticky-tab-label {
+  width: calc(100% - 6px);
+}
+
+html[data-view="classic"] .classic-sticky-tabs .sticky-tab-label > .sticky-level-badge {
+  display: none;
+}
+
+html[data-view="classic"] .classic-sticky-tabs .sticky-tab-text {
+  display: inline;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  overflow: visible;
+  max-width: none;
+  max-height: none;
+  min-width: 0;
+}
+
+html[data-view="classic"] .classic-sticky-tabs .sticky-tab-btn.level-1 {
+  width: calc(100% - 14px);
+  min-height: 29px;
+  height: auto;
+  padding: 5px 8px 6px 10px;
+}
+html[data-view="classic"] .classic-sticky-tabs .sticky-tab-btn.level-1.is-active {
+  width: calc(100% - 8px);
+}
+
+html[data-view="classic"] .classic-sticky-tabs .sticky-tab-btn.level-2 {
+  width: calc(100% - 22px);
+  min-height: 26px;
+  height: auto;
+  padding: 4px 7px 5px 9px;
+}
+html[data-view="classic"] .classic-sticky-tabs .sticky-tab-btn.level-2.is-active {
+  width: calc(100% - 16px);
+}
+
+html[data-view="classic"] .classic-sticky-tabs .sticky-tab-btn.level-3 {
+  width: calc(100% - 30px);
+  min-height: 23px;
+  height: auto;
+  padding: 4px 6px 4px 8px;
+}
+html[data-view="classic"] .classic-sticky-tabs .sticky-tab-btn.level-3.is-active {
+  width: calc(100% - 24px);
+}
+
+html[data-view="classic"] .classic-sticky-tabs .sticky-tab-btn.level-4,
+html[data-view="classic"] .classic-sticky-tabs .sticky-tab-btn.level-5,
+html[data-view="classic"] .classic-sticky-tabs .sticky-tab-btn.level-6 {
+  width: calc(100% - 38px);
+  min-height: 20px;
+  height: auto;
+  padding: 3px 5px 4px 7px;
+}
+html[data-view="classic"] .classic-sticky-tabs .sticky-tab-btn.level-4.is-active,
+html[data-view="classic"] .classic-sticky-tabs .sticky-tab-btn.level-5.is-active,
+html[data-view="classic"] .classic-sticky-tabs .sticky-tab-btn.level-6.is-active {
+  width: calc(100% - 32px);
+}
+
+html[data-view="classic"] .classic-sticky-tabs .sticky-tab-btn.is-active {
+  transform: none;
+}
+
+html[data-view="classic"] .classic-sticky-tabs .sticky-children-slot {
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  align-self: flex-start;
+  height: auto;
+  max-width: none;
+  max-height: calc(3px + var(--sticky-peek-reveal));
+  margin: -6px 0 0 0;
+}
+
+html[data-view="classic"] .classic-sticky-tabs .sticky-children-peek,
+html[data-view="classic"][data-theme="dark"] .classic-sticky-tabs .sticky-children-peek {
+  right: auto;
+  bottom: auto;
+  height: calc(3px + var(--sticky-peek-reveal));
+  border-radius: 0 0 4px 0;
+  box-shadow: none;
+}
+
+html[data-view="classic"] .classic-sticky-tabs .sticky-children-peek.level-2 { width: calc(100% - 22px); }
+html[data-view="classic"] .classic-sticky-tabs .sticky-children-peek.level-3 { width: calc(100% - 30px); }
+html[data-view="classic"] .classic-sticky-tabs .sticky-children-peek.level-4,
+html[data-view="classic"] .classic-sticky-tabs .sticky-children-peek.level-5,
+html[data-view="classic"] .classic-sticky-tabs .sticky-children-peek.level-6 { width: calc(100% - 38px); }
+
+html[data-view="classic"] .classic-sticky-tabs .sticky-children-slot.has-layered-peek {
+  max-height: calc(3px + var(--sticky-peek-reveal) * 2);
+}
+html[data-view="classic"] .classic-sticky-tabs .sticky-children-peek ~ .sticky-children-peek {
+  left: 0;
+  top: var(--sticky-peek-reveal);
+}
+
+html[data-view="classic"] .classic-sticky-tabs .sticky-tab-node.is-active > .sticky-children-slot,
+html[data-view="classic"] .classic-sticky-tabs .sticky-tab-node.is-active-branch > .sticky-children-slot {
+  max-width: none;
+  max-height: 1500px;
+  margin: 3px 0;
+}
+html[data-view="classic"] .classic-sticky-tabs .sticky-tab-node:not(.is-active):not(.is-active-branch) > .sticky-children-slot {
+  height: auto;
+}
+

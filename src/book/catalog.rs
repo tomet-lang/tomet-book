@@ -353,7 +353,11 @@ mod tests {
             &[],
         );
 
-        assert!(generated.query_errors.is_empty(), "{:?}", generated.query_errors);
+        assert!(
+            generated.query_errors.is_empty(),
+            "{:?}",
+            generated.query_errors
+        );
         assert_eq!(generated.entries, by_hand.entries);
     }
 

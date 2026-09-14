@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="{{ lang | default('ja') }}" data-view="{{ default_view | default('book') }}">
+<html class="no-js" lang="{{ lang | default('ja') }}" data-view="{{ default_view | default('book') }}">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% if page_title %}{{ page_title }} | {% endif %}{{ site_title }}</title>
     <script>
+      document.documentElement.classList.replace('no-js', 'js');
       try {
         const savedView = localStorage.getItem('wiki-view-mode');
         if (savedView === 'classic' || savedView === 'book') {
@@ -42,7 +43,6 @@
     {% endfor %}
   </head>
   <body class="is-fluid">
-    <div id="page-progress-bar" data-pagefind-ignore></div>
     <div class="container is-fluid">
       <div class="floating-controls" id="floating-controls" data-pagefind-ignore>
         <div class="floating-drag-handle" id="floating-drag-handle" title="{{ t["drag.handle"] }}" aria-label="{{ t["drag.handle"] }}">

@@ -22,6 +22,7 @@ pub const BOOK_CSS: &str = concat!(
     include_str!("../assets/static/css/70-widgets.css"),
     include_str!("../assets/static/css/72-center-peek.css"),
     include_str!("../assets/static/css/90-responsive.css"),
+    include_str!("../assets/static/css/98-no-js.css"),
 );
 /// The script, assembled in load order. Each file is a self-contained IIFE
 /// that registers what others need on `window.TMT`, so the order only has to
@@ -32,7 +33,6 @@ pub const BOOK_JS: &str = concat!(
     include_str!("../assets/static/js/10-theme.js"),
     include_str!("../assets/static/js/20-view-mode.js"),
     include_str!("../assets/static/js/30-floating-controls.js"),
-    include_str!("../assets/static/js/31-page-progress.js"),
     include_str!("../assets/static/js/36-nav-pane.js"),
     include_str!("../assets/static/js/37-data-pane.js"),
     include_str!("../assets/static/js/38-recent-notes.js"),
@@ -44,7 +44,6 @@ pub const BOOK_JS: &str = concat!(
     include_str!("../assets/static/js/72-center-peek.js"),
     include_str!("../assets/static/js/75-lightbox.js"),
     include_str!("../assets/static/js/78-costume.js"),
-    include_str!("../assets/static/js/80-router.js"),
     include_str!("../assets/static/js/85-classic-view.js"),
     include_str!("../assets/static/js/90-edit-menu.js"),
     include_str!("../assets/static/js/95-init.js"),

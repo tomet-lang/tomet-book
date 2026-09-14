@@ -344,7 +344,10 @@ mod tests {
             vec![3],
             "A-1's own slot only ever has H3 children"
         );
-        assert!(tabs[0].children[1].peek_levels.is_empty(), "A-2 has no children");
+        assert!(
+            tabs[0].children[1].peek_levels.is_empty(),
+            "A-2 has no children"
+        );
     }
 
     #[test]
@@ -353,12 +356,7 @@ mod tests {
         // child of A alongside the later, properly-nested A-2 (H3, with
         // its own H4 child) -- A's children end up mixing levels 4 and 3,
         // not the one shared level annotate_peek_levels used to assume.
-        let tabs = build_section_tabs(&toc(&[
-            (1, "A"),
-            (4, "A-1"),
-            (3, "A-2"),
-            (4, "A-2-i"),
-        ]));
+        let tabs = build_section_tabs(&toc(&[(1, "A"), (4, "A-1"), (3, "A-2"), (4, "A-2-i")]));
         assert_eq!(
             tabs[0].peek_levels,
             vec![3, 4],
@@ -372,12 +370,7 @@ mod tests {
         // sticky-tabs template never renders a slot inside an H3 tab, so
         // hinting at H4 from A's own collapsed slot would promise a tab
         // that clicking through never reveals.
-        let tabs = build_section_tabs(&toc(&[
-            (1, "A"),
-            (2, "A-1"),
-            (3, "A-1-a"),
-            (4, "A-1-a-i"),
-        ]));
+        let tabs = build_section_tabs(&toc(&[(1, "A"), (2, "A-1"), (3, "A-1-a"), (4, "A-1-a-i")]));
         assert_eq!(tabs[0].peek_levels, vec![2, 3]);
     }
 }

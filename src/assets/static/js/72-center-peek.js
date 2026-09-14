@@ -105,11 +105,7 @@
         link.addEventListener('click', (e) => {
           e.preventDefault();
           closeCenterPeek();
-          if (typeof T.navigateTo === 'function') {
-            T.navigateTo(href);
-          } else {
-            window.location.href = href;
-          }
+          window.location.href = href;
         });
       });
 
@@ -145,11 +141,7 @@
         if (!activePeekUrl) return;
         const targetUrl = activePeekUrl;
         closeCenterPeek();
-        if (typeof T.navigateTo === 'function') {
-          T.navigateTo(targetUrl);
-        } else {
-          window.location.href = targetUrl;
-        }
+        window.location.href = targetUrl;
       });
 
       // Close on clicking backdrop

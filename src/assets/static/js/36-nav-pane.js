@@ -16,6 +16,7 @@
       const pNav = document.getElementById('pane-nav');
       if (!pNav) return;
       pNav.dataset.activePanel = panelName;
+      T.storage.set('wiki-pane-nav-active-panel', panelName);
 
       if (expandIfCollapsed) {
         pNav.classList.remove('is-collapsed');
@@ -61,7 +62,8 @@
       const isNarrow = window.innerWidth <= 900;
       const navSetting = T.storage.get('wiki-pane-nav-collapsed');
       const isCollapsed = navSetting !== null ? navSetting === 'true' : isNarrow;
-      const currentPanel = pNav.dataset.activePanel || 'toc';
+      const savedPanel = T.storage.get('wiki-pane-nav-active-panel');
+      const currentPanel = savedPanel || pNav.dataset.activePanel || 'toc';
       if (isCollapsed) {
         collapsePane();
       } else {

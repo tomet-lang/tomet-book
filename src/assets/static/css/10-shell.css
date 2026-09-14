@@ -19,38 +19,11 @@ html[data-view="classic"] .classic-view {
   box-sizing: border-box;
 }
 
-/* ==================== PAGE LOAD PROGRESS BAR ==================== */
-/* Lives at the very top of <body> (base.html), outside anything the router
-   swaps, so one element persists across every SPA navigation. Covers the
-   gap the router itself has no feedback for: click to fetch-response, which
-   the View Transition below only starts animating once it's already over.
-   Pure class toggling (31-page-progress.js) -- no inline styles -- so every
-   timing lives here, next to the states it belongs to. */
-#page-progress-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 3px;
-  width: 0%;
-  background: var(--link);
-  z-index: 10000;
-  opacity: 0;
-  pointer-events: none;
-}
-#page-progress-bar.is-loading {
-  width: 85%;
-  opacity: 1;
-  /* Slow and easing-out: it should visibly still be "working" even on a
-     fetch fast enough to finish before this transition would have. */
-  transition: width 3s cubic-bezier(0.1, 0.5, 0.2, 1), opacity 0.15s ease;
-}
-#page-progress-bar.is-done {
-  width: 100%;
-  opacity: 1;
-  transition: width 0.2s ease, opacity 0.3s ease 0.2s;
+/* ==================== PAGE TRANSITIONS (CROSS-DOCUMENT MPA) ==================== */
+@view-transition {
+  navigation: auto;
 }
 
-/* ==================== PAGE TRANSITIONS ==================== */
 @keyframes article-exit-to-right {
   0% {
     opacity: 1;

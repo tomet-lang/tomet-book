@@ -292,7 +292,8 @@ pub async fn run_dev_server(
                         cached_unpublished = report.unpublished;
                         cached_book_index = report.book_index;
                         cached_scanned = report.scanned.into();
-                        cached_renderer = crate::book::renderer::BookRenderer::new(&watch_cfg, true).ok();
+                        cached_renderer =
+                            crate::book::renderer::BookRenderer::new(&watch_cfg, true).ok();
                         let _ = watcher_tx.send(ReloadSignal::Full);
                     }
                     Err(e) => warn!("Rebuild error: {e}"),

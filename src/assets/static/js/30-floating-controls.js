@@ -147,6 +147,7 @@
     function setView(mode) {
       document.documentElement.setAttribute('data-view', mode);
       T.storage.set('wiki-view-mode', mode);
+      document.dispatchEvent(new CustomEvent('tmt:view-mode-changed', { detail: { view: mode } }));
     }
 
     btnBook.onclick = () => setView('book');

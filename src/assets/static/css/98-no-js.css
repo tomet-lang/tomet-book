@@ -1,0 +1,92 @@
+/* ==================== NO-JS PROGRESSIVE ENHANCEMENT ==================== */
+/* When JavaScript is disabled or unavailable, `html.no-js` remains active.
+   All core content (articles, ToC, infoboxes, links, index) stays 100% accessible,
+   while JS-only widgets and controls that cannot function without JS are cleanly
+   hidden or replaced with static fallbacks. */
+
+/* 1. Hide interactive controls that depend entirely on JavaScript */
+.no-js .floating-controls,
+.no-js .theme-toggle-btn,
+.no-js .pane-content-header,
+.no-js .hero-zoom-btn,
+.no-js .infobox-costume-switcher,
+.no-js .edit-dropdown,
+.no-js .rail-tools,
+.no-js #wiki-page-preview,
+.no-js #wiki-center-peek,
+.no-js #sticky-hover-popover,
+.no-js #wiki-image-lightbox {
+  display: none !important;
+}
+
+/* 2. Cursors & Collapsible Headers */
+.no-js article img,
+.no-js .hero-banner-wrapper {
+  cursor: default !important;
+}
+
+.no-js .pane-header-collapsible {
+  cursor: default !important;
+}
+
+.no-js .pane-header-collapsible .pane-collapse-arrow,
+.no-js .pane-collapsed-bar {
+  display: none !important;
+}
+
+/* 3. Book View Navigation Pane (Pane 1) Fallbacks:
+      Ensure Pane 1 stays expanded and stacks static lists (ToC, Backlinks,
+      Book Index) vertically so readers can navigate by scrolling without tab-switching. */
+.no-js .pane-nav {
+  width: 260px !important;
+  min-width: 260px !important;
+  max-width: 260px !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+.no-js .pane-data {
+  width: 340px !important;
+  min-width: 340px !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+.no-js #pane-panel-links[hidden],
+.no-js #pane-panel-index[hidden] {
+  display: block !important;
+  border-top: 1px solid var(--sidebar-border);
+}
+
+/* Lookup (Pagefind) and Graph views require JS; keep them hidden */
+.no-js #pane-panel-lookup,
+.no-js #pane-panel-graph,
+.no-js #pane-recent-section {
+  display: none !important;
+}
+
+/* 4. Target anchors: provide comfortable scroll offset for in-page jumps */
+:target {
+  scroll-margin-top: 16px;
+}
+
+/* 5. Mobile Fallback:
+      On mobile screens (<= 768px), fallback to the clean single-column
+      Wikipedia-style Classic View, where all content and ToC read naturally in one flow. */
+@media (max-width: 768px) {
+  html.no-js .book-shell,
+  html.no-js .book-view {
+    display: none !important;
+  }
+
+  html.no-js .classic-view {
+    display: block !important;
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 20px 20px 48px 20px;
+    box-sizing: border-box;
+  }
+}

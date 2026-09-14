@@ -138,16 +138,4 @@
     width: 40px;
     height: 40px;
   }
-
-  /* Fades both edges of the tab row to hint there's more to scroll to --
-     a mouse pointer crossing a scrollbar makes overflow obvious, but a
-     finger doesn't, and the row's own horizontal scrollbar is what this
-     book's touch-scroll design leaves to the browser/OS to show (or hide)
-     on its own. The mask fades on an element already showing its own
-     scrollbar (30-sticky-tabs.css's ::-webkit-scrollbar) just adds a
-     softer edge in addition to it, not instead of it. */
-  .sticky-tabs-bar {
-    -webkit-mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
-    mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
-  }
 }
