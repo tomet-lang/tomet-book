@@ -26,6 +26,26 @@
       }
     });
 
+    const previewCardEl = document.getElementById('wiki-page-preview');
+    if (previewCardEl && !previewCardEl.__peekBound) {
+      previewCardEl.__peekBound = true;
+      previewCardEl.addEventListener('click', () => {
+        const href = previewCardEl.dataset.href;
+        if (href) {
+          hidePreviewCard();
+          T.openCenterPeek?.(href);
+        }
+      });
+      previewCardEl.addEventListener('mouseleave', () => {
+        clearTimeout(hoverTimer);
+        hoverTimer = setTimeout(() => {
+          if (!previewCardEl.matches(':hover')) {
+            hidePreviewCard();
+          }
+        }, 150);
+      });
+    }
+
     document.addEventListener('mouseover', (e) => {
       const card = document.getElementById('wiki-page-preview');
       if (!card) return;
@@ -100,6 +120,7 @@
           top = rect.top - 140;
         }
 
+        card.dataset.href = href;
         card.style.left = `${Math.round(left)}px`;
         card.style.top = `${Math.round(top)}px`;
         card.hidden = false;

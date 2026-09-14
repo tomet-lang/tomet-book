@@ -10,6 +10,7 @@
   const initKeyboardNavigation = (...a) => T.initKeyboardNavigation(...a);
   const setupSearch = (...a) => T.setupSearch(...a);
   const initPagePreview = (...a) => T.initPagePreview(...a);
+  const initCenterPeek = (...a) => T.initCenterPeek(...a);
   const initImageLightbox = (...a) => T.initImageLightbox(...a);
   const setupCostumeSwitchers = (...a) => T.setupCostumeSwitchers(...a);
   const setupEditDropdown = (...a) => T.setupEditDropdown(...a);
@@ -27,6 +28,7 @@
     initKeyboardNavigation();
     setupSearch();
     initPagePreview();
+    initCenterPeek();
     initImageLightbox();
     setupCostumeSwitchers();
     setupEditDropdown();

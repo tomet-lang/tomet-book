@@ -126,6 +126,9 @@ fn default_ui_strings() -> HashMap<String, String> {
         ("image.zoom_banner", "バナーを拡大表示"),
         ("image.banner_alt", "バナー"),
         ("lightbox.close", "閉じる"),
+        ("peek.fullscreen", "全画面で開く"),
+        ("peek.close", "閉じる"),
+        ("preview.open_peek", "クリックで開く"),
         // Catalog page
         ("index.sections", "セクション分類"),
         ("index.entries", "ノート一覧"),

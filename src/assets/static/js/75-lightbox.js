@@ -3,26 +3,33 @@
   const t = (key, fallback) => T.t(key, fallback);
 
   // ==================== IMAGE LIGHTBOX ====================
-  function initImageLightbox() {
+  function openLightbox(src, alt = '') {
     const overlay = document.getElementById('wiki-image-lightbox');
     const lightboxImg = document.getElementById('lightbox-img');
     const lightboxCaption = document.getElementById('lightbox-caption');
-    const closeBtn = overlay?.querySelector('.lightbox-close');
     if (!overlay || !lightboxImg) return;
 
-    function openLightbox(src, alt = '') {
-      lightboxImg.src = src;
-      lightboxImg.alt = alt;
-      if (lightboxCaption) lightboxCaption.textContent = alt;
-      overlay.hidden = false;
-      document.body.style.overflow = 'hidden';
-    }
+    lightboxImg.src = src;
+    lightboxImg.alt = alt;
+    if (lightboxCaption) lightboxCaption.textContent = alt;
+    overlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
 
-    function closeLightbox() {
-      overlay.hidden = true;
-      lightboxImg.src = '';
-      document.body.style.overflow = '';
-    }
+  function closeLightbox() {
+    const overlay = document.getElementById('wiki-image-lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    if (!overlay) return;
+
+    overlay.hidden = true;
+    if (lightboxImg) lightboxImg.src = '';
+    document.body.style.overflow = '';
+  }
+
+  function initImageLightbox() {
+    const overlay = document.getElementById('wiki-image-lightbox');
+    const closeBtn = overlay?.querySelector('.lightbox-close');
+    if (!overlay) return;
 
     // The overlay lives in base.html and survives every DOM swap, so these
     // must be bound once -- initPage() runs again on each navigation.
@@ -56,5 +63,5 @@
     });
   }
 
-  Object.assign(T, { initImageLightbox });
+  Object.assign(T, { initImageLightbox, openLightbox, closeLightbox });
 })();
