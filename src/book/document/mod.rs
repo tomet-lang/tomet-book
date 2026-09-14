@@ -197,6 +197,45 @@ mod kind_tests {
             out.body_html
         );
     }
+
+    #[test]
+    fn a_meta_icon_written_as_a_doc_icon_element_renders_as_svg() {
+        let config = BookConfig::default();
+        let vault = tomet_links::VaultLinkIndex::from_paths(&["page.tmt".to_string()]);
+
+        let out = process_tomet_document(
+            "@meta{icon: @doc.icon(\"cake\")}\n\n#[ Page ]\n\nbody\n",
+            "page.tmt",
+            None,
+            &config,
+            &vault,
+            None,
+            &HashSet::new(),
+        )
+        .unwrap();
+
+        let icon = out.icon.as_deref().unwrap_or_default();
+        assert!(icon.contains("<svg") && icon.contains("data-icon=\"cake\""), "{icon}");
+    }
+
+    #[test]
+    fn a_meta_icon_written_as_a_plain_string_still_works() {
+        let config = BookConfig::default();
+        let vault = tomet_links::VaultLinkIndex::from_paths(&["page.tmt".to_string()]);
+
+        let out = process_tomet_document(
+            "@meta{icon: \"\u{1F382}\"}\n\n#[ Page ]\n\nbody\n",
+            "page.tmt",
+            None,
+            &config,
+            &vault,
+            None,
+            &HashSet::new(),
+        )
+        .unwrap();
+
+        assert_eq!(out.icon.as_deref(), Some("\u{1F382}"));
+    }
 }
 
 /// Read a document far enough to know what it is.
@@ -324,6 +363,15 @@ pub fn process_parsed_document(
         vault_index,
         config,
     );
+
+    // `icon: @doc.icon("cake")` -- an embedded element rather than the
+    // plain string/emoji `meta::extract` reads out of `meta_json`. Checked
+    // against the raw, pre-JSON value: `Value::Element` has no JSON form
+    // (`tomet_semantics::value_to_json` degrades it to a tagged object),
+    // so this is the one path that can still see it.
+    if let Some(icon_html) = icon::meta_icon_element(raw_meta.as_ref()) {
+        props.icon = Some(icon_html);
+    }
 
     // Merge links from @meta into body links, dropping self-references and duplicates.
     for linked in std::mem::take(&mut props.linked_slugs) {

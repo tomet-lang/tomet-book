@@ -57,6 +57,50 @@ fn placeholder(name: &str, pkg: &str, inline: bool) -> String {
     )
 }
 
+/// The `@meta` counterpart of [`render`]: an `icon` field written as
+/// `icon: @doc.icon("cake")` rather than a plain string/emoji.
+///
+/// `@meta`'s data reaches `document::mod`'s page-chrome extraction as
+/// `serde_json::Value` (`tomet_semantics::value_to_json`), which has no
+/// element concept -- a `Value::Element` there degrades to a tagged
+/// `{"element": ..., "args": ...}` object, and `MetaProperties::icon`'s
+/// existing `.as_str()` read silently sees `None` for it. This reads the
+/// raw `tomet_ast::Value` instead, *before* that JSON conversion, so the
+/// element never has to round-trip through JSON at all -- same element,
+/// same [`render`], just called directly rather than through
+/// `tomet_html::RenderOptions::custom_element`'s hook (there is no
+/// enclosing document render pass over `@meta`'s data for that hook to
+/// fire during).
+///
+/// `Bindings::default()` is what `render`'s own caller
+/// (`render_custom_or_generic_element` in `tomet-html`) effectively uses
+/// for body content too -- `doc.icon` resolves unconditionally there, the
+/// same way `std` does, so no vault/vocabulary context is needed here
+/// either.
+pub fn render_meta_value(el: &tomet_ast::Element, inline: bool) -> Option<String> {
+    let name = el.sigil.name().map(|n| n.to_string()).unwrap_or_default();
+    let bindings = tomet_semantics::Bindings::default();
+    let ctx = CustomElementCtx::new(&name, el.content.as_deref(), inline, || {
+        tomet_semantics::normalized_element_args_in(el, &bindings)
+    });
+    render(ctx)
+}
+
+/// `@meta`'s `icon` field, when it is a `@doc.icon(...)` element rather
+/// than the plain string `MetaProperties::icon`'s own JSON-based read
+/// already covers. `None` for a plain string (that path handles it), a
+/// missing `icon` key, or an `icon` written as something else entirely.
+pub fn meta_icon_element(raw_meta: Option<&tomet_ast::Value>) -> Option<String> {
+    let tomet_ast::Value::Map(entries) = raw_meta? else {
+        return None;
+    };
+    let (_, value) = entries.iter().find(|(k, _)| k == "icon")?;
+    let tomet_ast::Value::Element(el) = value else {
+        return None;
+    };
+    render_meta_value(el, true)
+}
+
 /// [`tomet_html::RenderOptions::custom_element`] entry point. Answers only
 /// for `doc.icon`; every other `Custom` kind falls through to the crate's
 /// generic rendering (`None`).
@@ -167,5 +211,40 @@ mod tests {
         let html = render(ctx("doc.icon", &a, true)).unwrap();
         assert!(html.contains("tm-doc-icon-missing"));
         assert!(html.contains("heroicons"));
+    }
+
+    fn parse_meta(src: &str) -> Option<tomet_ast::Value> {
+        let doc = tomet_parser::parse_document(src).expect("valid Tomet source");
+        tomet_semantics::document_meta(&doc)
+    }
+
+    #[test]
+    fn meta_icon_renders_a_real_doc_icon_element() {
+        let raw_meta = parse_meta("@meta{icon: @doc.icon(\"cake\")}\n");
+        let html = meta_icon_element(raw_meta.as_ref()).unwrap();
+        assert!(html.contains("<svg"));
+        assert!(html.contains("data-icon=\"cake\""));
+    }
+
+    #[test]
+    fn meta_icon_is_none_for_a_plain_string_icon() {
+        // `MetaProperties::icon`'s own JSON-based read covers this case;
+        // `meta_icon_element` deliberately answers only for an embedded
+        // element, not a plain string/emoji.
+        let raw_meta = parse_meta("@meta{icon: \"\u{1F382}\"}\n");
+        assert!(meta_icon_element(raw_meta.as_ref()).is_none());
+    }
+
+    #[test]
+    fn meta_icon_is_none_with_no_icon_key_at_all() {
+        let raw_meta = parse_meta("@meta{title: \"a\"}\n");
+        assert!(meta_icon_element(raw_meta.as_ref()).is_none());
+    }
+
+    #[test]
+    fn meta_icon_falls_back_to_a_placeholder_for_an_unknown_name() {
+        let raw_meta = parse_meta("@meta{icon: @doc.icon(\"not-a-real-icon\")}\n");
+        let html = meta_icon_element(raw_meta.as_ref()).unwrap();
+        assert!(html.contains("tm-doc-icon-missing"));
     }
 }

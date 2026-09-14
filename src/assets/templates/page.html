@@ -224,7 +224,7 @@
     <div class="pane-scroll pane-scroll-data">
       <div class="infobox">
         <div class="infobox-title" {% if primary_color %}style="border-top: 3px solid #{{ primary_color }};"{% endif %}>
-          {% if icon %}<span>{{ icon }}</span>{% endif %}
+          {% if icon %}<span>{{ icon | safe }}</span>{% endif %}
           <span>{{ page_title }}</span>
         </div>
         {% if images and images | length > 0 %}
@@ -324,7 +324,7 @@
           <div class="hero-content" {% if primary_color %}style="border-bottom-color: #{{ primary_color }};"{% endif %}>
             {% if icon %}
             <div class="hero-avatar" {% if primary_color %}style="border-color: #{{ primary_color }};"{% endif %}>
-              <span class="avatar-icon">{{ icon }}</span>
+              <span class="avatar-icon">{{ icon | safe }}</span>
             </div>
             {% endif %}
             <div class="hero-title-area">
@@ -410,7 +410,7 @@
         class="hero-avatar"
         {% if primary_color %}style="box-shadow: 0 4px 16px #{{ primary_color }}40; border-color: #{{ primary_color }};"{% endif %}
       >
-        <span class="avatar-icon">{{ icon }}</span>
+        <span class="avatar-icon">{{ icon | safe }}</span>
       </div>
       {% endif %}
       <div class="hero-title-area">
@@ -435,7 +435,7 @@
   <header class="article-header" {% if primary_color %}style="border-bottom: 3px solid #{{ primary_color }};"{% endif %}>
     <div class="title-row">
       <h1>
-        {% if icon %}<span class="title-inline-icon">{{ icon }}</span>{% endif %}
+        {% if icon %}<span class="title-inline-icon">{{ icon | safe }}</span>{% endif %}
         {{ page_title }}
       </h1>
       {% if kind %}
@@ -459,7 +459,7 @@
     {% if primary_color %}style="border-top: 3px solid #{{ primary_color }};"{% endif %}
   >
     <div class="infobox-title">
-      {% if icon %}<span>{{ icon }}</span>{% endif %}
+      {% if icon %}<span>{{ icon | safe }}</span>{% endif %}
       <span>{{ page_title }}</span>
     </div>
     {% if images and images | length > 0 %}
