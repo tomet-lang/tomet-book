@@ -1,6 +1,7 @@
 //! One source document, turned into everything a page needs.
 
 mod html;
+mod icon;
 mod links;
 mod meta;
 mod toc;
@@ -167,6 +168,35 @@ mod kind_tests {
         );
         assert_eq!(out.outgoing, ["secret"]);
     }
+
+    #[test]
+    fn a_page_renders_ruby_and_doc_icon() {
+        let config = BookConfig::default();
+        let vault = tomet_links::VaultLinkIndex::from_paths(&["page.tmt".to_string()]);
+
+        let out = process_tomet_document(
+            "#[ Page ]\n\n@ruby[漢字](rt:\"かんじ\") and @doc.icon(\"star\", pkg:\"lucide\").\n",
+            "page.tmt",
+            None,
+            &config,
+            &vault,
+            None,
+            &HashSet::new(),
+        )
+        .unwrap();
+
+        assert!(
+            out.body_html.contains("<ruby>漢字<rt>かんじ</rt></ruby>"),
+            "{}",
+            out.body_html
+        );
+        assert!(
+            out.body_html
+                .contains("<svg class=\"tm-doc-icon\" data-icon=\"star\""),
+            "{}",
+            out.body_html
+        );
+    }
 }
 
 /// Read a document far enough to know what it is.
@@ -262,6 +292,7 @@ pub fn process_parsed_document(
         number_headings: true,
         auto_slug_headings: true,
         lang: Some(config.book.lang.clone()),
+        custom_element: Some(tomet_html::CustomElementRenderer::new(icon::render)),
     };
     let (body_html, outline) = tomet_html::render_body_with_outline(&doc, &render_opts);
 

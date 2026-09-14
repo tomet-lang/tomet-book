@@ -20,6 +20,7 @@ pub const BOOK_CSS: &str = concat!(
     include_str!("../assets/static/css/50-nav-infobox.css"),
     include_str!("../assets/static/css/60-content.css"),
     include_str!("../assets/static/css/70-widgets.css"),
+    include_str!("../assets/static/css/72-center-peek.css"),
     include_str!("../assets/static/css/90-responsive.css"),
 );
 /// The script, assembled in load order. Each file is a self-contained IIFE
@@ -40,6 +41,7 @@ pub const BOOK_JS: &str = concat!(
     include_str!("../assets/static/js/50-keyboard.js"),
     include_str!("../assets/static/js/60-search.js"),
     include_str!("../assets/static/js/70-preview.js"),
+    include_str!("../assets/static/js/72-center-peek.js"),
     include_str!("../assets/static/js/75-lightbox.js"),
     include_str!("../assets/static/js/78-costume.js"),
     include_str!("../assets/static/js/80-router.js"),
@@ -49,6 +51,12 @@ pub const BOOK_JS: &str = concat!(
     include_str!("../assets/static/js/97-live-reload.js"),
     include_str!("../assets/static/js/99-bootstrap.js"),
 );
+
+/// Every Lucide icon, as one `<symbol id="name">` per icon -- vendored
+/// whole from `lucide-static` rather than one file per icon we might use,
+/// so `@doc.icon("<name>", pkg:"lucide")` can reference any of them by
+/// `<use href="/icons/lucide.svg#<name>">` without a code change to add one.
+pub const LUCIDE_SPRITE: &str = include_str!("../assets/static/icons/lucide/sprite.svg");
 
 /// A short digest of an asset's contents, for `?v=` cache busting.
 ///
@@ -75,7 +83,11 @@ pub fn write_static_assets(out_dir: &Path, src_dir: &Path, config: &BookConfig) 
     super::write_if_changed(&out_dir.join("book.js"), BOOK_JS)
         .context("Failed to write book.js")?;
 
-    // 3. Copy user's custom CSS if specified and exists
+    // 3. Write embedded icons/lucide.svg
+    super::write_if_changed(&out_dir.join("icons/lucide.svg"), LUCIDE_SPRITE)
+        .context("Failed to write icons/lucide.svg")?;
+
+    // 4. Copy user's custom CSS if specified and exists
     for css_rel in &config.ui.custom_css {
         let clean_rel = css_rel.trim_start_matches('/');
         let src_file = src_dir.join(clean_rel);

@@ -222,3 +222,54 @@ article td {
   background-color: var(--bg);
 }
 
+/* `@ruby[漢字](rt:"かんじ")` -- native <ruby>/<rt>, styled only enough to
+   read as a small reading gloss rather than the browser's plain default. */
+article ruby {
+  ruby-position: over;
+}
+article rt {
+  font-size: 0.55em;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+/* `@doc.icon("name", pkg:"lucide")` -- sized as a glyph (1em square) so it
+   scales with surrounding text like the character it stands in for. */
+.tm-doc-icon {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
+  fill: none;
+  stroke: currentColor;
+  /* The sprite's `<symbol>`s carry only path data, no presentation
+     attributes -- `<use>`'s shadow content inherits these from here,
+     matching Lucide's own default look. */
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.tm-doc-icon-block {
+  display: flex;
+  justify-content: center;
+  margin: 16px 0;
+}
+.tm-doc-icon-block .tm-doc-icon {
+  width: 2rem;
+  height: 2rem;
+}
+/* An icon name/pkg this book cannot draw -- a typo or an unvendored icon.
+   Visible on purpose: a document author should notice it, not lose the
+   icon silently. */
+.tm-doc-icon-missing {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4em;
+  height: 1.4em;
+  border: 1px dashed var(--border);
+  border-radius: 3px;
+  color: var(--text-muted);
+  font-size: 0.85em;
+  cursor: help;
+}
+
