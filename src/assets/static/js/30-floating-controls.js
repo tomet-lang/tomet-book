@@ -183,7 +183,6 @@
       document.documentElement.setAttribute('data-tabs', side);
       T.storage.set('wiki-tabs-side', side);
       sync();
-      window.dispatchEvent(new CustomEvent('tmt:tabs-side-changed', { detail: { side } }));
     };
 
     btnTop.onclick = () => setSide('top');

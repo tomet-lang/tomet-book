@@ -26,50 +26,20 @@
   flex-direction: column;
   align-items: flex-start;
   order: 2; /* Move to the right of article content */
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateX(8px);
-  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-[data-theme="dark"][data-tabs="right"] .pane-content-header {
-  background: transparent;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  [data-tabs="right"] .pane-content-header::before {
-    content: "";
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 24px;
-    pointer-events: auto;
-    z-index: -1;
-  }
-}
-
-[data-tabs="right"] .pane-content-header.is-scrolling,
-[data-tabs="right"] .pane-content-header.is-hovered,
-[data-tabs="right"] .pane-content-header:hover {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateX(0);
 }
 
 [data-tabs="right"] .pane-scroll-content {
   order: 1;
+  /* The article surface sits above the rail and casts a shadow rightward onto tabs,
+     producing the illusion of tabs sliding out from under the paper.
+     Popovers live on document.body (z-index: 1000) and remain visible above this layer. */
   position: relative;
   z-index: 2;
-  box-shadow: none;
+  box-shadow: 4px 0 9px -3px rgba(0, 0, 0, 0.12);
 }
 
 [data-theme="dark"][data-tabs="right"] .pane-scroll-content {
-  box-shadow: none;
+  box-shadow: 4px 0 10px -3px rgba(0, 0, 0, 0.38);
 }
 
 /* --- Bar Container --- */

@@ -251,23 +251,11 @@
   <main class="book-pane pane-content" data-pagefind-body>
     <div class="pane-header pane-content-header">
       {% if section_tabs and section_tabs | length > 0 %}
-      <button type="button" class="sticky-edge-btn" id="btn-sticky-top" title="{{ t["sticky.to_top"] }}" aria-label="{{ t["sticky.to_top"] }}" data-pagefind-ignore>
-        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M5 5h14"></path>
-          <path d="M12 20V10"></path>
-          <path d="m7 14 5-5 5 5"></path>
-        </svg>
-      </button>
+      {{ ui.sticky_edge_btn("top", t, "btn-sticky-top") }}
       <nav class="sticky-tabs-bar" id="sticky-tabs-bar" aria-label="{{ t["sticky.label"] }}" data-pagefind-ignore>
 {{ ui.sticky_tabs_tree(section_tabs) }}
       </nav>
-      <button type="button" class="sticky-edge-btn" id="btn-sticky-bottom" title="{{ t["sticky.to_bottom"] }}" aria-label="{{ t["sticky.to_bottom"] }}" data-pagefind-ignore>
-        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M12 4v10"></path>
-          <path d="m7 10 5 5 5-5"></path>
-          <path d="M5 19h14"></path>
-        </svg>
-      </button>
+      {{ ui.sticky_edge_btn("bottom", t, "btn-sticky-bottom") }}
       {% endif %}
     </div>
     <div class="pane-scroll pane-scroll-content" id="book-content-scroll">
@@ -331,6 +319,15 @@
 
 <!-- ==================== 2. CLASSIC VIEW (single column) ==================== -->
 <div class="classic-view" id="wiki-classic-view" data-pagefind-ignore>
+  {% if section_tabs and section_tabs | length > 0 %}
+  <aside class="classic-sticky-tabs" id="classic-sticky-tabs" aria-label="{{ t["sticky.label"] }}" data-pagefind-ignore>
+    {{ ui.sticky_edge_btn("top", t) }}
+    <nav class="sticky-tabs-bar" id="classic-sticky-tabs-bar">
+{{ ui.sticky_tabs_tree(section_tabs) }}
+    </nav>
+    {{ ui.sticky_edge_btn("bottom", t) }}
+  </aside>
+  {% endif %}
   <nav class="breadcrumb breadcrumb-classic" style="display: flex; justify-content: space-between; align-items: center;">
     <div>
       <a href="/wiki">← Home</a>{% if section %} / <span class="breadcrumb-section">{{ section }}</span>{% endif %} / <span>{{ page_title }}</span>
