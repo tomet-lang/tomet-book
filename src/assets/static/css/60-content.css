@@ -268,6 +268,33 @@ article a:not([href^="http://"]):not([href^="https://"]):not(.tm-url):not(.tm-re
 }
 
 article p { margin: 12px 0; }
+
+/* Lists: Left padding aligns bullet dots at 1 CJK char (2ch) from the left edge */
+article ul,
+article ol {
+  margin: 12px 0;
+  padding-inline-start: 1.75em;
+}
+
+article ul ul,
+article ul ol,
+article ol ul,
+article ol ol {
+  margin: 4px 0;
+  padding-inline-start: 1.5em;
+}
+
+article li {
+  margin: 4px 0;
+}
+
+article ul > li::marker {
+  color: var(--bullet-color);
+}
+
+article ol > li::marker {
+  color: var(--bullet-color);
+}
 article img { max-width: 100%; height: auto; display: block; margin: 16px auto; cursor: zoom-in; }
 article pre {
   background: var(--surface);
