@@ -110,7 +110,7 @@
         });
       });
     } else {
-      bodyEl.innerHTML = `<div class="peek-loading">本文が見つかりませんでした</div>`;
+      bodyEl.innerHTML = `<div class="peek-loading">${t('peek.not_found', '本文が見つかりませんでした')}</div>`;
     }
   }
 

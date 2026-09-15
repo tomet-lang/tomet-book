@@ -131,11 +131,13 @@ pub fn format_meta_value_to_html(
     from_path: &Path,
     vault_index: &tomet_links::VaultLinkIndex,
     url_prefix: &str,
+    unresolved_title: &str,
 ) -> String {
     if let Some((href, label)) = resolve_meta_link(raw_str, from_path, vault_index, url_prefix) {
         let label = escape_html(&label);
         if href.is_empty() {
-            format!(r#"<span class="tm-link tm-unresolved" title="未作成のページ">{label}</span>"#)
+            let title = escape_html(unresolved_title);
+            format!(r#"<span class="tm-link tm-unresolved" title="{title}">{label}</span>"#)
         } else {
             let href = escape_html(&href);
             format!(r#"<a href="{href}" class="tm-link tm-file">{label}</a>"#)
@@ -259,6 +261,7 @@ mod tests {
             Path::new("a.tmt"),
             &idx,
             "/wiki",
+            "未作成のページ",
         );
         // The payload survives as inert text, but never as markup.
         assert_eq!(html, "&lt;img src=x onerror=alert(1)&gt;");
@@ -272,6 +275,7 @@ mod tests {
             Path::new("a.tmt"),
             &idx,
             "/wiki",
+            "未作成のページ",
         );
         assert!(!html.contains("<script>"));
         assert!(html.contains("&lt;script&gt;"));

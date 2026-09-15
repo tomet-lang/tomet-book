@@ -85,21 +85,50 @@ impl MetaCtx<'_> {
     }
 
     fn value_html(&self, raw: &str) -> String {
+        let unresolved_title = self
+            .config
+            .ui
+            .strings
+            .get("link.unresolved")
+            .map(String::as_str)
+            .unwrap_or("未作成のページ");
         format_meta_value_to_html(
             raw,
             self.from_path,
             self.vault_index,
             self.config.build.clean_url_prefix(),
+            unresolved_title,
         )
     }
 }
 
-pub fn format_chip_value(val: &str, format: Option<&str>) -> String {
+pub fn format_chip_value(val: &str, format: Option<&str>, lang: Option<&str>) -> String {
     if format == Some("birthday")
         && let Some(caps) = ISO_DATE_RE.captures(val)
     {
         let m: u32 = caps[2].parse().unwrap_or(0);
         let d: u32 = caps[3].parse().unwrap_or(0);
+        if let Some(l) = lang
+            && crate::config::is_english(l)
+        {
+            const MONTHS_EN: [&str; 12] = [
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
+            ];
+            if (1..=12).contains(&m) {
+                return format!("{} {d}", MONTHS_EN[(m - 1) as usize]);
+            }
+        }
         return format!("{m}月{d}日");
     }
     val.to_string()
@@ -205,7 +234,11 @@ fn hero_chips(cx: &MetaCtx, map: &Map<String, Value>) -> Vec<HeroChipItem> {
             if !display.is_empty() {
                 chips.push(HeroChipItem {
                     label: chip_cfg.label.clone(),
-                    value: format_chip_value(&display, chip_cfg.format.as_deref()),
+                    value: format_chip_value(
+                        &display,
+                        chip_cfg.format.as_deref(),
+                        Some(&cx.config.book.lang),
+                    ),
                     href,
                 });
             }
@@ -253,11 +286,13 @@ fn infobox_rows(cx: &MetaCtx, map: &Map<String, Value>, kind: Option<&str>) -> V
         && !map.contains_key("kind")
     {
         rows.push(InfoboxRowItem {
-            label: infobox
-                .labels
-                .get("kind")
-                .cloned()
-                .unwrap_or_else(|| "種別".to_string()),
+            label: infobox.labels.get("kind").cloned().unwrap_or_else(|| {
+                if crate::config::is_english(&cx.config.book.lang) {
+                    "Kind".to_string()
+                } else {
+                    "種別".to_string()
+                }
+            }),
             value: k.to_string(),
         });
     }
@@ -341,17 +376,31 @@ mod tests {
 
     #[test]
     fn birthday_format_shortens_an_iso_date() {
-        assert_eq!(format_chip_value("2001-04-09", Some("birthday")), "4月9日");
         assert_eq!(
-            format_chip_value("2001-04-09T00:00:00", Some("birthday")),
+            format_chip_value("2001-04-09", Some("birthday"), None),
             "4月9日"
+        );
+        assert_eq!(
+            format_chip_value("2001-04-09T00:00:00", Some("birthday"), None),
+            "4月9日"
+        );
+        assert_eq!(
+            format_chip_value("2001-04-09", Some("birthday"), Some("en")),
+            "April 9"
+        );
+        assert_eq!(
+            format_chip_value("2001-12-25", Some("birthday"), Some("en-US")),
+            "December 25"
         );
     }
 
     #[test]
     fn birthday_format_leaves_unparsable_values_alone() {
-        assert_eq!(format_chip_value("春ごろ", Some("birthday")), "春ごろ");
-        assert_eq!(format_chip_value("2001-04-09", None), "2001-04-09");
+        assert_eq!(
+            format_chip_value("春ごろ", Some("birthday"), None),
+            "春ごろ"
+        );
+        assert_eq!(format_chip_value("2001-04-09", None, None), "2001-04-09");
     }
 
     #[test]
