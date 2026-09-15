@@ -82,9 +82,7 @@ html[data-view="classic"] .classic-view {
 }
 
 /* ==================== FLOATING CONTROLS ==================== */
-/* Same tint as the left sidebar (--sidebar-*, defined in 00-base.css)
-   rather than the page's own surface color, so this bar reads as part of
-   that same sidebar family instead of a third, unrelated control style. */
+/* Same tint as the application shell (--shell-*, defined in 00-base.css) */
 .floating-controls {
   position: fixed;
   top: 10px;
@@ -93,12 +91,19 @@ html[data-view="classic"] .classic-view {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: var(--sidebar-bg);
-  color: var(--text);
-  border: 1px solid var(--sidebar-border);
+  background-color: var(--shell-bg);
+  background-image: var(--shell-grain);
+  background-blend-mode: soft-light;
+  background-repeat: repeat;
+  color: var(--shell-text);
+  --text: var(--shell-text);
+  --text-muted: var(--shell-text-muted);
+  border: 1px solid var(--shell-border);
   border-radius: 0;
   padding: 4px 6px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22),
+              inset 0 1px 0 rgba(255, 255, 255, 0.16),
+              inset 0 -1px 0 rgba(0, 0, 0, 0.12);
   user-select: none;
 }
 
@@ -124,7 +129,7 @@ html[data-view="classic"] .classic-view {
 
 .floating-drag-handle:hover {
   color: var(--text);
-  background: var(--sidebar-border);
+  background: var(--shell-border);
 }
 
 .floating-controls.is-dragging,
@@ -241,8 +246,16 @@ html[data-view="classic"] .classic-view {
   min-width: 38px;
   max-width: 38px;
   height: 100vh;
-  background: var(--sidebar-bg);
-  border-right: 1px solid var(--sidebar-border);
+  background-color: var(--shell-bg);
+  background-image: var(--shell-grain);
+  background-blend-mode: soft-light;
+  background-repeat: repeat;
+  border-right: 1px solid var(--shell-border);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.12),
+              inset 1px 0 0 rgba(255, 255, 255, 0.08);
+  color: var(--shell-text);
+  --text: var(--shell-text);
+  --text-muted: var(--shell-text-muted);
   flex-shrink: 0;
   box-sizing: border-box;
   padding: 0;
@@ -370,4 +383,121 @@ html[data-view="classic"] .classic-view {
 .rail-tab-theme:hover svg {
   transform: scale(1.15);
 }
+
+.rail-tab-palette {
+  padding: 12px 0;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--shell-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.rail-tab-palette:hover,
+.rail-tab-palette[aria-expanded="true"] {
+  background: var(--shell-border);
+  color: var(--shell-text);
+}
+.rail-tab-palette svg {
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+.rail-tab-palette:hover svg,
+.rail-tab-palette[aria-expanded="true"] svg {
+  transform: rotate(25deg);
+}
+
+/* ==================== SHELL PALETTE POPOVER ==================== */
+.rail-palette-container {
+  position: relative;
+  width: 100%;
+}
+
+.shell-palette-popover {
+  position: absolute;
+  left: calc(100% + 8px);
+  bottom: 0;
+  z-index: 1050;
+  background-color: var(--shell-bg);
+  background-image: var(--shell-grain);
+  background-blend-mode: soft-light;
+  border: 1px solid var(--shell-border);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.3),
+              inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  padding: 8px;
+  width: 170px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-sizing: border-box;
+}
+
+.shell-palette-popover[hidden] {
+  display: none !important;
+}
+
+.palette-header {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  padding: 2px 6px 4px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 2px;
+}
+
+.palette-swatches {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.swatch-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0;
+  color: var(--text);
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.swatch-btn:hover {
+  background: var(--surface-subtle);
+}
+
+.swatch-btn.is-active {
+  background: var(--surface-subtle);
+  border-color: var(--link);
+  font-weight: 600;
+}
+
+.swatch-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+[data-theme="dark"] .swatch-dot {
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.swatch-slate { background: #6b8bb2; }
+.swatch-violet { background: #8e78b8; }
+.swatch-indigo { background: #4a7ebb; }
+.swatch-olive { background: #7a7d58; }
+.swatch-contrast { background: linear-gradient(135deg, #1c222c 50%, #eaecf0 50%); }
 

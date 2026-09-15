@@ -21,6 +21,10 @@
         if (savedTheme === 'dark' || savedTheme === 'light') {
           document.documentElement.setAttribute('data-theme', savedTheme);
         }
+        const savedShell = localStorage.getItem('tmtbook-shell');
+        if (savedShell && savedShell !== 'slate') {
+          document.documentElement.setAttribute('data-shell', savedShell);
+        }
         // Decide the panes' collapsed state before the first paint. book.js
         // applies the real classes on DOMContentLoaded and clears these, but
         // by then the panes would already have been painted open.

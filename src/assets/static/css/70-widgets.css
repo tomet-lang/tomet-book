@@ -7,8 +7,8 @@
   display: flex;
   align-items: center;
 }
-/* Sits inside .floating-controls, which wears the left sidebar's own tint
-   (--sidebar-*) instead of the page's own surface color -- this field gets
+/* Sits inside .floating-controls, which wears the application shell's own tint
+   (--shell-*) instead of the page's own surface color -- this field gets
    a background one step off the bar's own, so it still reads as a
    distinct field rather than just more bar. */
 #wiki-search-input {
@@ -16,7 +16,7 @@
   height: 32px;
   padding: 0 10px;
   background: var(--bg);
-  border: 1px solid var(--sidebar-border);
+  border: 1px solid var(--shell-border);
   color: var(--text);
   font-size: 0.875rem;
   box-sizing: border-box;

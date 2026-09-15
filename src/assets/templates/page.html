@@ -61,8 +61,46 @@
       </button>
     </div>
 
-    <!-- Bottom Footer (Theme Switcher) -->
+    <!-- Bottom Footer (Theme Switcher & Shell Palette) -->
     <div class="rail-footer">
+      <div class="rail-palette-container">
+        <button type="button" class="rail-tab rail-tab-palette" id="btn-rail-palette" title="{{ t["theme.shell_toggle"] }}" aria-label="{{ t["theme.shell_toggle"] }}" aria-haspopup="true" aria-expanded="false">
+          <svg class="icon-palette" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle>
+            <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle>
+            <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle>
+            <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle>
+            <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path>
+          </svg>
+        </button>
+        <div class="shell-palette-popover" id="shell-palette-popover" hidden data-pagefind-ignore>
+          <div class="palette-header">
+            <span>{{ t["theme.shell_label"] }}</span>
+          </div>
+          <div class="palette-swatches">
+            <button type="button" class="swatch-btn" data-shell="slate" title="スレート (Slate)">
+              <span class="swatch-dot swatch-slate"></span>
+              <span class="swatch-name">スレート</span>
+            </button>
+            <button type="button" class="swatch-btn" data-shell="violet" title="バイオレット (Violet / 鉱物紫)">
+              <span class="swatch-dot swatch-violet"></span>
+              <span class="swatch-name">バイオレット</span>
+            </button>
+            <button type="button" class="swatch-btn" data-shell="indigo" title="インディゴ (Indigo / 濃藍)">
+              <span class="swatch-dot swatch-indigo"></span>
+              <span class="swatch-name">インディゴ</span>
+            </button>
+            <button type="button" class="swatch-btn" data-shell="olive" title="オリーブ (Olive / 古書装丁)">
+              <span class="swatch-dot swatch-olive"></span>
+              <span class="swatch-name">オリーブ</span>
+            </button>
+            <button type="button" class="swatch-btn" data-shell="contrast" title="コントラスト (Contrast / 二層反転)">
+              <span class="swatch-dot swatch-contrast"></span>
+              <span class="swatch-name">コントラスト</span>
+            </button>
+          </div>
+        </div>
+      </div>
       <button type="button" class="rail-tab rail-tab-theme theme-toggle-btn" id="btn-rail-theme" title="{{ t["theme.toggle"] }}" aria-label="{{ t["theme.toggle_label"] }}">
         <svg class="icon-theme icon-sun" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="4"></circle>

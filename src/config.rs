@@ -144,6 +144,8 @@ fn default_ui_strings() -> HashMap<String, String> {
         ("theme.toggle_label", "テーマ切り替え"),
         ("theme.to_light", "ライトテーマに切り替え"),
         ("theme.to_dark", "ダークテーマに切り替え"),
+        ("theme.shell_toggle", "シェルテーマ切り替え"),
+        ("theme.shell_label", "シェルテーマ"),
         // Search
         ("search.placeholder", "検索... (Ctrl+K)"),
         ("search.loading", "検索インデックスを準備中..."),

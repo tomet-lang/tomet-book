@@ -57,7 +57,7 @@
 .no-js #pane-panel-links[hidden],
 .no-js #pane-panel-index[hidden] {
   display: block !important;
-  border-top: 1px solid var(--sidebar-border);
+  border-top: 1px solid var(--shell-border);
 }
 
 /* Lookup (Pagefind) and Graph views require JS; keep them hidden */
