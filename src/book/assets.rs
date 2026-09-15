@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use rayon::prelude::*;
 use std::collections::hash_map::DefaultHasher;
 use std::fs;
 use std::hash::{Hash, Hasher};
@@ -136,6 +137,35 @@ fn is_same_media(src_path: &Path, dest_path: &Path) -> bool {
     false
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SyncOutcome {
+    Unchanged,
+    Linked,
+    Copied,
+}
+
+pub fn sync_media_file(src: &Path, dest: &Path) -> Result<SyncOutcome> {
+    if dest.exists() {
+        if is_same_media(src, dest) {
+            return Ok(SyncOutcome::Unchanged);
+        }
+        let _ = fs::remove_file(dest);
+    }
+
+    if let Some(parent) = dest.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    // A hard link costs nothing and shares the bytes; copying is the
+    // fallback for when the two paths are on different filesystems.
+    if fs::hard_link(src, dest).is_ok() {
+        Ok(SyncOutcome::Linked)
+    } else {
+        fs::copy(src, dest)?;
+        Ok(SyncOutcome::Copied)
+    }
+}
+
 pub fn sync_single_media(
     out_dir: &Path,
     abs_path: &Path,
@@ -144,21 +174,7 @@ pub fn sync_single_media(
 ) -> Result<()> {
     let target_vault = out_dir.join(config.build.asset_out_rel());
     let dest = target_vault.join(rel_path);
-
-    if dest.exists() {
-        if is_same_media(abs_path, &dest) {
-            return Ok(());
-        }
-        let _ = fs::remove_file(&dest);
-    }
-
-    if let Some(parent) = dest.parent() {
-        fs::create_dir_all(parent)?;
-    }
-
-    if fs::hard_link(abs_path, &dest).is_err() {
-        fs::copy(abs_path, &dest)?;
-    }
+    sync_media_file(abs_path, &dest)?;
     Ok(())
 }
 
@@ -188,28 +204,20 @@ pub fn copy_vault_media(
     let target_vault = out_dir.join(config.build.asset_out_rel());
     fs::create_dir_all(&target_vault)?;
 
+    let outcomes: Result<Vec<SyncOutcome>> = media_files
+        .par_iter()
+        .map(|media| {
+            let dest = target_vault.join(&media.rel_path);
+            sync_media_file(&media.abs_path, &dest)
+        })
+        .collect();
+
     let mut sync = MediaSync::default();
-    for media in media_files {
-        let dest = target_vault.join(&media.rel_path);
-
-        if dest.exists() {
-            if is_same_media(&media.abs_path, &dest) {
-                sync.unchanged += 1;
-                continue;
-            }
-            let _ = fs::remove_file(&dest);
-        }
-
-        if let Some(parent) = dest.parent() {
-            fs::create_dir_all(parent)?;
-        }
-
-        // A hard link costs nothing and shares the bytes; copying is the
-        // fallback for when the two paths are on different filesystems.
-        if fs::hard_link(&media.abs_path, &dest).is_ok() {
-            sync.linked += 1;
-        } else if fs::copy(&media.abs_path, &dest).is_ok() {
-            sync.copied += 1;
+    for outcome in outcomes? {
+        match outcome {
+            SyncOutcome::Unchanged => sync.unchanged += 1,
+            SyncOutcome::Linked => sync.linked += 1,
+            SyncOutcome::Copied => sync.copied += 1,
         }
     }
 

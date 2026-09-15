@@ -21,11 +21,7 @@ async fn main() -> Result<()> {
 
     match cli.command {
         Commands::Build { dir, dest, strict } => {
-            let config = BookConfig::load_from_dir(&dir)?;
-            let src_dir = dir
-                .canonicalize()
-                .context("Failed to find source directory")?;
-            let out_dir = dest.unwrap_or_else(|| src_dir.join(&config.book.dest));
+            let (src_dir, out_dir, config) = resolve_build_paths(&dir, dest)?;
 
             let report = book::build_book(&src_dir, &out_dir, &config, false)?;
 
@@ -45,11 +41,7 @@ async fn main() -> Result<()> {
             host,
             port,
         } => {
-            let config = BookConfig::load_from_dir(&dir)?;
-            let src_dir = dir
-                .canonicalize()
-                .context("Failed to find source directory")?;
-            let out_dir = dest.unwrap_or_else(|| src_dir.join(&config.book.dest));
+            let (src_dir, out_dir, config) = resolve_build_paths(&dir, dest)?;
 
             serve::run_dev_server(src_dir, out_dir, config, host, port).await?;
         }
@@ -105,4 +97,16 @@ exclude = [
     }
 
     Ok(())
+}
+
+fn resolve_build_paths(
+    dir: &std::path::Path,
+    dest: Option<std::path::PathBuf>,
+) -> Result<(std::path::PathBuf, std::path::PathBuf, BookConfig)> {
+    let config = BookConfig::load_from_dir(dir)?;
+    let src_dir = dir
+        .canonicalize()
+        .context("Failed to find source directory")?;
+    let out_dir = dest.unwrap_or_else(|| src_dir.join(&config.book.dest));
+    Ok((src_dir, out_dir, config))
 }

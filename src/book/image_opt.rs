@@ -5,8 +5,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use tracing::debug;
 
-use super::document::ProcessedDoc;
 use super::DocFailure;
+use super::document::ProcessedDoc;
 use crate::config::BookConfig;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -55,12 +55,11 @@ pub fn optimize_image(
     let url = format!(
         "/cache/{}/{}",
         preset.dir_name(),
-        webp_rel.to_string_lossy().replace('\\', "/")
+        crate::book::normalize_path(&webp_rel)
     );
 
     // Cache check: if dest exists and was modified after or at src mtime, skip processing
-    if dest_abs.exists()
-        && let (Ok(src_meta), Ok(dest_meta)) = (fs::metadata(src_abs), fs::metadata(&dest_abs))
+    if let (Ok(src_meta), Ok(dest_meta)) = (fs::metadata(src_abs), fs::metadata(&dest_abs))
         && let (Ok(src_mtime), Ok(dest_mtime)) = (src_meta.modified(), dest_meta.modified())
         && dest_mtime >= src_mtime
     {
@@ -95,9 +94,18 @@ pub fn optimize_image(
     // Save as WebP
     optimized
         .save_with_format(&dest_abs, image::ImageFormat::WebP)
-        .with_context(|| format!("Failed to save optimized WebP image to {}", dest_abs.display()))?;
+        .with_context(|| {
+            format!(
+                "Failed to save optimized WebP image to {}",
+                dest_abs.display()
+            )
+        })?;
 
-    debug!("Optimized image: {} -> {}", src_abs.display(), dest_abs.display());
+    debug!(
+        "Optimized image: {} -> {}",
+        src_abs.display(),
+        dest_abs.display()
+    );
     Ok(Some(url))
 }
 
@@ -302,17 +310,23 @@ mod tests {
         assert!(res2.is_some());
 
         // External URL returns None
-        assert!(resolve_local_media_path("https://example.com/banner.png", &src_dir, "/vault").is_none());
+        assert!(
+            resolve_local_media_path("https://example.com/banner.png", &src_dir, "/vault")
+                .is_none()
+        );
 
         // Non-existent file returns None
-        assert!(resolve_local_media_path("/vault/images/missing.png", &src_dir, "/vault").is_none());
+        assert!(
+            resolve_local_media_path("/vault/images/missing.png", &src_dir, "/vault").is_none()
+        );
 
         let _ = fs::remove_dir_all(&tmp);
     }
 
     #[test]
     fn optimizes_docs_media_in_batch() {
-        let tmp = std::env::temp_dir().join(format!("tmtbook-img-batch-test-{}", std::process::id()));
+        let tmp =
+            std::env::temp_dir().join(format!("tmtbook-img-batch-test-{}", std::process::id()));
         let src_dir = tmp.join("vault");
         let out_dir = tmp.join("dist");
         fs::create_dir_all(src_dir.join("images")).unwrap();

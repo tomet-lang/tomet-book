@@ -20,14 +20,15 @@
 /// `kind` is `None` for a document that never declared one; only `*` matches
 /// it. A document no pattern matches is left out, which is what makes a list
 /// without any `*` read as "publish exactly these".
-pub fn publishes(kind: Option<&str>, patterns: &[String]) -> bool {
+pub fn publishes<S: AsRef<str>>(kind: Option<&str>, patterns: &[S]) -> bool {
     let name = kind.unwrap_or("");
 
     let mut verdict = false;
     for pattern in patterns {
-        let (negated, glob) = match pattern.strip_prefix('!') {
+        let s = pattern.as_ref();
+        let (negated, glob) = match s.strip_prefix('!') {
             Some(rest) => (true, rest),
-            None => (false, pattern.as_str()),
+            None => (false, s),
         };
         if glob_matches(glob, name) {
             verdict = !negated;
@@ -73,48 +74,45 @@ fn glob_matches(pattern: &str, name: &str) -> bool {
 mod tests {
     use super::*;
 
-    fn patterns(list: &[&str]) -> Vec<String> {
-        list.iter().map(|s| s.to_string()).collect()
-    }
-
     #[test]
     fn the_default_publishes_everything_but_the_control_kinds() {
-        let p = patterns(&["*", "!config", "!index"]);
-        assert!(publishes(Some("page"), &p));
-        assert!(publishes(Some("unit"), &p));
-        assert!(publishes(None, &p), "a document with no kind is a page");
-        assert!(!publishes(Some("config"), &p));
-        assert!(!publishes(Some("index"), &p));
+        let p = &["*", "!config", "!index"];
+        assert!(publishes(Some("page"), p));
+        assert!(publishes(Some("unit"), p));
+        assert!(publishes(None, p), "a document with no kind is a page");
+        assert!(!publishes(Some("config"), p));
+        assert!(!publishes(Some("index"), p));
     }
 
     #[test]
     fn a_list_without_a_star_publishes_exactly_what_it_names() {
-        let p = patterns(&["page", "unit"]);
-        assert!(publishes(Some("page"), &p));
-        assert!(publishes(Some("unit"), &p));
-        assert!(!publishes(Some("event"), &p));
+        let p = &["page", "unit"];
+        assert!(publishes(Some("page"), p));
+        assert!(publishes(Some("unit"), p));
+        assert!(!publishes(Some("event"), p));
         assert!(
-            !publishes(None, &p),
+            !publishes(None, p),
             "only `*` reaches a document with no kind"
         );
     }
 
     #[test]
     fn the_last_matching_rule_wins() {
-        let p = patterns(&["*", "!deck.*", "deck.card"]);
-        assert!(publishes(Some("deck.card"), &p));
-        assert!(!publishes(Some("deck.bookmark"), &p));
-        assert!(publishes(Some("page"), &p));
+        let p = &["*", "!deck.*", "deck.card"];
+        assert!(publishes(Some("deck.card"), p));
+        assert!(!publishes(Some("deck.bookmark"), p));
+        assert!(publishes(Some("page"), p));
 
         // Order is the whole rule: reversed, the namespace wins again.
-        let reversed = patterns(&["*", "deck.card", "!deck.*"]);
-        assert!(!publishes(Some("deck.card"), &reversed));
+        let reversed = &["*", "deck.card", "!deck.*"];
+        assert!(!publishes(Some("deck.card"), reversed));
     }
 
     #[test]
     fn an_empty_list_publishes_nothing() {
-        assert!(!publishes(Some("page"), &[]));
-        assert!(!publishes(None, &[]));
+        let empty: &[&str] = &[];
+        assert!(!publishes(Some("page"), empty));
+        assert!(!publishes(None, empty));
     }
 
     #[test]

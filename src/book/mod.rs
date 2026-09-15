@@ -28,6 +28,16 @@ use renderer::{Backlink, BookRenderer, EntrySummary, SectionSummary};
 
 use rayon::prelude::*;
 
+/// Normalize a filesystem path to a forward-slash string (for URL and index consistency).
+pub fn normalize_path(path: &Path) -> String {
+    path.to_string_lossy().replace('\\', "/")
+}
+
+/// Normalize a path string to use forward slashes.
+pub fn normalize_path_str(s: &str) -> String {
+    s.replace('\\', "/")
+}
+
 /// Name of the record a build leaves behind in the output directory.
 const MANIFEST_FILE: &str = ".tmtbook-manifest.json";
 
@@ -104,8 +114,7 @@ enum DocOutcome {
 /// Write content to path only if content has actually changed or file does not exist.
 /// Returns Ok(true) if written, Ok(false) if skipped because unchanged.
 pub fn write_if_changed(path: &Path, content: &str) -> Result<bool> {
-    if path.exists()
-        && let Ok(meta) = fs::metadata(path)
+    if let Ok(meta) = fs::metadata(path)
         && meta.len() == content.len() as u64
         && let Ok(existing) = fs::read_to_string(path)
         && existing == content
@@ -129,6 +138,7 @@ pub struct RenderContext<'a, 'r> {
     pub src_dir: &'a Path,
     pub vault_index: &'a tomet_links::VaultLinkIndex,
     pub workspace_cfg_src: Option<&'a str>,
+    pub workspace_cfg_blocks: &'a [tomet_ast::Block],
     pub renderer: &'a BookRenderer<'r>,
     /// The documents the last full build left out, so a page re-rendered on
     /// its own still shows links to them as broken.
@@ -153,13 +163,13 @@ pub fn render_single_document(
         return Ok(None);
     }
 
-    let mut processed = document::process_parsed_document(
+    let mut processed = document::process_parsed_document_with_blocks(
         doc,
         rel_path,
         Some(abs_path),
         config,
         cx.vault_index,
-        cx.workspace_cfg_src,
+        cx.workspace_cfg_blocks,
         cx.unpublished,
     )?;
     image_opt::optimize_single_doc_media(&mut processed, cx.src_dir, out_dir, config);
@@ -179,7 +189,11 @@ pub fn render_single_document(
 ///
 /// Returns `None` when the vault has none, which is what keeps the generated
 /// catalog as the default.
-fn read_written_index(scanned: &ScannedVault, src_dir: &Path) -> Option<Vec<catalog::IndexEntry>> {
+fn read_written_index(
+    scanned: &ScannedVault,
+    parsed: &[Result<(tomet_ast::Document, Option<String>), DocFailure>],
+    src_dir: &Path,
+) -> Option<Vec<catalog::IndexEntry>> {
     let index_files: Vec<&loader::DocFileInfo> = scanned
         .control_files
         .iter()
@@ -193,7 +207,14 @@ fn read_written_index(scanned: &ScannedVault, src_dir: &Path) -> Option<Vec<cata
     // same way `vault_index` already is -- each `${filter(...)}` answers
     // from the vault as this build's own scan sees it, not a second,
     // independently-filtered walk.
-    let rows = catalog::index_rows(&scanned.doc_files, src_dir);
+    // Reuses the ASTs already parsed during the build pipeline.
+    let rows = catalog::index_rows(
+        parsed
+            .par_iter()
+            .zip(scanned.doc_files.par_iter())
+            .filter_map(|(res, file)| res.as_ref().ok().map(|(doc, _)| (doc, file))),
+        src_dir,
+    );
 
     let mut entries = Vec::new();
     for file in index_files {
@@ -351,7 +372,7 @@ fn prune_stale_pages(wiki_root: &Path, keep_slugs: &HashSet<&str>) -> usize {
         let Ok(rel) = parent.strip_prefix(wiki_root) else {
             continue;
         };
-        let slug = rel.to_string_lossy().replace('\\', "/");
+        let slug = normalize_path(rel);
         if keep_slugs.contains(slug.as_str()) {
             continue;
         }
@@ -380,7 +401,7 @@ fn prune_stale_media(vault_root: &Path, keep_rel: &HashSet<&str>) -> usize {
         let Ok(rel) = entry.path().strip_prefix(vault_root) else {
             continue;
         };
-        let rel_str = rel.to_string_lossy().replace('\\', "/");
+        let rel_str = normalize_path(rel);
         if keep_rel.contains(rel_str.as_str()) {
             continue;
         }
@@ -507,6 +528,8 @@ pub fn build_book(
         );
     }
 
+    let written_index = read_written_index(&scanned, &parsed, src_dir);
+
     info!(
         "Processing {} document(s)...",
         scanned.doc_files.len() - unpublished.len()
@@ -517,13 +540,13 @@ pub fn build_book(
         .filter(|(_, doc_file)| !unpublished.contains(&doc_file.rel_path))
         .map(|(result, doc_file)| {
             let (doc, _) = result?;
-            document::process_parsed_document(
+            document::process_parsed_document_with_blocks(
                 doc,
                 &doc_file.rel_path,
                 Some(&doc_file.abs_path),
                 config,
                 &scanned.vault_index,
-                scanned.workspace_config_src.as_deref(),
+                &scanned.workspace_config_blocks,
                 &unpublished,
             )
             .map_err(|e| DocFailure {
@@ -557,37 +580,11 @@ pub fn build_book(
         })
         .collect();
 
-    let written_index = read_written_index(&scanned, src_dir);
     let book_index: Vec<EntrySummary> = match &written_index {
         Some(index) => arrange_entries(index, &entries_by_slug),
         None => Vec::new(),
     };
 
-    // Search's tag chips need the vault's section names regardless of
-    // whether the vault has a written index at all, so this is built from
-    // the map directly rather than from `book_index` (empty) or
-    // `processed_entries` (not settled until after the render pass below).
-    // Written once here as its own static file -- exactly how book.css and
-    // book.js already work -- rather than inlined into every page's own
-    // context.
-    let mut lookup_section_totals: HashMap<String, usize> = HashMap::new();
-    for entry in entries_by_slug.values() {
-        if let Some(sec) = &entry.section {
-            *lookup_section_totals.entry(sec.clone()).or_insert(0) += 1;
-        }
-    }
-    let mut lookup_sections: Vec<SectionSummary> = lookup_section_totals
-        .into_iter()
-        .map(|(name, count)| SectionSummary { name, count })
-        .collect();
-    lookup_sections.sort_by(|a, b| a.name.cmp(&b.name));
-
-    write_if_changed(
-        &out_dir.join("lookup/manifest.json"),
-        &serde_json::to_string(&LookupManifest {
-            sections: lookup_sections,
-        })?,
-    )?;
     // A-Z browsing (and the per-character lookup/buckets/*.json shards it
     // used to page through) was tried and dropped -- not worth the added
     // complexity for this vault's actual usage. Nothing writes that
@@ -729,12 +726,19 @@ pub fn build_book(
         rendered - written
     );
 
-    // 6. Render the catalog page
+    // 6. Render the catalog page and write lookup manifest
     let mut sections: Vec<SectionSummary> = section_counts
         .into_iter()
         .map(|(name, count)| SectionSummary { name, count })
         .collect();
     sections.sort_by(|a, b| a.name.cmp(&b.name));
+
+    write_if_changed(
+        &out_dir.join("lookup/manifest.json"),
+        &serde_json::to_string(&LookupManifest {
+            sections: sections.clone(),
+        })?,
+    )?;
 
     // A written index replaces the generated listing outright: the order is
     // the author's, and a page they left out is a page they do not want

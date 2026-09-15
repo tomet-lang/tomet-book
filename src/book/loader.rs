@@ -1,5 +1,4 @@
 use anyhow::Result;
-use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
@@ -11,6 +10,7 @@ pub struct ScannedVault {
     pub media_files: Vec<MediaFileInfo>,
     pub vault_index: tomet_links::VaultLinkIndex,
     pub workspace_config_src: Option<String>,
+    pub workspace_config_blocks: Vec<tomet_ast::Block>,
     /// The documents that shape the book without being part of it:
     /// `*.index.tmt` and `*.config.tmt`, in filename order, so a long index
     /// can be split the way a long stylesheet is.
@@ -60,10 +60,10 @@ pub fn exclude_prefixes(config: &BookConfig) -> Vec<String> {
         .build
         .exclude
         .iter()
-        .map(|s| s.replace('\\', "/"))
+        .map(|s| super::normalize_path_str(s))
         .collect();
 
-    let dest_str = config.book.dest.to_string_lossy().replace('\\', "/");
+    let dest_str = super::normalize_path(&config.book.dest);
     if !dest_str.is_empty() && !prefixes.contains(&dest_str) {
         prefixes.push(dest_str);
     }
@@ -91,9 +91,21 @@ pub fn scan_vault(src_dir: &Path, config: &BookConfig) -> Result<ScannedVault> {
     let mut all_rel_paths = Vec::new();
 
     let exclude_prefixes = exclude_prefixes(config);
-    let media_ext_set: HashSet<&str> = MEDIA_EXTENSIONS.iter().copied().collect();
 
-    for entry in WalkDir::new(src_dir).into_iter().filter_map(|e| e.ok()) {
+    for entry in WalkDir::new(src_dir)
+        .into_iter()
+        .filter_entry(|e| {
+            if e.path() == src_dir {
+                return true;
+            }
+            let Ok(rel) = e.path().strip_prefix(src_dir) else {
+                return false;
+            };
+            let rel_str = super::normalize_path(rel);
+            !is_ignored_rel(&rel_str, &exclude_prefixes)
+        })
+        .filter_map(|e| e.ok())
+    {
         let path = entry.path();
         if !path.is_file() {
             continue;
@@ -103,11 +115,7 @@ pub fn scan_vault(src_dir: &Path, config: &BookConfig) -> Result<ScannedVault> {
             Ok(r) => r,
             Err(_) => continue,
         };
-        let rel_str = rel.to_string_lossy().replace('\\', "/");
-
-        if is_ignored_rel(&rel_str, &exclude_prefixes) {
-            continue;
-        }
+        let rel_str = super::normalize_path(rel);
 
         all_rel_paths.push(rel_str.clone());
 
@@ -132,7 +140,7 @@ pub fn scan_vault(src_dir: &Path, config: &BookConfig) -> Result<ScannedVault> {
                 abs_path: path.to_path_buf(),
                 rel_path: rel_str,
             });
-        } else if media_ext_set.contains(ext.as_str()) {
+        } else if MEDIA_EXTENSIONS.contains(&ext.as_str()) {
             media_files.push(MediaFileInfo {
                 abs_path: path.to_path_buf(),
                 rel_path: rel_str,
@@ -156,6 +164,11 @@ pub fn scan_vault(src_dir: &Path, config: &BookConfig) -> Result<ScannedVault> {
         None
     };
 
+    let workspace_config_blocks = workspace_config_src
+        .as_deref()
+        .map(crate::book::document::extract_workspace_config_blocks)
+        .unwrap_or_default();
+
     // WalkDir does not promise an order, and the catalog must not depend on
     // one: the filenames decide.
     control_files.sort_by(|a, b| a.rel_path.cmp(&b.rel_path));
@@ -165,6 +178,7 @@ pub fn scan_vault(src_dir: &Path, config: &BookConfig) -> Result<ScannedVault> {
         media_files,
         vault_index,
         workspace_config_src,
+        workspace_config_blocks,
         control_files,
     })
 }

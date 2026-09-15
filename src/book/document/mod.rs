@@ -45,14 +45,13 @@ pub struct ProcessedDoc {
     pub outgoing: Vec<String>,
 }
 
-/// Prepend the `@config`/`@settings` blocks of a workspace-wide document, so a
-/// vault's shared macros are in scope while this one expands.
-fn inject_workspace_config(doc: &mut tomet_ast::Document, workspace_cfg_src: &str) {
+/// Extract the `@config`/`@settings` blocks of a workspace-wide document.
+pub fn extract_workspace_config_blocks(workspace_cfg_src: &str) -> Vec<tomet_ast::Block> {
     let Ok(cfg_doc) = tomet_parser::parse_document(workspace_cfg_src) else {
-        return;
+        return Vec::new();
     };
 
-    let mut prefix_blocks: Vec<tomet_ast::Block> = cfg_doc
+    cfg_doc
         .blocks
         .into_iter()
         .filter(|block| match block {
@@ -62,11 +61,18 @@ fn inject_workspace_config(doc: &mut tomet_ast::Document, workspace_cfg_src: &st
             }
             _ => false,
         })
-        .collect();
+        .collect()
+}
 
+/// Prepend pre-parsed workspace-wide config blocks so shared macros are in scope.
+pub fn inject_workspace_config_blocks(
+    doc: &mut tomet_ast::Document,
+    prefix_blocks: &[tomet_ast::Block],
+) {
     if !prefix_blocks.is_empty() {
-        prefix_blocks.append(&mut doc.blocks);
-        doc.blocks = prefix_blocks;
+        let mut new_blocks = prefix_blocks.to_vec();
+        new_blocks.append(&mut doc.blocks);
+        doc.blocks = new_blocks;
     }
 }
 
@@ -217,7 +223,10 @@ mod kind_tests {
         .unwrap();
 
         let icon = out.icon.as_deref().unwrap_or_default();
-        assert!(icon.contains("<svg") && icon.contains("data-icon=\"cake\""), "{icon}");
+        assert!(
+            icon.contains("<svg") && icon.contains("data-icon=\"cake\""),
+            "{icon}"
+        );
     }
 
     #[test]
@@ -277,13 +286,8 @@ pub fn process_tomet_document(
     )
 }
 
-/// Turn a parsed document into the page it becomes.
-///
-/// `unpublished` names the vault-relative paths the site leaves out; links to
-/// those resolve to nothing, so they render as broken rather than pointing at
-/// a page that was never written.
 pub fn process_parsed_document(
-    mut doc: tomet_ast::Document,
+    doc: tomet_ast::Document,
     rel_path: &str,
     abs_path: Option<&Path>,
     config: &BookConfig,
@@ -291,10 +295,32 @@ pub fn process_parsed_document(
     workspace_cfg_src: Option<&str>,
     unpublished: &HashSet<String>,
 ) -> Result<ProcessedDoc> {
+    let blocks = workspace_cfg_src
+        .map(extract_workspace_config_blocks)
+        .unwrap_or_default();
+    process_parsed_document_with_blocks(
+        doc,
+        rel_path,
+        abs_path,
+        config,
+        vault_index,
+        &blocks,
+        unpublished,
+    )
+}
+
+/// Turn a parsed document into the page it becomes using pre-parsed workspace config blocks.
+pub fn process_parsed_document_with_blocks(
+    mut doc: tomet_ast::Document,
+    rel_path: &str,
+    abs_path: Option<&Path>,
+    config: &BookConfig,
+    vault_index: &tomet_links::VaultLinkIndex,
+    workspace_cfg_blocks: &[tomet_ast::Block],
+    unpublished: &HashSet<String>,
+) -> Result<ProcessedDoc> {
     // 1. Bring in the vault-wide config (e.g. default.config.tmt)
-    if let Some(cfg_src) = workspace_cfg_src {
-        inject_workspace_config(&mut doc, cfg_src);
-    }
+    inject_workspace_config_blocks(&mut doc, workspace_cfg_blocks);
 
     // 2. Expand macros
     let doc_cfg = tomet_semantics::document_config(&doc);
@@ -302,7 +328,7 @@ pub fn process_parsed_document(
 
     // 3. Collect outgoing links, then resolve them
     let from_path = Path::new(rel_path);
-    let slug = strip_doc_extension(&rel_path.replace('\\', "/")).to_string();
+    let slug = strip_doc_extension(&crate::book::normalize_path_str(rel_path)).to_string();
     let mut outgoing = links::outgoing_page_slugs(&doc, from_path, &slug, vault_index, unpublished);
 
     let mode = tomet_transform::TargetMode::WebSlug {
@@ -317,7 +343,7 @@ pub fn process_parsed_document(
                 .resolve_ref(target, from)
                 // A page the site does not publish is not a page. Resolving
                 // it would print a link to a file that was never written.
-                .filter(|p| !unpublished.contains(&p.to_string_lossy().replace('\\', "/")))
+                .filter(|p| !unpublished.contains(&crate::book::normalize_path(p)))
                 .map(|p| p.to_path_buf())
         },
         &mode,

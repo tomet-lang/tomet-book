@@ -52,6 +52,52 @@ impl RebuildPlan {
     }
 }
 
+struct DevBuildCache<'a> {
+    scanned: Option<crate::book::loader::ScannedVault>,
+    renderer: Option<crate::book::renderer::BookRenderer<'a>>,
+    backlinks: std::collections::HashMap<String, Vec<crate::book::renderer::Backlink>>,
+    unpublished: std::collections::HashSet<String>,
+    book_index: Vec<crate::book::renderer::EntrySummary>,
+}
+
+impl<'a> DevBuildCache<'a> {
+    fn update_from_report(&mut self, report: crate::book::BuildReport, config: &'a BookConfig) {
+        self.backlinks = report.backlinks;
+        self.unpublished = report.unpublished;
+        self.book_index = report.book_index;
+        self.scanned = Some(report.scanned);
+        self.renderer = crate::book::renderer::BookRenderer::new(config, true).ok();
+    }
+}
+
+fn run_dev_full_rebuild<'a>(
+    src_dir: &Path,
+    out_dir: &Path,
+    config: &'a BookConfig,
+    cache: &mut DevBuildCache<'a>,
+    watcher_tx: &broadcast::Sender<ReloadSignal>,
+) {
+    let start = Instant::now();
+    let mut dev_cfg = config.clone();
+    dev_cfg.build.pagefind = false;
+
+    match build_book(src_dir, out_dir, &dev_cfg, true) {
+        Ok(report) => {
+            info!(
+                "Full rebuild complete in {:?} ({} pages, {} written, {} pruned, {} failed), triggering reload",
+                start.elapsed(),
+                report.rendered,
+                report.written,
+                report.pruned_pages + report.pruned_media,
+                report.failures.len()
+            );
+            cache.update_from_report(report, config);
+            let _ = watcher_tx.send(ReloadSignal::Full);
+        }
+        Err(e) => warn!("Rebuild error: {e}"),
+    }
+}
+
 /// True when an event path cannot affect the book: it is build output, or the
 /// vault scanner would have skipped it anyway.
 ///
@@ -63,7 +109,7 @@ fn is_ignored_event_path(path: &Path, src_dir: &Path, out_dir: &Path, excludes: 
     }
 
     match path.strip_prefix(src_dir) {
-        Ok(rel) => is_ignored_rel(&rel.to_string_lossy().replace('\\', "/"), excludes),
+        Ok(rel) => is_ignored_rel(&crate::book::normalize_path(rel), excludes),
         Err(_) => false,
     }
 }
@@ -116,7 +162,7 @@ fn plan_events(
 
             let ext = path
                 .extension()
-                .and_then(|s| s.to_str())
+                .and_then(|e| e.to_str())
                 .unwrap_or("")
                 .to_lowercase();
 
@@ -127,13 +173,13 @@ fn plan_events(
                     plan.global = true;
                 } else if let Some(rel) = rel.filter(|_| seen_docs.insert(path.clone())) {
                     plan.docs
-                        .push((path.clone(), rel.to_string_lossy().replace('\\', "/")));
+                        .push((path.clone(), crate::book::normalize_path(rel)));
                 }
             } else if crate::book::loader::MEDIA_EXTENSIONS.contains(&ext.as_str())
                 && let Some(rel) = rel.filter(|_| seen_media.insert(path.clone()))
             {
                 plan.media
-                    .push((path.clone(), rel.to_string_lossy().replace('\\', "/")));
+                    .push((path.clone(), crate::book::normalize_path(rel)));
             }
         }
     }
@@ -211,17 +257,16 @@ pub async fn run_dev_server(
 
         // Cache for fast incremental rebuilds. The initial build already
         // walked the vault; only scan again if it failed outright.
-        let mut cached_scanned = match initial_scanned {
-            Some(scanned) => Some(scanned),
-            None => crate::book::loader::scan_vault(&watch_src, &watch_cfg).ok(),
+        let mut cache = DevBuildCache {
+            scanned: match initial_scanned {
+                Some(scanned) => Some(scanned),
+                None => crate::book::loader::scan_vault(&watch_src, &watch_cfg).ok(),
+            },
+            renderer: crate::book::renderer::BookRenderer::new(&watch_cfg, true).ok(),
+            backlinks: initial_backlinks,
+            unpublished: initial_unpublished,
+            book_index: initial_book_index,
         };
-        let mut cached_renderer = crate::book::renderer::BookRenderer::new(&watch_cfg, true).ok();
-        // Backlinks need the whole vault, so a single-document rebuild reuses
-        // the index from the last full build. An edit that adds or removes a
-        // link shows up on the other page at the next full rebuild.
-        let mut cached_backlinks = initial_backlinks;
-        let mut cached_unpublished = initial_unpublished;
-        let mut cached_book_index = initial_book_index;
 
         // Events are collected until the filesystem goes quiet, then handled as
         // one batch. Dropping events instead would silently skip rebuilds when
@@ -267,37 +312,12 @@ pub async fn run_dev_server(
                 continue;
             }
 
-            let can_render_incrementally = cached_scanned.is_some() && cached_renderer.is_some();
+            let can_render_incrementally = cache.scanned.is_some() && cache.renderer.is_some();
             let needs_full = plan.global || (!plan.docs.is_empty() && !can_render_incrementally);
 
             if needs_full {
                 info!("🔄 Global change detected, rebuilding all pages (parallel)...");
-                let start = Instant::now();
-                let mut dev_cfg = watch_cfg.clone();
-                dev_cfg.build.pagefind = false;
-
-                match build_book(&watch_src, &watch_out, &dev_cfg, true) {
-                    Ok(report) => {
-                        info!(
-                            "Full rebuild complete in {:?} ({} pages, {} written, {} pruned, {} failed), triggering reload",
-                            start.elapsed(),
-                            report.rendered,
-                            report.written,
-                            report.pruned_pages + report.pruned_media,
-                            report.failures.len()
-                        );
-                        // The build already walked the vault; reuse that scan
-                        // rather than doing it a second time.
-                        cached_backlinks = report.backlinks;
-                        cached_unpublished = report.unpublished;
-                        cached_book_index = report.book_index;
-                        cached_scanned = report.scanned.into();
-                        cached_renderer =
-                            crate::book::renderer::BookRenderer::new(&watch_cfg, true).ok();
-                        let _ = watcher_tx.send(ReloadSignal::Full);
-                    }
-                    Err(e) => warn!("Rebuild error: {e}"),
-                }
+                run_dev_full_rebuild(&watch_src, &watch_out, &watch_cfg, &mut cache, &watcher_tx);
                 continue;
             }
 
@@ -310,8 +330,8 @@ pub async fn run_dev_server(
 
             for (abs_path, rel_path) in &plan.docs {
                 let start = Instant::now();
-                let scanned = cached_scanned.as_ref().unwrap();
-                let renderer = cached_renderer.as_ref().unwrap();
+                let scanned = cache.scanned.as_ref().unwrap();
+                let renderer = cache.renderer.as_ref().unwrap();
 
                 match crate::book::render_single_document(
                     abs_path,
@@ -322,11 +342,13 @@ pub async fn run_dev_server(
                         src_dir: &watch_src,
                         vault_index: &scanned.vault_index,
                         workspace_cfg_src: scanned.workspace_config_src.as_deref(),
+                        workspace_cfg_blocks: &scanned.workspace_config_blocks,
                         renderer,
-                        unpublished: &cached_unpublished,
-                        book_index: &cached_book_index,
+                        unpublished: &cache.unpublished,
+                        book_index: &cache.book_index,
                     },
-                    cached_backlinks
+                    cache
+                        .backlinks
                         .get(crate::book::document::strip_doc_extension(rel_path))
                         .map(Vec::as_slice)
                         .unwrap_or(&[]),
@@ -348,18 +370,13 @@ pub async fn run_dev_server(
                     // every link to this document changes with it.
                     Ok(None) => {
                         info!("{rel_path} is not published; rebuilding in full");
-                        let mut dev_cfg = watch_cfg.clone();
-                        dev_cfg.build.pagefind = false;
-                        match build_book(&watch_src, &watch_out, &dev_cfg, true) {
-                            Ok(report) => {
-                                cached_backlinks = report.backlinks;
-                                cached_unpublished = report.unpublished;
-                                cached_book_index = report.book_index;
-                                cached_scanned = report.scanned.into();
-                                let _ = watcher_tx.send(ReloadSignal::Full);
-                            }
-                            Err(e) => warn!("Rebuild error: {e}"),
-                        }
+                        run_dev_full_rebuild(
+                            &watch_src,
+                            &watch_out,
+                            &watch_cfg,
+                            &mut cache,
+                            &watcher_tx,
+                        );
                         break;
                     }
                     Err(e) => warn!("Incremental rebuild error for {rel_path}: {e}"),

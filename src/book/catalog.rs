@@ -23,6 +23,7 @@
 
 use std::path::Path;
 
+use rayon::prelude::*;
 use tomet_ast::{Block, Document, Paragraph};
 
 use super::document::strip_doc_extension;
@@ -105,24 +106,31 @@ pub fn parse_index_document(
     outline
 }
 
-/// The vault-wide metadata table every `${filter(...)}` in an index document
-/// answers from -- built from tomet-book's own scan (`doc_files`), not a
-/// second, independently-filtered walk, so a query only ever sees the files
-/// this build will actually turn into pages.
-pub fn index_rows(doc_files: &[DocFileInfo], src_dir: &Path) -> Vec<tomet_transform::IndexRow> {
-    doc_files
-        .iter()
-        .filter_map(|file| {
-            let src = std::fs::read_to_string(&file.abs_path).ok()?;
-            let doc = tomet_parser::parse_document(&src).ok()?;
-            let fields = tomet_indexer::document_fields(&doc, &file.abs_path, src_dir);
-            let path = match fields.get("path") {
-                Some(tomet_ast::Value::String(p)) => p.clone(),
-                _ => file.rel_path.clone(),
-            };
-            Some(tomet_transform::IndexRow { path, fields })
-        })
+/// Turn already parsed documents into the rows a `${filter(...)}` query reads against.
+///
+/// Reuses ASTs already parsed in the build pipeline, avoiding redundant disk reads and parsing.
+pub fn index_rows<'a>(
+    docs: impl IntoParallelIterator<Item = (&'a Document, &'a DocFileInfo)>,
+    src_dir: &Path,
+) -> Vec<tomet_transform::IndexRow> {
+    docs.into_par_iter()
+        .map(|(doc, file)| make_index_row(doc, &file.abs_path, &file.rel_path, src_dir))
         .collect()
+}
+
+/// Build an [`IndexRow`] from an AST and document metadata.
+pub fn make_index_row(
+    doc: &Document,
+    abs_path: &Path,
+    rel_path: &str,
+    src_dir: &Path,
+) -> tomet_transform::IndexRow {
+    let fields = tomet_indexer::document_fields(doc, abs_path, src_dir);
+    let path = match fields.get("path") {
+        Some(tomet_ast::Value::String(p)) => p.clone(),
+        _ => rel_path.to_string(),
+    };
+    tomet_transform::IndexRow { path, fields }
 }
 
 /// Walk the lists in a run of blocks, in source order.

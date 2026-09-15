@@ -33,28 +33,54 @@ pub fn is_link_ref(raw: &str) -> bool {
         || (s.starts_with('@') && s.len() > 1 && !s.contains(' ') && !s[1..].contains('@'))
 }
 
-/// Clean link references like `@link(ref:"@foo")` or `ref:bar` into plain labels.
-pub fn clean_ref_target(raw: &str) -> String {
+/// A parsed link reference representation.
+#[derive(Debug, PartialEq, Eq)]
+pub struct ParsedLinkRef<'a> {
+    /// The target name or path (without quotes, 'ref:', or outer markup).
+    pub target: &'a str,
+    /// The optional explicit alias (e.g. from `[[target|alias]]`).
+    pub alias: Option<&'a str>,
+}
+
+/// Extract the core target and optional alias from link reference syntax.
+pub fn parse_link_ref(raw: &str) -> ParsedLinkRef<'_> {
     let mut s = raw.trim();
+    let mut alias = None;
+
     if s.starts_with("@link(") && s.ends_with(')') {
         s = s[6..s.len() - 1].trim();
     } else if s.starts_with("link(") && s.ends_with(')') {
         s = s[5..s.len() - 1].trim();
     } else if s.starts_with("[[") && s.ends_with("]]") {
         let inner = s[2..s.len() - 2].trim();
-        if let Some((_, a)) = inner.split_once('|') {
-            return a.trim().to_string();
+        if let Some((t, a)) = inner.split_once('|') {
+            s = t.trim();
+            alias = Some(a.trim());
         } else {
             s = inner;
         }
     }
+
     if s.starts_with("ref:") {
         s = s["ref:".len()..].trim();
     }
     if (s.starts_with('"') && s.ends_with('"')) || (s.starts_with('\'') && s.ends_with('\'')) {
         s = s[1..s.len() - 1].trim();
     }
-    s.trim_start_matches('@').trim().to_string()
+
+    ParsedLinkRef {
+        target: s.trim(),
+        alias,
+    }
+}
+
+/// Clean link references like `@link(ref:"@foo")` or `ref:bar` into plain labels.
+pub fn clean_ref_target(raw: &str) -> String {
+    let parsed = parse_link_ref(raw);
+    if let Some(alias) = parsed.alias {
+        return alias.to_string();
+    }
+    parsed.target.trim_start_matches('@').trim().to_string()
 }
 
 /// Resolve a `@meta` value that looks like a link into `(href, label)`.
@@ -72,34 +98,12 @@ pub fn resolve_meta_link(
         return None;
     }
 
-    let mut target = s;
-    let mut alias = None;
-
-    if target.starts_with("@link(") && target.ends_with(')') {
-        target = target[6..target.len() - 1].trim();
-    } else if target.starts_with("link(") && target.ends_with(')') {
-        target = target[5..target.len() - 1].trim();
-    } else if target.starts_with("[[") && target.ends_with("]]") {
-        let inner = target[2..target.len() - 2].trim();
-        if let Some((t, a)) = inner.split_once('|') {
-            target = t.trim();
-            alias = Some(a.trim().to_string());
-        } else {
-            target = inner;
-        }
-    }
-
-    if target.starts_with("ref:") {
-        target = target["ref:".len()..].trim();
-    }
-    if (target.starts_with('"') && target.ends_with('"'))
-        || (target.starts_with('\'') && target.ends_with('\''))
-    {
-        target = target[1..target.len() - 1].trim();
-    }
-
-    let clean_target = target.trim();
-    let display_label = alias.unwrap_or_else(|| clean_ref_target(s));
+    let parsed = parse_link_ref(s);
+    let clean_target = parsed.target;
+    let display_label = parsed
+        .alias
+        .map(str::to_string)
+        .unwrap_or_else(|| clean_target.trim_start_matches('@').trim().to_string());
     let clean_url_prefix = url_prefix.trim_end_matches('/');
 
     let resolved = vault_index
@@ -114,7 +118,7 @@ pub fn resolve_meta_link(
         });
 
     if let Some(path) = resolved {
-        let slug = strip_doc_extension(&path.to_string_lossy().replace('\\', "/")).to_string();
+        let slug = strip_doc_extension(&crate::book::normalize_path(path)).to_string();
         Some((format!("{clean_url_prefix}/{slug}"), display_label))
     } else {
         Some((String::new(), display_label))
@@ -157,12 +161,12 @@ pub fn resolve_meta_media_path(
     let clean_prefix = asset_prefix.trim_end_matches('/');
 
     if let Some(resolved) = vault_index.resolve_ref(&target, Some(from_path)) {
+        format!("{clean_prefix}/{}", crate::book::normalize_path(resolved))
+    } else {
         format!(
             "{clean_prefix}/{}",
-            resolved.to_string_lossy().replace('\\', "/")
+            crate::book::normalize_path_str(&target)
         )
-    } else {
-        format!("{clean_prefix}/{}", target.replace('\\', "/"))
     }
 }
 
@@ -318,7 +322,7 @@ pub fn outgoing_page_slugs(
         let Some(resolved) = vault_index.resolve_ref(&link.target, Some(from_path)) else {
             continue;
         };
-        let path = resolved.to_string_lossy().replace('\\', "/");
+        let path = crate::book::normalize_path(resolved);
         // A page the book leaves out has nothing to show a backlink on.
         if unpublished.contains(&path) {
             continue;

@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use minijinja::{Environment, context};
+use minijinja::{Environment, Value, context};
 use serde::{Deserialize, Serialize};
 
 use super::document::ProcessedDoc;
@@ -8,13 +8,6 @@ use crate::config::BookConfig;
 pub struct BookRenderer<'a> {
     env: Environment<'a>,
     config: &'a BookConfig,
-    rail_letters: Vec<String>,
-    /// Whether this render is happening under `tmtbook serve` rather than
-    /// `tmtbook build`. Gates the edit-in-editor button: `source_path` is an
-    /// absolute path on whoever's machine ran the build, so it's only ever
-    /// useful (and only safe to publish) on the machine currently editing
-    /// the vault, not in output meant to be hosted.
-    is_dev: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -66,12 +59,29 @@ impl<'a> BookRenderer<'a> {
 
         let rail_letters: Vec<String> = rail_title.chars().map(|c| c.to_string()).collect();
 
-        Ok(Self {
-            env,
-            config,
-            rail_letters,
-            is_dev,
-        })
+        // Vault-wide invariant values registered once as globals rather than
+        // rebuilt per-page in context!().
+        env.add_global("site_title", Value::from(&config.book.title));
+        env.add_global(
+            "description",
+            Value::from_serialize(&config.book.description),
+        );
+        env.add_global("lang", Value::from(&config.book.lang));
+        env.add_global("default_view", Value::from(&config.ui.default_view));
+        env.add_global("custom_css", Value::from_serialize(&config.ui.custom_css));
+        env.add_global("t", Value::from_serialize(&config.ui.strings));
+        env.add_global(
+            "css_version",
+            Value::from(super::assets::CSS_VERSION.as_str()),
+        );
+        env.add_global(
+            "js_version",
+            Value::from(super::assets::JS_VERSION.as_str()),
+        );
+        env.add_global("is_dev", Value::from(is_dev));
+        env.add_global("rail_letters", Value::from_serialize(&rail_letters));
+
+        Ok(Self { env, config })
     }
 
     pub fn render_page(
@@ -83,14 +93,6 @@ impl<'a> BookRenderer<'a> {
         let tmpl = self.env.get_template("page.html")?;
 
         let ctx = context! {
-            site_title => &self.config.book.title,
-            lang => &self.config.book.lang,
-            default_view => &self.config.ui.default_view,
-            custom_css => &self.config.ui.custom_css,
-            t => &self.config.ui.strings,
-            css_version => &*super::assets::CSS_VERSION,
-            js_version => &*super::assets::JS_VERSION,
-            rail_letters => &self.rail_letters,
             source_path => &doc.source_path,
             page_title => &doc.title,
             section => &doc.section,
@@ -110,7 +112,6 @@ impl<'a> BookRenderer<'a> {
             body_html => &doc.body_html,
             backlinks => backlinks,
             book_index => book_index,
-            is_dev => self.is_dev,
             // So the index can mark where the reader is standing.
             page_url => format!("{}/{}", self.config.build.clean_url_prefix(), doc.slug),
         };
@@ -127,14 +128,6 @@ impl<'a> BookRenderer<'a> {
         let tmpl = self.env.get_template("index.html")?;
 
         let ctx = context! {
-            site_title => &self.config.book.title,
-            description => &self.config.book.description,
-            lang => &self.config.book.lang,
-            default_view => &self.config.ui.default_view,
-            custom_css => &self.config.ui.custom_css,
-            t => &self.config.ui.strings,
-            css_version => &*super::assets::CSS_VERSION,
-            js_version => &*super::assets::JS_VERSION,
             sections => sections,
             entries => entries,
         };
