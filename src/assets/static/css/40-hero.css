@@ -157,16 +157,26 @@ a.hero-chip:hover .chip-val,
   text-decoration: underline;
 }
 
-/* Unresolved links. Those from @meta use tm-unresolved, while body links from tomet-html
-   use tm-ref-unresolved; they share the same meaning despite different class names.
-   Styled in red like Wikipedia red links so missing targets are evident before clicking. */
+/* Unresolved links: kept at full body text color for maximum readability,
+   with a faint dotted underline so it gently signals an uncreated concept
+   without reading as strong emphasis. */
 .tm-unresolved,
 a.tm-unresolved,
 .tm-ref-unresolved,
 a.tm-ref-unresolved {
-  color: var(--unresolved);
-  text-decoration: underline dashed 1px;
-  cursor: not-allowed;
+  color: inherit;
+  text-decoration: underline dotted 1px;
+  text-underline-offset: 3.5px;
+  text-decoration-color: color-mix(in srgb, var(--text-muted) 55%, transparent);
+  cursor: default;
+  transition: text-decoration-color 0.15s ease;
+}
+
+.tm-unresolved:hover,
+a.tm-unresolved:hover,
+.tm-ref-unresolved:hover,
+a.tm-ref-unresolved:hover {
+  text-decoration-color: var(--text-muted);
 }
 
 /* ==================== HERO ACTIONS & EDIT DROPDOWN ==================== */

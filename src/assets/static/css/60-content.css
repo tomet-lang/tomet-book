@@ -167,12 +167,104 @@ article h2 { font-size: 1.35rem; border-bottom: 1px solid var(--border-subtle); 
 article h3 { font-size: 1.15rem; }
 article h4 { font-size: 1.0rem; }
 
+/* Section numbers: styled using the book's signature sticky-note palette
+   so heading numbers visually correlate with the sticky tabs above. */
 .tm-heading-number,
 article .tm-heading-number {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 600;
+  padding: 0.12em 0.5em;
+  margin-right: 0.65em;
+  vertical-align: 0.12em;
+  border-radius: 3px;
+  line-height: 1.2;
+  user-select: none;
+}
+
+/* H1: Soft yellow */
+article h1 .tm-heading-number {
+  background: var(--sticky-l1-bg);
+  color: var(--sticky-l1-color);
+}
+
+/* H2: Soft mint green */
+article h2 .tm-heading-number {
+  background: var(--sticky-l2-bg);
+  color: var(--sticky-l2-color);
+}
+
+/* H3: Soft pastel sky blue */
+article h3 .tm-heading-number {
+  background: var(--sticky-l3-bg);
+  color: var(--sticky-l3-color);
+}
+
+/* H4+: Soft lavender purple */
+article h4 .tm-heading-number,
+article h5 .tm-heading-number,
+article h6 .tm-heading-number {
+  background: var(--sticky-l4-bg);
+  color: var(--sticky-l4-color);
+}
+
+/* ==================== ARTICLE LINKS (EXTERNAL & INTERNAL) ==================== */
+
+/* External links: standard external-link icon (box with arrow) */
+article a[href^="http://"],
+article a[href^="https://"],
+article a.tm-url {
+  color: var(--link);
+  text-decoration: none;
+}
+
+article a[href^="http://"]:hover,
+article a[href^="https://"]:hover,
+article a.tm-url:hover {
+  text-decoration: underline;
+  text-underline-offset: 3.5px;
+  text-decoration-thickness: 1px;
+}
+
+article a[href^="http://"]::after,
+article a[href^="https://"]::after,
+article a.tm-url::after {
+  content: "";
   display: inline-block;
-  margin-right: 0.6em;
-  color: var(--text-muted);
-  font-weight: 500;
+  width: 0.85em;
+  height: 0.85em;
+  margin-left: 0.25em;
+  vertical-align: -0.05em;
+  background-color: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E") no-repeat center / contain;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E") no-repeat center / contain;
+  opacity: 0.8;
+  text-decoration: none !important;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+article a[href^="http://"]:hover::after,
+article a[href^="https://"]:hover::after,
+article a.tm-url:hover::after {
+  opacity: 1;
+  transform: translate(1px, -1px);
+}
+
+/* Internal links: clean offset underline for color-independent accessibility.
+   Maintains seamless Japanese typography without inserting awkward gaps between words and particles. */
+article a:not([href^="http://"]):not([href^="https://"]):not(.tm-url):not(.tm-ref-unresolved):not(:has(img)) {
+  color: var(--link);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+  text-underline-offset: 3.5px;
+  text-decoration-thickness: 1px;
+  transition: text-decoration-color 0.15s ease;
+}
+
+article a:not([href^="http://"]):not([href^="https://"]):not(.tm-url):not(.tm-ref-unresolved):not(:has(img)):hover {
+  text-decoration-color: currentColor;
 }
 
 article p { margin: 12px 0; }
