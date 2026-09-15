@@ -45,6 +45,23 @@
           menu.hidden = false;
         }
       };
+
+      let hoverTimer = null;
+      dropdown.addEventListener('mouseenter', () => {
+        if (window.matchMedia('(hover: hover)').matches) {
+          clearTimeout(hoverTimer);
+          dropdown.classList.add('is-open');
+          menu.hidden = false;
+        }
+      });
+      dropdown.addEventListener('mouseleave', () => {
+        if (window.matchMedia('(hover: hover)').matches) {
+          hoverTimer = setTimeout(() => {
+            dropdown.classList.remove('is-open');
+            menu.hidden = true;
+          }, 180);
+        }
+      });
     });
 
     // Copy path buttons

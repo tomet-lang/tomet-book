@@ -200,7 +200,7 @@ a.tm-ref-unresolved:hover {
   display: inline-block;
 }
 
-/* Same tint as the left sidebar (--sidebar-*, defined in 00-base.css),
+/* Same tint as the application shell (--shell-*, defined in 00-base.css),
    plus a shadow so it reads as a raised control rather than sitting flush
    with the page. */
 .hero-action-btn {
@@ -210,25 +210,27 @@ a.tm-ref-unresolved:hover {
   width: 30px;
   height: 30px;
   padding: 0;
-  color: var(--text-muted);
-  background: var(--sidebar-bg);
-  border: 1px solid var(--sidebar-border);
+  color: var(--shell-text-muted);
+  background-color: var(--shell-bg);
+  background-image: var(--shell-grain);
+  background-blend-mode: soft-light;
+  border: 1px solid var(--shell-border);
   border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
   line-height: 1;
 }
 
 [data-theme="dark"] .hero-action-btn {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .hero-action-btn:hover {
-  color: var(--link);
+  color: var(--shell-text);
   border-color: var(--link);
-  background: var(--sidebar-border);
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+  background-color: var(--shell-border);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .edit-dropdown-menu {
@@ -236,11 +238,14 @@ a.tm-ref-unresolved:hover {
   top: calc(100% + 4px);
   right: 0;
   min-width: 135px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  background-color: var(--shell-bg);
+  background-image: var(--shell-grain);
+  background-blend-mode: soft-light;
+  border: 1px solid var(--shell-border);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.35),
+              inset 0 1px 0 rgba(255, 255, 255, 0.15);
   border-radius: 0;
-  padding: 3px 0;
+  padding: 4px 0;
   z-index: 9999;
   display: flex;
   flex-direction: column;
@@ -254,9 +259,9 @@ a.tm-ref-unresolved:hover {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 5px 10px;
+  padding: 6px 12px;
   font-size: 0.73rem;
-  color: var(--text);
+  color: var(--shell-text);
   text-decoration: none !important;
   background: transparent;
   border: none;
@@ -269,8 +274,8 @@ a.tm-ref-unresolved:hover {
 }
 
 .edit-dropdown-item:hover {
-  background: var(--surface-subtle);
-  color: var(--link);
+  background-color: color-mix(in srgb, var(--shell-border), transparent 30%);
+  color: var(--shell-text);
 }
 
 .edit-dropdown-item .item-svg {
