@@ -27,10 +27,33 @@
     if (input.dataset.searchInitialized === 'true') return;
     input.dataset.searchInitialized = 'true';
 
+    function showResults() {
+      resultsContainer.hidden = false;
+      adjustPosition();
+    }
+
+    function adjustPosition() {
+      if (window.innerWidth <= 768) {
+        resultsContainer.style.left = '';
+        return;
+      }
+      resultsContainer.style.left = '0';
+      const rect = resultsContainer.getBoundingClientRect();
+      const maxRight = window.innerWidth - 10;
+      if (rect.right > maxRight) {
+        const overflow = rect.right - maxRight;
+        resultsContainer.style.left = `-${overflow}px`;
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      if (!resultsContainer.hidden) adjustPosition();
+    });
+
     input.addEventListener('focus', () => {
       getPagefind();
       if (input.value.trim().length > 0) {
-        resultsContainer.hidden = false;
+        showResults();
       }
     });
 
@@ -50,14 +73,14 @@
         const pf = await getPagefind();
         if (!pf) {
           resultsContainer.innerHTML = `<div class="search-status">${t('search.loading')}</div>`;
-          resultsContainer.hidden = false;
+          showResults();
           return;
         }
 
         const search = await pf.search(query);
         if (!search || search.results.length === 0) {
           resultsContainer.innerHTML = `<div class="search-status">${t('search.empty')}</div>`;
-          resultsContainer.hidden = false;
+          showResults();
           selectedIndex = -1;
           return;
         }
@@ -84,7 +107,7 @@
         `
           )
           .join('');
-        resultsContainer.hidden = false;
+        showResults();
       }, 120);
     });
 
