@@ -23,7 +23,9 @@
   max-width: 94vw;
   height: 88vh;
   max-height: 900px;
-  background: var(--bg);
+  background-color: var(--bg);
+  background-image: var(--paper-grain);
+  background-repeat: repeat;
   border: 1px solid var(--border);
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
   border-radius: 6px;

@@ -25,12 +25,41 @@
      gets its own variable rather than reusing --bg or --surface-subtle
      directly. */
   --recent-book-bg: #ffffff;
-  /* The left sidebar (book-rail-nav + pane-nav) and anything meant to read
-     as part of it (floating-controls, the edit button): a cool, quiet tint
-     a step off --surface, distinct enough to read as its own zone without
-     competing with the page's own near-white background. */
-  --sidebar-bg: #eef2f8;
-  --sidebar-border: #c7d2e0;
+  /* The application shell (book-rail-nav, pane-nav, floating-controls,
+     hero action buttons): distinct tone defining the application frame. */
+  --shell-bg: #dbe4f0;
+  --shell-border: #b8c8dc;
+  --shell-text: var(--text);
+  --shell-text-muted: var(--text-muted);
+  --bullet-color: #000000;
+  --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160' width='160' height='160'%3E%3Cfilter id='p' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch' x='0' y='0' width='100%25' height='100%25'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.15'/%3E%3C/svg%3E");
+  --shell-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 360' width='360' height='360'%3E%3Cfilter id='m' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.014' numOctaves='4' seed='50' stitchTiles='stitch' x='0' y='0' width='100%25' height='100%25'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='table' tableValues='0.0 0.0 0.0 0.05 0.5 0.5 0.5 0.95 1.0 1.0 1.0'/%3E%3CfeFuncG type='table' tableValues='0.0 0.0 0.0 0.05 0.5 0.5 0.5 0.95 1.0 1.0 1.0'/%3E%3CfeFuncB type='table' tableValues='0.0 0.0 0.0 0.05 0.5 0.5 0.5 0.95 1.0 1.0 1.0'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E");
+}
+
+/* Shell Themes (Light Default: Slate) */
+:root[data-shell="violet"] {
+  --shell-bg: #d8d0e6;
+  --shell-border: #ada0c5;
+  --shell-text: #1d182b;
+  --shell-text-muted: #564c6d;
+}
+:root[data-shell="indigo"] {
+  --shell-bg: #b9d1ec;
+  --shell-border: #86aed8;
+  --shell-text: #121e2c;
+  --shell-text-muted: #485c75;
+}
+:root[data-shell="olive"] {
+  --shell-bg: #dad9c2;
+  --shell-border: #afac85;
+  --shell-text: #23241b;
+  --shell-text-muted: #61634f;
+}
+:root[data-shell="contrast"] {
+  --shell-bg: #1a222c;
+  --shell-border: #2e3848;
+  --shell-text: #eaecf0;
+  --shell-text-muted: #9aa1ab;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -52,8 +81,38 @@
     --spine-5: #d1b56a;
     --spine-6: #a89bd8;
     --recent-book-bg: #2f3236;
-    --sidebar-bg: #1a2130;
-    --sidebar-border: #2e3b52;
+    --shell-bg: #263246;
+    --shell-border: #3d4f6c;
+    --shell-text: var(--text);
+    --shell-text-muted: var(--text-muted);
+    --bullet-color: color-mix(in srgb, var(--text) 78%, black 22%);
+    --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160' width='160' height='160'%3E%3Cfilter id='p' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch' x='0' y='0' width='100%25' height='100%25'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.15'/%3E%3C/svg%3E");
+    --shell-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 360' width='360' height='360'%3E%3Cfilter id='m' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.014' numOctaves='4' seed='50' stitchTiles='stitch' x='0' y='0' width='100%25' height='100%25'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='table' tableValues='0.0 0.0 0.0 0.05 0.5 0.5 0.5 0.95 1.0 1.0 1.0'/%3E%3CfeFuncG type='table' tableValues='0.0 0.0 0.0 0.05 0.5 0.5 0.5 0.95 1.0 1.0 1.0'/%3E%3CfeFuncB type='table' tableValues='0.0 0.0 0.0 0.05 0.5 0.5 0.5 0.95 1.0 1.0 1.0'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E");
+  }
+
+  :root:not([data-theme="light"])[data-shell="violet"] {
+    --shell-bg: #292036;
+    --shell-border: #4d3a67;
+    --shell-text: #eee8f5;
+    --shell-text-muted: #aa9cbe;
+  }
+  :root:not([data-theme="light"])[data-shell="indigo"] {
+    --shell-bg: #1b2d46;
+    --shell-border: #315380;
+    --shell-text: #e8f1fc;
+    --shell-text-muted: #97b5da;
+  }
+  :root:not([data-theme="light"])[data-shell="olive"] {
+    --shell-bg: #272a1e;
+    --shell-border: #4a4f35;
+    --shell-text: #eeefea;
+    --shell-text-muted: #a6ad8f;
+  }
+  :root:not([data-theme="light"])[data-shell="contrast"] {
+    --shell-bg: #38465c;
+    --shell-border: #566c8e;
+    --shell-text: #f0f4f8;
+    --shell-text-muted: #c2d0e0;
   }
 }
 
@@ -75,8 +134,38 @@
   --spine-5: #d1b56a;
   --spine-6: #a89bd8;
   --recent-book-bg: #2f3236;
-  --sidebar-bg: #1a2130;
-  --sidebar-border: #2e3b52;
+  --shell-bg: #263246;
+  --shell-border: #3d4f6c;
+  --shell-text: var(--text);
+  --shell-text-muted: var(--text-muted);
+  --bullet-color: color-mix(in srgb, var(--text) 78%, black 22%);
+  --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160' width='160' height='160'%3E%3Cfilter id='p' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch' x='0' y='0' width='100%25' height='100%25'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.15'/%3E%3C/svg%3E");
+  --shell-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 360' width='360' height='360'%3E%3Cfilter id='m' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.014' numOctaves='4' seed='50' stitchTiles='stitch' x='0' y='0' width='100%25' height='100%25'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='table' tableValues='0.0 0.0 0.0 0.05 0.5 0.5 0.5 0.95 1.0 1.0 1.0'/%3E%3CfeFuncG type='table' tableValues='0.0 0.0 0.0 0.05 0.5 0.5 0.5 0.95 1.0 1.0 1.0'/%3E%3CfeFuncB type='table' tableValues='0.0 0.0 0.0 0.05 0.5 0.5 0.5 0.95 1.0 1.0 1.0'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E");
+}
+
+:root[data-theme="dark"][data-shell="violet"] {
+  --shell-bg: #292036;
+  --shell-border: #4d3a67;
+  --shell-text: #eee8f5;
+  --shell-text-muted: #aa9cbe;
+}
+:root[data-theme="dark"][data-shell="indigo"] {
+  --shell-bg: #1b2d46;
+  --shell-border: #315380;
+  --shell-text: #e8f1fc;
+  --shell-text-muted: #97b5da;
+}
+:root[data-theme="dark"][data-shell="olive"] {
+  --shell-bg: #272a1e;
+  --shell-border: #4a4f35;
+  --shell-text: #eeefea;
+  --shell-text-muted: #a6ad8f;
+}
+:root[data-theme="dark"][data-shell="contrast"] {
+  --shell-bg: #38465c;
+  --shell-border: #566c8e;
+  --shell-text: #f0f4f8;
+  --shell-text-muted: #c2d0e0;
 }
 
 :root[data-theme="light"] {
@@ -97,8 +186,38 @@
   --spine-5: #6b5a2f;
   --spine-6: #4a3f6b;
   --recent-book-bg: #ffffff;
-  --sidebar-bg: #eef2f8;
-  --sidebar-border: #c7d2e0;
+  --shell-bg: #dbe4f0;
+  --shell-border: #b8c8dc;
+  --shell-text: var(--text);
+  --shell-text-muted: var(--text-muted);
+  --bullet-color: #000000;
+  --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160' width='160' height='160'%3E%3Cfilter id='p' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch' x='0' y='0' width='100%25' height='100%25'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.15'/%3E%3C/svg%3E");
+  --shell-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 360' width='360' height='360'%3E%3Cfilter id='m' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.014' numOctaves='4' seed='50' stitchTiles='stitch' x='0' y='0' width='100%25' height='100%25'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='table' tableValues='0.0 0.0 0.0 0.05 0.5 0.5 0.5 0.95 1.0 1.0 1.0'/%3E%3CfeFuncG type='table' tableValues='0.0 0.0 0.0 0.05 0.5 0.5 0.5 0.95 1.0 1.0 1.0'/%3E%3CfeFuncB type='table' tableValues='0.0 0.0 0.0 0.05 0.5 0.5 0.5 0.95 1.0 1.0 1.0'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E");
+}
+
+:root[data-theme="light"][data-shell="violet"] {
+  --shell-bg: #d8d0e6;
+  --shell-border: #ada0c5;
+  --shell-text: #1d182b;
+  --shell-text-muted: #564c6d;
+}
+:root[data-theme="light"][data-shell="indigo"] {
+  --shell-bg: #b9d1ec;
+  --shell-border: #86aed8;
+  --shell-text: #121e2c;
+  --shell-text-muted: #485c75;
+}
+:root[data-theme="light"][data-shell="olive"] {
+  --shell-bg: #dad9c2;
+  --shell-border: #afac85;
+  --shell-text: #23241b;
+  --shell-text-muted: #61634f;
+}
+:root[data-theme="light"][data-shell="contrast"] {
+  --shell-bg: #1a222c;
+  --shell-border: #2e3848;
+  --shell-text: #eaecf0;
+  --shell-text-muted: #9aa1ab;
 }
 
 *, *::before, *::after {
@@ -120,6 +239,8 @@ button, input, select, textarea {
 html {
   line-height: 1.6;
   background-color: var(--bg);
+  background-image: var(--paper-grain);
+  background-repeat: repeat;
   color: var(--text);
   word-wrap: break-word;
 }
@@ -241,12 +362,12 @@ a:visited {
   background: var(--surface);
 }
 
-/* Lives inside .floating-controls, which wears the left sidebar's own tint
-   (--sidebar-*) -- .view-btn and .view-switcher match it there; elsewhere
+/* Lives inside .floating-controls, which wears the application shell's own tint
+   (--shell-*) -- .view-btn and .view-switcher match it there; elsewhere
    (there is currently no other caller) they keep the plain
    --border/--text-muted look above. */
 .floating-controls .view-switcher {
-  border-color: var(--sidebar-border);
+  border-color: var(--shell-border);
   background: transparent;
 }
 
@@ -273,7 +394,7 @@ html[data-view="classic"] .view-btn-classic {
 
 html[data-view="book"] .floating-controls .view-btn-book,
 html[data-view="classic"] .floating-controls .view-btn-classic {
-  background: var(--sidebar-border);
+  background: var(--shell-border);
   color: var(--text);
   font-weight: 500;
 }
