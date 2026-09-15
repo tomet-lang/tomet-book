@@ -59,15 +59,13 @@ pub fn optimize_image(
     );
 
     // Cache check: if dest exists and was modified after or at src mtime, skip processing
-    if dest_abs.exists() {
-        if let (Ok(src_meta), Ok(dest_meta)) = (fs::metadata(src_abs), fs::metadata(&dest_abs)) {
-            if let (Ok(src_mtime), Ok(dest_mtime)) = (src_meta.modified(), dest_meta.modified()) {
-                if dest_mtime >= src_mtime {
-                    debug!("Image cache hit: {}", dest_abs.display());
-                    return Ok(Some(url));
-                }
-            }
-        }
+    if dest_abs.exists()
+        && let (Ok(src_meta), Ok(dest_meta)) = (fs::metadata(src_abs), fs::metadata(&dest_abs))
+        && let (Ok(src_mtime), Ok(dest_mtime)) = (src_meta.modified(), dest_meta.modified())
+        && dest_mtime >= src_mtime
+    {
+        debug!("Image cache hit: {}", dest_abs.display());
+        return Ok(Some(url));
     }
 
     // Attempt to decode the source image
@@ -152,10 +150,10 @@ pub fn optimize_docs_media(
     for result in docs.iter() {
         let Ok(doc) = result else { continue };
 
-        if let Some(banner) = &doc.banner_url {
-            if let Some((rel, abs)) = resolve_local_media_path(banner, src_dir, asset_prefix) {
-                targets.insert((ImagePreset::Banner, rel, abs));
-            }
+        if let Some(banner) = &doc.banner_url
+            && let Some((rel, abs)) = resolve_local_media_path(banner, src_dir, asset_prefix)
+        {
+            targets.insert((ImagePreset::Banner, rel, abs));
         }
 
         for img in &doc.images {
@@ -188,19 +186,18 @@ pub fn optimize_docs_media(
     for result in docs.iter_mut() {
         let Ok(doc) = result else { continue };
 
-        if let Some(banner) = &doc.banner_url {
-            if let Some((rel, _)) = resolve_local_media_path(banner, src_dir, asset_prefix) {
-                if let Some(cached_url) = optimized_map.get(&(ImagePreset::Banner, rel)) {
-                    doc.banner_url = Some(cached_url.clone());
-                }
-            }
+        if let Some(banner) = &doc.banner_url
+            && let Some((rel, _)) = resolve_local_media_path(banner, src_dir, asset_prefix)
+            && let Some(cached_url) = optimized_map.get(&(ImagePreset::Banner, rel))
+        {
+            doc.banner_url = Some(cached_url.clone());
         }
 
         for img in &mut doc.images {
-            if let Some((rel, _)) = resolve_local_media_path(img, src_dir, asset_prefix) {
-                if let Some(cached_url) = optimized_map.get(&(ImagePreset::Profile, rel)) {
-                    *img = cached_url.clone();
-                }
+            if let Some((rel, _)) = resolve_local_media_path(img, src_dir, asset_prefix)
+                && let Some(cached_url) = optimized_map.get(&(ImagePreset::Profile, rel))
+            {
+                *img = cached_url.clone();
             }
         }
     }
@@ -215,15 +212,15 @@ pub fn optimize_single_doc_media(
 ) {
     let asset_prefix = config.build.clean_asset_prefix();
 
-    if let Some(banner) = &doc.banner_url {
-        if let Some((rel, abs)) = resolve_local_media_path(banner, src_dir, asset_prefix) {
-            match optimize_image(&abs, &rel, ImagePreset::Banner, out_dir) {
-                Ok(Some(cached_url)) => {
-                    doc.banner_url = Some(cached_url);
-                }
-                Ok(None) => {}
-                Err(e) => tracing::warn!("Failed to optimize banner {}: {e}", abs.display()),
+    if let Some(banner) = &doc.banner_url
+        && let Some((rel, abs)) = resolve_local_media_path(banner, src_dir, asset_prefix)
+    {
+        match optimize_image(&abs, &rel, ImagePreset::Banner, out_dir) {
+            Ok(Some(cached_url)) => {
+                doc.banner_url = Some(cached_url);
             }
+            Ok(None) => {}
+            Err(e) => tracing::warn!("Failed to optimize banner {}: {e}", abs.display()),
         }
     }
 
@@ -334,7 +331,7 @@ mod tests {
         }
         prof_img.save(src_dir.join("images/profile.png")).unwrap();
 
-        let mut doc = ProcessedDoc {
+        let doc = ProcessedDoc {
             slug: "alice".to_string(),
             rel_path: "alice.tmt".to_string(),
             source_path: "/vault/alice.tmt".to_string(),
