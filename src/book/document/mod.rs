@@ -247,6 +247,85 @@ mod kind_tests {
 
         assert_eq!(out.icon.as_deref(), Some("\u{1F382}"));
     }
+
+    #[test]
+    fn a_meta_banner_and_images_written_as_link_elements_resolve() {
+        let config = BookConfig::default();
+        let vault = tomet_links::VaultLinkIndex::from_paths(&[
+            "page.tmt".to_string(),
+            "+771a262c8eeb5a2459a01a44a2404eaa2999bc54.svg".to_string(),
+            "a.png".to_string(),
+            "b.png".to_string(),
+        ]);
+
+        let out = process_tomet_document(
+            r#"@meta{
+    banner: @link(ref:+771a262c8eeb5a2459a01a44a2404eaa2999bc54.svg),
+    images: list(@link(ref: "a.png"), @link(ref: "b.png"))
+}
+
+#[ Page ]
+
+body
+"#,
+            "page.tmt",
+            None,
+            &config,
+            &vault,
+            None,
+            &HashSet::new(),
+        )
+        .unwrap();
+
+        assert_eq!(
+            out.banner_url.as_deref(),
+            Some("/vault/+771a262c8eeb5a2459a01a44a2404eaa2999bc54.svg")
+        );
+        assert_eq!(
+            out.images,
+            vec!["/vault/a.png", "/vault/b.png"]
+        );
+    }
+
+    #[test]
+    fn a_meta_parent_and_row_written_as_link_element_resolve() {
+        let config = BookConfig::default();
+        let vault = tomet_links::VaultLinkIndex::from_paths(&[
+            "page.tmt".to_string(),
+            "30-39 Knowledge/rust.tmt".to_string(),
+        ]);
+
+        let out = process_tomet_document(
+            r#"@meta{
+    parent: @link(ref: "rust"),
+    author: @link(ref: "rust")
+}
+
+#[ Page ]
+
+body
+"#,
+            "page.tmt",
+            None,
+            &config,
+            &vault,
+            None,
+            &HashSet::new(),
+        )
+        .unwrap();
+
+        assert_eq!(out.hero_chips.len(), 1);
+        assert_eq!(out.hero_chips[0].value, "rust");
+        assert_eq!(
+            out.hero_chips[0].href.as_deref(),
+            Some("/wiki/30-39 Knowledge/rust")
+        );
+
+        assert!(out.outgoing.contains(&"30-39 Knowledge/rust".to_string()));
+
+        let author_row = out.infobox_rows.iter().find(|r| r.label == "author").unwrap();
+        assert!(author_row.value.contains(r#"href="/wiki/30-39 Knowledge/rust""#));
+    }
 }
 
 /// Read a document far enough to know what it is.
