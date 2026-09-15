@@ -30,8 +30,10 @@ pub struct ProcessedDoc {
     pub primary_color: Option<String>,
     pub icon: Option<String>,
     pub banner_url: Option<String>,
+    pub banner_original_url: Option<String>,
     pub banner_y: Option<f64>,
     pub images: Vec<String>,
+    pub original_images: Vec<String>,
     pub hero_chips: Vec<HeroChipItem>,
     pub infobox_rows: Vec<InfoboxRowItem>,
     pub has_data: bool,
@@ -384,6 +386,9 @@ pub fn process_parsed_document(
         .map(|p| p.to_string_lossy().to_string())
         .unwrap_or_else(|| rel_path.to_string());
 
+    let banner_original_url = props.banner_url.clone();
+    let original_images = props.images.clone();
+
     Ok(ProcessedDoc {
         slug,
         rel_path: rel_path.to_string(),
@@ -395,8 +400,10 @@ pub fn process_parsed_document(
         primary_color: props.primary_color,
         icon: props.icon,
         banner_url: props.banner_url,
+        banner_original_url,
         banner_y: props.banner_y,
         images: props.images,
+        original_images,
         hero_chips: props.hero_chips,
         infobox_rows: props.infobox_rows,
         toc,

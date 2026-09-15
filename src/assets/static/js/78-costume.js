@@ -15,6 +15,12 @@
           const src = btn.getAttribute('data-img-src');
           if (!src) return;
           img.src = src;
+          const orig = btn.getAttribute('data-original');
+          if (orig) {
+            img.setAttribute('data-original', orig);
+          } else {
+            img.removeAttribute('data-original');
+          }
           switcher.querySelectorAll('.costume-btn').forEach((b) => b.classList.remove('active'));
           btn.classList.add('active');
         });

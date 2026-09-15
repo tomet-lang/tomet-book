@@ -319,6 +319,7 @@ pub async fn run_dev_server(
                     &watch_out,
                     &crate::book::RenderContext {
                         config: &watch_cfg,
+                        src_dir: &watch_src,
                         vault_index: &scanned.vault_index,
                         workspace_cfg_src: scanned.workspace_config_src.as_deref(),
                         renderer,

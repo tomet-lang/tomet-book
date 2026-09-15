@@ -228,7 +228,7 @@
           <span>{{ page_title }}</span>
         </div>
         {% if images and images | length > 0 %}
-{{ ui.costume_switcher(images, page_title, t) }}
+{{ ui.costume_switcher(images, page_title, t, original_images) }}
         {% endif %}
         {% if infobox_rows and infobox_rows | length > 0 %}
         <table class="infobox-table">
@@ -263,7 +263,7 @@
         {% if banner_url or icon or (hero_chips and hero_chips | length > 0) %}
         <div class="book-hero-section">
           {% if banner_url %}
-{{ ui.hero_banner(banner_url, banner_y, page_title, t) }}
+{{ ui.hero_banner(banner_url, banner_y, page_title, t, banner_original_url) }}
           {% endif %}
           <div class="hero-content" {% if primary_color %}style="border-bottom-color: #{{ primary_color }};"{% endif %}>
             {% if icon %}
@@ -355,7 +355,7 @@
     class="hero-section"
     {% if primary_color %}style="border-bottom: 3px solid #{{ primary_color }};"{% endif %}
   >
-{{ ui.hero_banner(banner_url, banner_y, page_title, t) }}
+{{ ui.hero_banner(banner_url, banner_y, page_title, t, banner_original_url) }}
 
     <div class="hero-content">
       {% if icon %}
@@ -416,7 +416,7 @@
       <span>{{ page_title }}</span>
     </div>
     {% if images and images | length > 0 %}
-{{ ui.costume_switcher(images, page_title, t) }}
+{{ ui.costume_switcher(images, page_title, t, original_images) }}
     {% endif %}
     {% if infobox_rows and infobox_rows | length > 0 %}
     <table class="infobox-table">

@@ -45,10 +45,11 @@
 </div>
 {% endmacro %}
 
-{% macro hero_banner(banner_url, banner_y, page_title, t) %}
+{% macro hero_banner(banner_url, banner_y, page_title, t, banner_original_url=none) %}
 <div class="hero-banner-wrapper">
   <img
     src="{{ banner_url }}"
+    {% if banner_original_url %}data-original="{{ banner_original_url }}"{% endif %}
     alt="{{ page_title }} {{ t["image.banner_alt"] }}"
     class="hero-banner-img"
     {% if banner_y %}style="object-position: center {{ banner_y }}%;"{% endif %}
@@ -84,11 +85,12 @@
 </div>
 {% endmacro %}
 
-{% macro costume_switcher(images, page_title, t) %}
+{% macro costume_switcher(images, page_title, t, original_images=[]) %}
 <div class="infobox-image-section">
   <div class="infobox-image-wrapper">
     <img
       src="{{ images[0] }}"
+      {% if original_images and original_images | length > 0 %}data-original="{{ original_images[0] }}"{% endif %}
       alt="{{ page_title }}"
       class="infobox-main-img"
       loading="lazy"
@@ -104,6 +106,7 @@
         type="button"
         class="costume-btn{% if loop.first %} active{% endif %}"
         data-img-src="{{ img }}"
+        {% if original_images and original_images[loop.index0] %}data-original="{{ original_images[loop.index0] }}"{% endif %}
         title="{{ t["costume.item"] }} {{ loop.index }}"
       >{{ loop.index }}</button>
       {% endfor %}

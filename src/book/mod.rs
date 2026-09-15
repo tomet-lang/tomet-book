@@ -1,6 +1,7 @@
 pub mod assets;
 pub mod catalog;
 pub mod document;
+pub mod image_opt;
 pub mod kinds;
 pub mod loader;
 pub mod pagefind;
@@ -125,6 +126,7 @@ pub fn write_if_changed(path: &Path, content: &str) -> Result<bool> {
 /// per-page call about the page.
 pub struct RenderContext<'a, 'r> {
     pub config: &'a BookConfig,
+    pub src_dir: &'a Path,
     pub vault_index: &'a tomet_links::VaultLinkIndex,
     pub workspace_cfg_src: Option<&'a str>,
     pub renderer: &'a BookRenderer<'r>,
@@ -151,7 +153,7 @@ pub fn render_single_document(
         return Ok(None);
     }
 
-    let processed = document::process_parsed_document(
+    let mut processed = document::process_parsed_document(
         doc,
         rel_path,
         Some(abs_path),
@@ -160,6 +162,7 @@ pub fn render_single_document(
         cx.workspace_cfg_src,
         cx.unpublished,
     )?;
+    image_opt::optimize_single_doc_media(&mut processed, cx.src_dir, out_dir, config);
     let html = cx
         .renderer
         .render_page(&processed, backlinks, cx.book_index)?;
@@ -508,7 +511,7 @@ pub fn build_book(
         "Processing {} document(s)...",
         scanned.doc_files.len() - unpublished.len()
     );
-    let processed: Vec<Result<ProcessedDoc, DocFailure>> = parsed
+    let mut processed: Vec<Result<ProcessedDoc, DocFailure>> = parsed
         .into_par_iter()
         .zip(scanned.doc_files.par_iter())
         .filter(|(_, doc_file)| !unpublished.contains(&doc_file.rel_path))
@@ -529,6 +532,9 @@ pub fn build_book(
             })
         })
         .collect();
+
+    // 5.5. Optimize referenced banners and profile images
+    image_opt::optimize_docs_media(&mut processed, src_dir, out_dir, config);
 
     // 6. Reverse the links: who points at each page.
     let docs: Vec<&ProcessedDoc> = processed.iter().filter_map(|r| r.as_ref().ok()).collect();
@@ -895,8 +901,10 @@ mod tests {
             primary_color: None,
             icon: None,
             banner_url: None,
+            banner_original_url: None,
             banner_y: None,
             images: Vec::new(),
+            original_images: Vec::new(),
             hero_chips: Vec::new(),
             infobox_rows: Vec::new(),
             has_data: false,
@@ -1116,8 +1124,10 @@ mod manifest_tests {
             primary_color: None,
             icon: None,
             banner_url: None,
+            banner_original_url: None,
             banner_y: None,
             images: Vec::new(),
+            original_images: Vec::new(),
             hero_chips: Vec::new(),
             infobox_rows: Vec::new(),
             has_data: false,

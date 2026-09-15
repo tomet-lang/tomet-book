@@ -48,7 +48,7 @@
     // These, by contrast, are page content: new nodes every time.
     document.querySelectorAll('article img, .infobox-main-img, .hero-banner-img').forEach((img) => {
       img.addEventListener('click', () => {
-        const src = img.getAttribute('src');
+        const src = img.getAttribute('data-original') || img.getAttribute('src');
         if (src) openLightbox(src, img.getAttribute('alt') || '');
       });
     });
@@ -57,7 +57,7 @@
       const wrapper = btn.closest('.hero-banner-wrapper');
       const img = wrapper ? wrapper.querySelector('.hero-banner-img') : document.querySelector('.hero-banner-img');
       btn.addEventListener('click', () => {
-        const src = img?.getAttribute('src');
+        const src = img?.getAttribute('data-original') || img?.getAttribute('src');
         if (src) openLightbox(src, img.getAttribute('alt') || 'Banner');
       });
     });
