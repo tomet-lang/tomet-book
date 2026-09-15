@@ -211,19 +211,19 @@
 
   <!-- Pane 2: data profile -->
   {% if has_data %}
-  <aside class="book-pane pane-data" id="pane-data" data-pagefind-ignore>
-    <div class="pane-header pane-header-collapsible" id="header-collapse-data" title="{{ t["pane.data_collapse"] }}" role="button" tabindex="0">
+  <aside class="book-pane pane-data" id="pane-data">
+    <div class="pane-header pane-header-collapsible" id="header-collapse-data" title="{{ t["pane.data_collapse"] }}" role="button" tabindex="0" data-pagefind-ignore>
       <span class="pane-title">{{ t["pane.data"] }}</span>
       <span class="pane-collapse-arrow">◀</span>
     </div>
-    <div class="pane-collapsed-bar" id="bar-expand-data" title="{{ t["pane.data_expand"] }}" role="button" tabindex="0">
+    <div class="pane-collapsed-bar" id="bar-expand-data" title="{{ t["pane.data_expand"] }}" role="button" tabindex="0" data-pagefind-ignore>
       <span class="collapsed-icon">📊</span>
       <span class="collapsed-label">{{ t["pane.data_short"] }}</span>
       <span class="collapsed-arrow">▶</span>
     </div>
     <div class="pane-scroll pane-scroll-data">
-      <div class="infobox">
-        <div class="infobox-title" {% if primary_color %}style="border-top: 3px solid #{{ primary_color }};"{% endif %}>
+      <div class="infobox" data-pagefind-body>
+        <div class="infobox-title" data-pagefind-ignore {% if primary_color %}style="border-top: 3px solid #{{ primary_color }};"{% endif %}>
           {% if icon %}<span>{{ icon | safe }}</span>{% endif %}
           <span>{{ page_title }}</span>
         </div>
@@ -231,12 +231,12 @@
 {{ ui.costume_switcher(images, page_title, t, original_images) }}
         {% endif %}
         {% if infobox_rows and infobox_rows | length > 0 %}
-        <table class="infobox-table">
+        <table class="infobox-table" data-pagefind-weight="6.0">
           <tbody>
             {% for row in infobox_rows %}
-            <tr>
+            <tr {% if row.label == "別名 / 愛称" or row.label == "aliases" or row.label == "愛称" or row.label == "別名" %}data-pagefind-weight="9.0"{% endif %}>
               <th class="infobox-label">{{ row.label }}</th>
-              <td class="infobox-data">{{ row.value | safe }}</td>
+              <td class="infobox-data" {% if row.label == "別名 / 愛称" or row.label == "aliases" or row.label == "愛称" or row.label == "別名" %}data-pagefind-meta="aliases"{% endif %}>{{ row.value | safe }}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -249,7 +249,7 @@
 
   <!-- Pane 3: the text itself -->
   <main class="book-pane pane-content" data-pagefind-body>
-    <div class="pane-header pane-content-header">
+    <div class="pane-header pane-content-header" data-pagefind-ignore>
       {% if section_tabs and section_tabs | length > 0 %}
       {{ ui.sticky_edge_btn("top", t, "btn-sticky-top") }}
       <nav class="sticky-tabs-bar" id="sticky-tabs-bar" aria-label="{{ t["sticky.label"] }}" data-pagefind-ignore>
@@ -267,7 +267,7 @@
           {% endif %}
           <div class="hero-content" {% if primary_color %}style="border-bottom-color: #{{ primary_color }};"{% endif %}>
             {% if icon %}
-            <div class="hero-avatar" {% if primary_color %}style="border-color: #{{ primary_color }};"{% endif %}>
+            <div class="hero-avatar" data-pagefind-ignore {% if primary_color %}style="border-color: #{{ primary_color }};"{% endif %}>
               <span class="avatar-icon">{{ icon | safe }}</span>
             </div>
             {% endif %}
@@ -283,7 +283,7 @@
               {% endif %}
             </div>
             {% if source_path and is_dev %}
-            <div class="hero-actions">
+            <div class="hero-actions" data-pagefind-ignore>
 {{ ui.edit_menu(source_path, t) }}
             </div>
             {% endif %}
@@ -301,7 +301,7 @@
 {{ ui.hero_chips(hero_chips, 'margin-top: 8px;') }}
           {% endif %}
           {% if source_path and is_dev %}
-          <div class="hero-actions">
+          <div class="hero-actions" data-pagefind-ignore>
 {{ ui.edit_menu(source_path, t) }}
           </div>
           {% endif %}

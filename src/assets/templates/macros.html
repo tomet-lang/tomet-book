@@ -12,7 +12,7 @@
 #}
 
 {% macro edit_menu(source_path, t) %}
-<div class="edit-dropdown">
+<div class="edit-dropdown" data-pagefind-ignore>
   <button type="button" class="hero-action-btn btn-edit-open" title="{{ t["edit.editor"] }}" aria-label="{{ t["edit.editor"] }}">
     <svg class="icon-edit" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <path d="M12 20h9"></path>
@@ -57,7 +57,7 @@
     decoding="async"
     fetchpriority="high"
   />
-  <button type="button" class="hero-zoom-btn" title="{{ t["image.zoom_banner"] }}">{{ t["image.zoom"] }}</button>
+  <button type="button" class="hero-zoom-btn" title="{{ t["image.zoom_banner"] }}" data-pagefind-ignore>{{ t["image.zoom"] }}</button>
 </div>
 {% endmacro %}
 
@@ -68,7 +68,7 @@
   this keeps the book view's version.
 #}
 {% macro hero_chips(hero_chips, extra_style) %}
-<div class="hero-meta-chips"{% if extra_style %} style="{{ extra_style }}"{% endif %}>
+<div class="hero-meta-chips" data-pagefind-weight="6.0"{% if extra_style %} style="{{ extra_style }}"{% endif %}>
   {% for chip in hero_chips %}
   {% if chip.href %}
   <a href="{{ chip.href }}" class="hero-chip hero-chip-link">
@@ -91,6 +91,7 @@
     <img
       src="{{ images[0] }}"
       {% if original_images and original_images | length > 0 %}data-original="{{ original_images[0] }}"{% endif %}
+      data-pagefind-meta="image[src]"
       alt="{{ page_title }}"
       class="infobox-main-img"
       loading="lazy"
@@ -98,7 +99,7 @@
     />
   </div>
   {% if images | length > 1 %}
-  <div class="infobox-costume-switcher" role="tablist">
+  <div class="infobox-costume-switcher" role="tablist" data-pagefind-ignore>
     <span class="switcher-label">{{ t["costume.label"] }}</span>
     <div class="switcher-buttons">
       {% for img in images %}

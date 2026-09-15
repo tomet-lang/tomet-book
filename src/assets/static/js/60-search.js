@@ -93,13 +93,14 @@
             (res, idx) => `
           <a href="${res.url}" class="search-result-item" data-index="${idx}">
             <div class="search-result-row">
-              ${res.meta?.image ? `<img src="${res.meta.image}" class="search-result-thumb" alt="" loading="lazy" />` : ''}
+              ${res.meta?.image ? `<img src="${res.meta.image}" class="search-result-thumb" alt="" loading="lazy" onerror="this.remove()" />` : ''}
               <div class="search-result-main">
                 <div class="search-result-title">
                   <span>${res.meta?.title || 'No title'}</span>
                   ${res.filters?.kind ? `<span class="search-result-kind">${res.filters.kind}</span>` : ''}
                   ${res.filters?.section ? `<span class="search-result-section">${res.filters.section}</span>` : ''}
                 </div>
+                ${res.meta?.aliases ? `<div class="search-result-aliases"><span class="alias-label">別名:</span>${res.meta.aliases}</div>` : ''}
                 <div class="search-result-excerpt">${res.excerpt || ''}</div>
               </div>
             </div>
