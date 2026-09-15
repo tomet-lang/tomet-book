@@ -66,23 +66,17 @@
 
         let data = previewCache.get(href);
         if (!data) {
-          try {
-            const res = await fetch(href);
-            if (!res.ok) return;
-            const text = await res.text();
-            const doc = new DOMParser().parseFromString(text, 'text/html');
+          const doc = await T.fetchDocument(href);
+          if (!doc) return;
 
-            const title = doc.querySelector('.content-title')?.textContent?.trim() || doc.querySelector('h1')?.textContent?.trim() || '';
-            const section = doc.querySelector('.crumb-val')?.textContent?.trim() || doc.querySelector('.breadcrumb-section')?.textContent?.trim() || '';
-            const excerpt = doc.querySelector('article p, article li, article blockquote')?.textContent?.trim() || '';
-            const imgEl = doc.querySelector('.hero-banner-img, .infobox-main-img, article img');
-            const image = imgEl?.getAttribute('src') || '';
+          const title = doc.querySelector('.content-title')?.textContent?.trim() || doc.querySelector('h1')?.textContent?.trim() || '';
+          const section = doc.querySelector('.crumb-val')?.textContent?.trim() || doc.querySelector('.breadcrumb-section')?.textContent?.trim() || '';
+          const excerpt = doc.querySelector('article p, article li, article blockquote')?.textContent?.trim() || '';
+          const imgEl = doc.querySelector('.hero-banner-img, .infobox-main-img, article img');
+          const image = imgEl?.getAttribute('src') || '';
 
-            data = { title, section, excerpt, image };
-            previewCache.set(href, data);
-          } catch (err) {
-            return;
-          }
+          data = { title, section, excerpt, image };
+          previewCache.set(href, data);
         }
 
         if (activeLink !== target) return;

@@ -150,8 +150,10 @@ fn default_ui_strings() -> HashMap<String, String> {
         ("search.placeholder", "検索... (Ctrl+K)"),
         ("search.loading", "検索インデックスを準備中..."),
         ("search.empty", "見つかりませんでした"),
+        ("search.aliases", "別名:"),
         ("search.prev", "◀ 前へ"),
         ("search.next", "次へ ▶"),
+        ("peek.error", "ページの読み込みに失敗しました"),
         // Editing
         ("edit.open", "編集"),
         ("edit.editor", "エディタで開く"),

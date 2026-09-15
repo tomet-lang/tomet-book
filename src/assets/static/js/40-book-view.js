@@ -4,30 +4,9 @@
 
   // ==================== BOOK VIEW INTERACTIONS ====================
 
-  /** Reflect the currently read heading in the address bar so section URLs can be copied directly. */
-  function syncHeadingHash(id) {
-    if (!id) return;
-    if (readHash() === id) return;
-    try {
-      // replaceState: Avoid filling browser history while scrolling.
-      history.replaceState(null, "", `#${encodeURIComponent(id)}`);
-    } catch {}
-  }
-
-  /** Heading ID indicated by the current URL hash. Safely handles malformed strings. */
-  function readHash() {
-    const raw = (window.location.hash || "").slice(1);
-    if (!raw) return "";
-    try {
-      return decodeURIComponent(raw);
-    } catch {
-      return raw;
-    }
-  }
-
   /** Heading indicated by the requested URL that exists on this page. */
   function requestedHeadingId() {
-    const id = readHash();
+    const id = T.readHash();
     return id && document.getElementById(id) ? id : null;
   }
 
@@ -81,8 +60,27 @@
         }));
       }
 
-      let isClickScrolling = false;
-      let clickTimer = null;
+      let updateStickyTabs = null;
+
+      // ScrollSpy: unified cursor-based heading tracker from 00-utils.js
+      const spy = T.createScrollSpy({
+        container: scrollContainer,
+        headingTargets,
+        tocLinks,
+        headingLine: 80,
+        isActiveView: () => document.documentElement.getAttribute('data-view') !== 'classic',
+        onActiveChange: (currentId) => {
+          if (updateStickyTabs) {
+            updateStickyTabs(currentId);
+          }
+          T.syncHeadingHash(currentId);
+        },
+      });
+
+      if (window.__tmtBookSpy) {
+        window.__tmtBookSpy.destroy();
+      }
+      window.__tmtBookSpy = spy;
 
       tocLinks.forEach((link) => {
         link.addEventListener('click', (e) => {
@@ -91,104 +89,19 @@
           if (!targetId) return;
           const targetEl = document.getElementById(targetId);
           if (targetEl && scrollContainer) {
-            isClickScrolling = true;
-            if (clickTimer) clearTimeout(clickTimer);
-            clickTimer = setTimeout(() => {
-              isClickScrolling = false;
-            }, 800);
-
+            spy.markClickScrolling(800);
             const top = targetEl.offsetTop - scrollContainer.offsetTop - 16;
             scrollContainer.scrollTo({ top, behavior: 'smooth' });
             tocLinks.forEach((l) => l.classList.remove('is-active'));
             link.classList.add('is-active');
-            syncHeadingHash(targetId);
+            T.syncHeadingHash(targetId);
           }
         });
       });
 
-      const updateStickyTabs = setupStickyTabs(scrollContainer, headingTargets, () => {
-        isClickScrolling = true;
-        if (clickTimer) clearTimeout(clickTimer);
-        clickTimer = setTimeout(() => {
-          isClickScrolling = false;
-        }, 800);
+      updateStickyTabs = setupStickyTabs(scrollContainer, headingTargets, () => {
+        spy.markClickScrolling(800);
       });
-
-      // ScrollSpy: the single source of truth for "which heading am I on".
-      //
-      // This reads the whole heading list on every scroll frame rather than
-      // watching for crossings with an IntersectionObserver. An observer only
-      // reports a change of intersection state, and a fast scroll carries a
-      // heading from below the trigger line to above it within one frame --
-      // never intersecting, so never reported, leaving the highlight stuck on
-      // wherever the reader used to be.
-      const HEADING_LINE = 80;
-
-      // Scrolling is almost always continuous, so the heading under the line
-      // right now is nearly always the one found last frame, or its immediate
-      // neighbour. Walking out from that cached position -- instead of
-      // rescanning from the top of the document every frame -- turns this
-      // from one forced-layout read per heading above the fold into one or
-      // two, however deep into a long document the reader is.
-      let headingCursor = 0;
-
-      const currentHeadingId = () => {
-        const n = headingTargets.length;
-        if (n === 0) return null;
-
-        const containerTop = scrollContainer.getBoundingClientRect().top;
-        const line = containerTop + HEADING_LINE;
-        if (headingCursor >= n) headingCursor = n - 1;
-
-        // Retreat: the reader scrolled up past where the cursor thought they were.
-        while (headingCursor > 0 && headingTargets[headingCursor].el.getBoundingClientRect().top > line) {
-          headingCursor--;
-        }
-        // Advance: the reader scrolled down past it instead.
-        while (
-          headingCursor < n - 1 &&
-          headingTargets[headingCursor + 1].el.getBoundingClientRect().top <= line
-        ) {
-          headingCursor++;
-        }
-
-        return headingTargets[headingCursor].id;
-      };
-
-      const updateScrollSpy = () => {
-        if (isClickScrolling) return;
-
-        const currentId = currentHeadingId();
-        if (!currentId) return;
-
-        const active = headingTargets.find((item) => item.id === currentId);
-        if (active?.link && !active.link.classList.contains('is-active')) {
-          tocLinks.forEach((l) => l.classList.remove('is-active'));
-          active.link.classList.add('is-active');
-          active.link.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        }
-        if (updateStickyTabs) {
-          updateStickyTabs(currentId);
-        }
-        // When classic vertical view is active, its own spy handles the hash.
-        if (document.documentElement.getAttribute("data-view") !== "classic") {
-          syncHeadingHash(currentId);
-        }
-      };
-
-      // initPage() runs again on every client-side navigation and hot reload.
-      if (scrollContainer.__tmtScrollHandler) {
-        scrollContainer.removeEventListener('scroll', scrollContainer.__tmtScrollHandler);
-      }
-      // Deliberately live: the reader sees the next heading light up while
-      // still mid-scroll, which is the whole point of a tab bar you can read
-      // ahead on. A scroll-settle version of this traded that liveness away
-      // for iPad frame budget and was tried and backed out -- being able to
-      // glance at what's coming while scrolling matters more here than
-      // matching a plainer wiki's low-end-device ceiling.
-      const onScroll = T.rafThrottle(updateScrollSpy);
-      scrollContainer.__tmtScrollHandler = onScroll;
-      scrollContainer.addEventListener('scroll', onScroll, { passive: true });
 
       // If the opened URL targets a section, start reading from there. Native browser
       // anchor jumping does not work automatically inside an inner scroll container.
@@ -204,7 +117,7 @@
             });
           }
         }
-        updateScrollSpy();
+        spy.update();
       };
       settle();
       // Images and fonts settle after first paint and move the headings.
@@ -394,7 +307,7 @@
         if (!target) return;
         const top = target.offsetTop - scrollContainer.offsetTop - 16;
         scrollContainer.scrollTo({ top, behavior: 'smooth' });
-        syncHeadingHash(id);
+        T.syncHeadingHash(id);
       }
 
       function setActiveHeading(currentId) {
@@ -774,5 +687,5 @@
     T.updateRecentNotes();
   }
 
-  Object.assign(T, { setupBookViewInteraction, syncHeadingHash, hidePopover });
+  Object.assign(T, { setupBookViewInteraction, hidePopover });
 })();

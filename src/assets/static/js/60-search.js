@@ -100,7 +100,7 @@
                   ${res.filters?.kind ? `<span class="search-result-kind">${res.filters.kind}</span>` : ''}
                   ${res.filters?.section ? `<span class="search-result-section">${res.filters.section}</span>` : ''}
                 </div>
-                ${res.meta?.aliases ? `<div class="search-result-aliases"><span class="alias-label">別名:</span>${res.meta.aliases}</div>` : ''}
+                ${res.meta?.aliases ? `<div class="search-result-aliases"><span class="alias-label">${t('search.aliases', '別名:')}</span> ${res.meta.aliases}</div>` : ''}
                 <div class="search-result-excerpt">${res.excerpt || ''}</div>
               </div>
             </div>

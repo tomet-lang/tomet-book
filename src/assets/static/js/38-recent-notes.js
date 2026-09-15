@@ -68,10 +68,12 @@
           const CURRENT_HEIGHT_BONUS = 20;
           const height = spineHeightFor(r.title) + (isCurrent ? CURRENT_HEIGHT_BONUS : 0);
           const spineStyle = ` style="height: ${height}px"`;
+          const safePath = T.escapeHtml ? T.escapeHtml(r.path) : r.path;
+          const safeTitle = T.escapeHtml ? T.escapeHtml(r.title) : r.title;
           return `
         <li>
-          <a href="${r.path}" class="recent-link ${isCurrent ? 'is-current' : ''}"${spineStyle}>
-            <span class="recent-title">${r.title}</span>
+          <a href="${safePath}" class="recent-link ${isCurrent ? 'is-current' : ''}"${spineStyle}>
+            <span class="recent-title">${safeTitle}</span>
           </a>
         </li>
       `;

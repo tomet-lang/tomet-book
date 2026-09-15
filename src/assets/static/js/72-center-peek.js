@@ -5,7 +5,6 @@
   // ==================== NOTION-STYLE CENTER PEEK ====================
   let activePeekUrl = null;
   let isCenterPeekBound = false;
-  const peekDocCache = new Map();
 
   function closeCenterPeek() {
     const overlay = document.getElementById('wiki-center-peek');
@@ -29,20 +28,11 @@
     crumbsEl.innerHTML = `<span class="crumb-title">${t('search.loading', '読み込み中...')}</span>`;
     bodyEl.innerHTML = `<div class="peek-loading">${t('search.loading', '読み込み中...')}</div>`;
 
-    let doc = peekDocCache.get(url);
+    const doc = await T.fetchDocument(url);
     if (!doc) {
-      try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const htmlText = await res.text();
-        const parser = new DOMParser();
-        doc = parser.parseFromString(htmlText, 'text/html');
-        peekDocCache.set(url, doc);
-      } catch (err) {
-        if (activePeekUrl !== url) return;
-        bodyEl.innerHTML = `<div class="peek-loading" style="color: var(--unresolved);">ページの読み込みに失敗しました</div>`;
-        return;
-      }
+      if (activePeekUrl !== url) return;
+      bodyEl.innerHTML = `<div class="peek-loading" style="color: var(--unresolved);">${t('peek.error', 'ページの読み込みに失敗しました')}</div>`;
+      return;
     }
 
     if (activePeekUrl !== url) return;

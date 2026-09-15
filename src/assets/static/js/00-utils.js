@@ -43,13 +43,56 @@
     },
   };
 
+  /** Heading ID indicated by the current URL hash. Safely handles malformed strings. */
+  function readHash() {
+    const raw = (window.location.hash || '').slice(1);
+    if (!raw) return '';
+    try {
+      return decodeURIComponent(raw);
+    } catch {
+      return raw;
+    }
+  }
+
   // Synchronize URL hash with current heading without polluting history.
   function syncHeadingHash(id) {
     if (!id) return;
-    const newHash = '#' + id;
-    if (window.location.hash !== newHash) {
-      history.replaceState(null, '', newHash);
+    if (readHash() === id) return;
+    try {
+      history.replaceState(null, '', `#${encodeURIComponent(id)}`);
+    } catch {}
+  }
+
+  /** Escape unsafe characters for safe insertion into HTML template strings. */
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  /** Shared document cache and fetcher across hover preview and center peek. */
+  const docCache = new Map();
+  async function fetchDocument(url) {
+    if (!url) return null;
+    const cleanUrl = url.split('#')[0];
+    let cached = docCache.get(cleanUrl);
+    if (!cached) {
+      try {
+        const res = await fetch(cleanUrl);
+        if (!res.ok) return null;
+        const html = await res.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        docCache.set(cleanUrl, doc);
+        cached = doc;
+      } catch {
+        return null;
+      }
     }
+    return cached;
   }
 
   /**
@@ -166,5 +209,13 @@
     };
   }
 
-  Object.assign(T, { rafThrottle, storage, syncHeadingHash, createScrollSpy });
+  Object.assign(T, {
+    rafThrottle,
+    storage,
+    readHash,
+    syncHeadingHash,
+    createScrollSpy,
+    escapeHtml,
+    fetchDocument,
+  });
 })();

@@ -58,7 +58,7 @@
         <a href="${data.url}" class="book-index-link${isHere ? ' is-here' : ''}"${isHere ? ' aria-current="page"' : ''}>
           <span class="book-index-title">${data.meta?.title || data.url}</span>
           ${data.filters?.section ? `<span class="book-index-meta">${data.filters.section}</span>` : ''}
-          ${data.meta?.aliases ? `<span class="search-result-aliases"><span class="alias-label">別名:</span> ${data.meta.aliases}</span>` : ''}
+          ${data.meta?.aliases ? `<span class="search-result-aliases"><span class="alias-label">${t('search.aliases', '別名:')}</span> ${data.meta.aliases}</span>` : ''}
           ${data.excerpt ? `<span class="search-result-excerpt">${data.excerpt}</span>` : ''}
         </a>
       </li>
