@@ -5,6 +5,7 @@
 
   tmtbook,
   tomet,
+  twrit,
   ...
 }:
 let
@@ -21,6 +22,7 @@ mkShell rec {
   buildInputs = with pkgs; [
     tmtbook
     tomet
+    twrit
     pagefind
 
     #[ Rust ]

@@ -32,6 +32,7 @@ flake-parts.lib.mkFlake { inherit inputs; } {
 
         tmtbook = pkgs.callPackage ./pkgs/tmtbook.nix { inherit craneLib; };
         tomet = inputs.tomet.packages.${pkgs.stdenv.hostPlatform.system}.tomet;
+        twrit = inputs.twrit.packages.${pkgs.stdenv.hostPlatform.system}.twrit;
       };
 
       treefmt = import ./formatter.nix {
