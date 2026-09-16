@@ -34,33 +34,110 @@
   --bullet-color: #000000;
   --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160' width='160' height='160'%3E%3Cfilter id='p' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.45' numOctaves='3' stitchTiles='stitch' x='0' y='0' width='100%25' height='100%25'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.10'/%3E%3C/svg%3E");
 
-  /* Shell background textures per theme (customizable independently) */
-  --shell-grain-slate: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 360' width='360' height='360'%3E%3Cfilter id='shell-slate' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.007 0.014' numOctaves='4' seed='33' stitchTiles='stitch' result='warp'/%3E%3CfeTurbulence type='turbulence' baseFrequency='0.018 0.022' numOctaves='4' seed='88' stitchTiles='stitch' result='veins'/%3E%3CfeDisplacementMap in='veins' in2='warp' scale='80' xChannelSelector='R' yChannelSelector='G' result='disp'/%3E%3CfeColorMatrix in='disp' type='saturate' values='0' result='mono'/%3E%3CfeComponentTransfer in='mono'%3E%3CfeFuncR type='table' tableValues='0.0 0.0 0.0 0.08 0.45 0.55 0.92 1.0 1.0 1.0'/%3E%3CfeFuncG type='table' tableValues='0.0 0.0 0.0 0.08 0.45 0.55 0.92 1.0 1.0 1.0'/%3E%3CfeFuncB type='table' tableValues='0.0 0.0 0.0 0.08 0.45 0.55 0.92 1.0 1.0 1.0'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23shell-slate)'/%3E%3C/svg%3E");
+  /* Shell background textures (fixed-pixel tiles, GPU cached, zero-jank resize) */
+  --shell-grain-marble: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 360' width='360' height='360'%3E%3Cfilter id='shell-marble' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.015 0.030' numOctaves='4' seed='33' stitchTiles='stitch' result='t1'/%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.030 0.015' numOctaves='3' seed='88' stitchTiles='stitch' result='t2'/%3E%3CfeComposite in='t1' in2='t2' operator='arithmetic' k1='1' k2='0.5' k3='0.5' k4='0' result='comp'/%3E%3CfeColorMatrix in='comp' type='saturate' values='0' result='mono'/%3E%3CfeComponentTransfer in='mono'%3E%3CfeFuncR type='table' tableValues='0.0 0.0 0.0 0.08 0.45 0.55 0.92 1.0 1.0 1.0'/%3E%3CfeFuncG type='table' tableValues='0.0 0.0 0.0 0.08 0.45 0.55 0.92 1.0 1.0 1.0'/%3E%3CfeFuncB type='table' tableValues='0.0 0.0 0.0 0.08 0.45 0.55 0.92 1.0 1.0 1.0'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23shell-marble)'/%3E%3C/svg%3E");
   --shell-grain-violet: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 360' width='360' height='360'%3E%3Cfilter id='shell-violet' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.014' numOctaves='4' seed='50' stitchTiles='stitch' x='0' y='0' width='100%25' height='100%25'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='table' tableValues='0.0 0.0 0.0 0.05 0.5 0.5 0.5 0.95 1.0 1.0 1.0'/%3E%3CfeFuncG type='table' tableValues='0.0 0.0 0.0 0.05 0.5 0.5 0.5 0.95 1.0 1.0 1.0'/%3E%3CfeFuncB type='table' tableValues='0.0 0.0 0.0 0.05 0.5 0.5 0.5 0.95 1.0 1.0 1.0'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23shell-violet)'/%3E%3C/svg%3E");
-  --shell-grain-indigo-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 40' width='80' height='40'%3E%3Cdefs%3E%3Cfilter id='shell-indigo-l' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.06' numOctaves='2' seed='5' result='turb'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='turb' scale='4' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23shell-indigo-l)' fill='none' stroke='%23121e2c' stroke-width='1.2' opacity='0.35'%3E%3Cpath d='M0,40 A40,40 0 0,1 80,40 M10,40 A30,30 0 0,1 70,40 M20,40 A20,20 0 0,1 60,40 M30,40 A10,10 0 0,1 50,40'/%3E%3Cpath d='M-40,20 A40,40 0 0,1 40,20 M-30,20 A30,30 0 0,1 30,20 M-20,20 A20,20 0 0,1 20,20 M-10,20 A10,10 0 0,1 10,20'/%3E%3Cpath d='M40,20 A40,40 0 0,1 120,20 M50,20 A30,30 0 0,1 110,20 M60,20 A20,20 0 0,1 100,20 M70,20 A10,10 0 0,1 90,20'/%3E%3Cpath d='M0,0 A40,40 0 0,1 80,0 M10,0 A30,30 0 0,1 70,0 M20,0 A20,20 0 0,1 60,0 M30,0 A10,10 0 0,1 50,0'/%3E%3C/g%3E%3C/svg%3E");
-  --shell-grain-indigo-dark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 40' width='80' height='40'%3E%3Cdefs%3E%3Cfilter id='shell-indigo-d' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.06' numOctaves='2' seed='5' result='turb'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='turb' scale='4' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23shell-indigo-d)' fill='none' stroke='%23ffffff' stroke-width='1.2' opacity='0.25'%3E%3Cpath d='M0,40 A40,40 0 0,1 80,40 M10,40 A30,30 0 0,1 70,40 M20,40 A20,20 0 0,1 60,40 M30,40 A10,10 0 0,1 50,40'/%3E%3Cpath d='M-40,20 A40,40 0 0,1 40,20 M-30,20 A30,30 0 0,1 30,20 M-20,20 A20,20 0 0,1 20,20 M-10,20 A10,10 0 0,1 10,20'/%3E%3Cpath d='M40,20 A40,40 0 0,1 120,20 M50,20 A30,30 0 0,1 110,20 M60,20 A20,20 0 0,1 100,20 M70,20 A10,10 0 0,1 90,20'/%3E%3Cpath d='M0,0 A40,40 0 0,1 80,0 M10,0 A30,30 0 0,1 70,0 M20,0 A20,20 0 0,1 60,0 M30,0 A10,10 0 0,1 50,0'/%3E%3C/g%3E%3C/svg%3E");
-  --shell-grain-indigo: var(--shell-grain-indigo-light);
-  --shell-grain-olive-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' width='64' height='64'%3E%3Cdefs%3E%3Cfilter id='shell-olive-l' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.05' numOctaves='2' seed='16' result='grain'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='grain' scale='2.5' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23shell-olive-l)' fill='none' stroke='%2323241b' stroke-width='1' opacity='0.30'%3E%3Crect x='0' y='0' width='64' height='64' stroke-width='0.5' stroke-dasharray='2,2'/%3E%3Cpath d='M32,4 L60,32 L32,60 L4,32 Z'/%3E%3Ccircle cx='32' cy='32' r='8'/%3E%3Cpath d='M32,20 C32,28 28,32 20,32 C28,32 32,36 32,44 C32,36 36,32 44,32 C36,32 32,28 32,20 Z' fill='%2323241b' fill-opacity='0.15'/%3E%3Ccircle cx='32' cy='32' r='2' fill='%2323241b'/%3E%3Ccircle cx='4' cy='32' r='2' fill='%2323241b'/%3E%3Ccircle cx='60' cy='32' r='2' fill='%2323241b'/%3E%3Ccircle cx='32' cy='4' r='2' fill='%2323241b'/%3E%3Ccircle cx='32' cy='60' r='2' fill='%2323241b'/%3E%3C/g%3E%3C/svg%3E");
-  --shell-grain-olive-dark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' width='64' height='64'%3E%3Cdefs%3E%3Cfilter id='shell-olive-d' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.05' numOctaves='2' seed='16' result='grain'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='grain' scale='2.5' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23shell-olive-d)' fill='none' stroke='%23ffffff' stroke-width='1' opacity='0.22'%3E%3Crect x='0' y='0' width='64' height='64' stroke-width='0.5' stroke-dasharray='2,2'/%3E%3Cpath d='M32,4 L60,32 L32,60 L4,32 Z'/%3E%3Ccircle cx='32' cy='32' r='8'/%3E%3Cpath d='M32,20 C32,28 28,32 20,32 C28,32 32,36 32,44 C32,36 36,32 44,32 C36,32 32,28 32,20 Z' fill='%23ffffff' fill-opacity='0.15'/%3E%3Ccircle cx='32' cy='32' r='2' fill='%23ffffff'/%3E%3Ccircle cx='4' cy='32' r='2' fill='%23ffffff'/%3E%3Ccircle cx='60' cy='32' r='2' fill='%23ffffff'/%3E%3Ccircle cx='32' cy='4' r='2' fill='%23ffffff'/%3E%3Ccircle cx='32' cy='60' r='2' fill='%23ffffff'/%3E%3C/g%3E%3C/svg%3E");
-  --shell-grain-olive: var(--shell-grain-olive-light);
-  --shell-grain-contrast: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60' width='60' height='60'%3E%3Cdefs%3E%3Cfilter id='shell-contrast'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.05' numOctaves='2' seed='55' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='2.5' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23shell-contrast)' fill='none' stroke='%23ffffff' opacity='0.22' stroke-width='0.8'%3E%3Cpath d='M0,0 L60,60 M60,0 L0,60 M30,0 L30,60 M0,30 L60,30'/%3E%3Ccircle cx='30' cy='30' r='10'/%3E%3Ccircle cx='30' cy='30' r='4' fill='%23ffffff' fill-opacity='0.15'/%3E%3Ccircle cx='0' cy='0' r='5'/%3E%3Ccircle cx='60' cy='0' r='5'/%3E%3Ccircle cx='0' cy='60' r='5'/%3E%3Ccircle cx='60' cy='60' r='5'/%3E%3C/g%3E%3C/svg%3E");
+  --shell-grain-cloud: var(--shell-grain-violet);
+  --shell-grain-slate: var(--shell-grain-marble);
+  --shell-grain-seigaiha-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 40' width='80' height='40'%3E%3Cdefs%3E%3Cfilter id='shell-indigo-l' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.06' numOctaves='2' seed='5' result='turb'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='turb' scale='4' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23shell-indigo-l)' fill='none' stroke='%23121e2c' stroke-width='1.2' opacity='0.35'%3E%3Cpath d='M0,40 A40,40 0 0,1 80,40 M10,40 A30,30 0 0,1 70,40 M20,40 A20,20 0 0,1 60,40 M30,40 A10,10 0 0,1 50,40'/%3E%3Cpath d='M-40,20 A40,40 0 0,1 40,20 M-30,20 A30,30 0 0,1 30,20 M-20,20 A20,20 0 0,1 20,20 M-10,20 A10,10 0 0,1 10,20'/%3E%3Cpath d='M40,20 A40,40 0 0,1 120,20 M50,20 A30,30 0 0,1 110,20 M60,20 A20,20 0 0,1 100,20 M70,20 A10,10 0 0,1 90,20'/%3E%3Cpath d='M0,0 A40,40 0 0,1 80,0 M10,0 A30,30 0 0,1 70,0 M20,0 A20,20 0 0,1 60,0 M30,0 A10,10 0 0,1 50,0'/%3E%3C/g%3E%3C/svg%3E");
+  --shell-grain-seigaiha-dark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 40' width='80' height='40'%3E%3Cdefs%3E%3Cfilter id='shell-indigo-d' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.06' numOctaves='2' seed='5' result='turb'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='turb' scale='4' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23shell-indigo-d)' fill='none' stroke='%23ffffff' stroke-width='1.2' opacity='0.25'%3E%3Cpath d='M0,40 A40,40 0 0,1 80,40 M10,40 A30,30 0 0,1 70,40 M20,40 A20,20 0 0,1 60,40 M30,40 A10,10 0 0,1 50,40'/%3E%3Cpath d='M-40,20 A40,40 0 0,1 40,20 M-30,20 A30,30 0 0,1 30,20 M-20,20 A20,20 0 0,1 20,20 M-10,20 A10,10 0 0,1 10,20'/%3E%3Cpath d='M40,20 A40,40 0 0,1 120,20 M50,20 A30,30 0 0,1 110,20 M60,20 A20,20 0 0,1 100,20 M70,20 A10,10 0 0,1 90,20'/%3E%3Cpath d='M0,0 A40,40 0 0,1 80,0 M10,0 A30,30 0 0,1 70,0 M20,0 A20,20 0 0,1 60,0 M30,0 A10,10 0 0,1 50,0'/%3E%3C/g%3E%3C/svg%3E");
+  --shell-grain-seigaiha: var(--shell-grain-seigaiha-light);
+  --shell-grain-indigo-light: var(--shell-grain-seigaiha-light);
+  --shell-grain-indigo-dark: var(--shell-grain-seigaiha-dark);
+  --shell-grain-indigo: var(--shell-grain-seigaiha);
+  --shell-grain-flourish-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' width='64' height='64'%3E%3Cdefs%3E%3Cfilter id='shell-olive-l' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.05' numOctaves='2' seed='16' result='grain'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='grain' scale='2.5' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23shell-olive-l)' fill='none' stroke='%2323241b' stroke-width='1' opacity='0.30'%3E%3Crect x='0' y='0' width='64' height='64' stroke-width='0.5' stroke-dasharray='2,2'/%3E%3Cpath d='M32,4 L60,32 L32,60 L4,32 Z'/%3E%3Ccircle cx='32' cy='32' r='8'/%3E%3Cpath d='M32,20 C32,28 28,32 20,32 C28,32 32,36 32,44 C32,36 36,32 44,32 C36,32 32,28 32,20 Z' fill='%2323241b' fill-opacity='0.15'/%3E%3Ccircle cx='32' cy='32' r='2' fill='%2323241b'/%3E%3Ccircle cx='4' cy='32' r='2' fill='%2323241b'/%3E%3Ccircle cx='60' cy='32' r='2' fill='%2323241b'/%3E%3Ccircle cx='32' cy='4' r='2' fill='%2323241b'/%3E%3Ccircle cx='32' cy='60' r='2' fill='%2323241b'/%3E%3C/g%3E%3C/svg%3E");
+  --shell-grain-flourish-dark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' width='64' height='64'%3E%3Cdefs%3E%3Cfilter id='shell-olive-d' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.05' numOctaves='2' seed='16' result='grain'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='grain' scale='2.5' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23shell-olive-d)' fill='none' stroke='%23ffffff' stroke-width='1' opacity='0.22'%3E%3Crect x='0' y='0' width='64' height='64' stroke-width='0.5' stroke-dasharray='2,2'/%3E%3Cpath d='M32,4 L60,32 L32,60 L4,32 Z'/%3E%3Ccircle cx='32' cy='32' r='8'/%3E%3Cpath d='M32,20 C32,28 28,32 20,32 C28,32 32,36 32,44 C32,36 36,32 44,32 C36,32 32,28 32,20 Z' fill='%23ffffff' fill-opacity='0.15'/%3E%3Ccircle cx='32' cy='32' r='2' fill='%23ffffff'/%3E%3Ccircle cx='4' cy='32' r='2' fill='%23ffffff'/%3E%3Ccircle cx='60' cy='32' r='2' fill='%23ffffff'/%3E%3Ccircle cx='32' cy='4' r='2' fill='%23ffffff'/%3E%3Ccircle cx='32' cy='60' r='2' fill='%23ffffff'/%3E%3C/g%3E%3C/svg%3E");
+  --shell-grain-flourish: var(--shell-grain-flourish-light);
+  --shell-grain-olive-light: var(--shell-grain-flourish-light);
+  --shell-grain-olive-dark: var(--shell-grain-flourish-dark);
+  --shell-grain-olive: var(--shell-grain-flourish);
+  --shell-grain-mesh-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60' width='60' height='60'%3E%3Cdefs%3E%3Cfilter id='shell-mesh-l'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.05' numOctaves='2' seed='55' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='2.5' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23shell-mesh-l)' fill='none' stroke='%231a222c' opacity='0.25' stroke-width='0.8'%3E%3Cpath d='M0,0 L60,60 M60,0 L0,60 M30,0 L30,60 M0,30 L60,30'/%3E%3Ccircle cx='30' cy='30' r='10'/%3E%3Ccircle cx='30' cy='30' r='4' fill='%231a222c' fill-opacity='0.12'/%3E%3Ccircle cx='0' cy='0' r='5'/%3E%3Ccircle cx='60' cy='0' r='5'/%3E%3Ccircle cx='0' cy='60' r='5'/%3E%3Ccircle cx='60' cy='60' r='5'/%3E%3C/g%3E%3C/svg%3E");
+  --shell-grain-mesh-dark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60' width='60' height='60'%3E%3Cdefs%3E%3Cfilter id='shell-mesh-d'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.05' numOctaves='2' seed='55' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='2.5' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23shell-mesh-d)' fill='none' stroke='%23ffffff' opacity='0.22' stroke-width='0.8'%3E%3Cpath d='M0,0 L60,60 M60,0 L0,60 M30,0 L30,60 M0,30 L60,30'/%3E%3Ccircle cx='30' cy='30' r='10'/%3E%3Ccircle cx='30' cy='30' r='4' fill='%23ffffff' fill-opacity='0.15'/%3E%3Ccircle cx='0' cy='0' r='5'/%3E%3Ccircle cx='60' cy='0' r='5'/%3E%3Ccircle cx='0' cy='60' r='5'/%3E%3Ccircle cx='60' cy='60' r='5'/%3E%3C/g%3E%3C/svg%3E");
+  --shell-grain-mesh: var(--shell-grain-mesh-light);
+  --shell-grain-contrast: var(--shell-grain-mesh);
 
-  /* Active shell texture tokens (default: Slate) */
-  --shell-grain: var(--shell-grain-slate);
+  /* Active shell texture tokens (default: Marble tile) */
+  --shell-grain: var(--shell-grain-marble);
   --shell-blend-mode: soft-light;
-  --shell-grain-size: calc(100vw + 240px) calc(100vh + 240px);
-  --shell-grain-position: -120px -120px;
-  --shell-grain-repeat: no-repeat;
+  --shell-grain-size: 360px 360px;
+  --shell-grain-position: 0 0;
+  --shell-grain-repeat: repeat;
   --shell-grain-attachment: fixed;
 }
 
-/* Shell Themes (Light Default: Slate) */
+/* Shell Pattern Selectors (Texture is fully orthogonal to color) */
+:root[data-shell-pattern="marble"] {
+  --shell-grain: var(--shell-grain-marble);
+  --shell-grain-size: 360px 360px;
+  --shell-grain-position: 0 0;
+  --shell-grain-repeat: repeat;
+  --shell-grain-attachment: fixed;
+}
+:root[data-shell-pattern="cloud"] {
+  --shell-grain: var(--shell-grain-cloud);
+  --shell-grain-size: 360px 360px;
+  --shell-grain-position: 0 0;
+  --shell-grain-repeat: repeat;
+  --shell-grain-attachment: fixed;
+}
+:root[data-shell-pattern="seigaiha"] {
+  --shell-grain: var(--shell-grain-seigaiha);
+  --shell-grain-size: 80px 40px;
+  --shell-grain-position: 0 0;
+  --shell-grain-repeat: repeat;
+  --shell-grain-attachment: fixed;
+}
+:root[data-shell-pattern="flourish"] {
+  --shell-grain: var(--shell-grain-flourish);
+  --shell-grain-size: 64px 64px;
+  --shell-grain-position: 0 0;
+  --shell-grain-repeat: repeat;
+  --shell-grain-attachment: fixed;
+}
+:root[data-shell-pattern="mesh"] {
+  --shell-grain: var(--shell-grain-mesh);
+  --shell-grain-size: 60px 60px;
+  --shell-grain-position: 0 0;
+  --shell-grain-repeat: repeat;
+  --shell-grain-attachment: fixed;
+}
+:root[data-shell-pattern="none"] {
+  --shell-grain: none;
+}
+
+/* Shell Color Palettes (Light Default) */
+:root[data-shell-color="slate"],
+:root:not([data-shell-color]) {
+  --shell-bg: #dbe4f0;
+  --shell-border: #b8c8dc;
+  --shell-text: var(--text);
+  --shell-text-muted: var(--text-muted);
+}
+:root[data-shell-color="violet"] {
+  --shell-bg: #d8d0e6;
+  --shell-border: #ada0c5;
+  --shell-text: #1d182b;
+  --shell-text-muted: #564c6d;
+}
+:root[data-shell-color="indigo"] {
+  --shell-bg: #b9d1ec;
+  --shell-border: #86aed8;
+  --shell-text: #121e2c;
+  --shell-text-muted: #485c75;
+}
+:root[data-shell-color="olive"] {
+  --shell-bg: #dad9c2;
+  --shell-border: #afac85;
+  --shell-text: #23241b;
+  --shell-text-muted: #61634f;
+}
+
+/* Legacy data-shell attribute compatibility */
 :root[data-shell="slate"] {
-  --shell-grain: var(--shell-grain-slate);
-  --shell-blend-mode: soft-light;
-  --shell-grain-size: calc(100vw + 240px) calc(100vh + 240px);
-  --shell-grain-position: -120px -120px;
-  --shell-grain-repeat: no-repeat;
+  --shell-grain: var(--shell-grain-marble);
+  --shell-grain-size: 360px 360px;
+  --shell-grain-position: 0 0;
+  --shell-grain-repeat: repeat;
   --shell-grain-attachment: fixed;
 }
 :root[data-shell="violet"] {
@@ -69,10 +146,9 @@
   --shell-text: #1d182b;
   --shell-text-muted: #564c6d;
   --shell-grain: var(--shell-grain-violet);
-  --shell-blend-mode: soft-light;
-  --shell-grain-size: cover;
-  --shell-grain-position: center;
-  --shell-grain-repeat: no-repeat;
+  --shell-grain-size: 360px 360px;
+  --shell-grain-position: 0 0;
+  --shell-grain-repeat: repeat;
   --shell-grain-attachment: fixed;
 }
 :root[data-shell="indigo"] {
@@ -80,9 +156,8 @@
   --shell-border: #86aed8;
   --shell-text: #121e2c;
   --shell-text-muted: #485c75;
-  --shell-grain: var(--shell-grain-indigo-light);
-  --shell-blend-mode: soft-light;
-  --shell-grain-size: auto;
+  --shell-grain: var(--shell-grain-seigaiha);
+  --shell-grain-size: 80px 40px;
   --shell-grain-position: 0 0;
   --shell-grain-repeat: repeat;
   --shell-grain-attachment: fixed;
@@ -92,9 +167,8 @@
   --shell-border: #afac85;
   --shell-text: #23241b;
   --shell-text-muted: #61634f;
-  --shell-grain: var(--shell-grain-olive-light);
-  --shell-blend-mode: soft-light;
-  --shell-grain-size: auto;
+  --shell-grain: var(--shell-grain-flourish);
+  --shell-grain-size: 64px 64px;
   --shell-grain-position: 0 0;
   --shell-grain-repeat: repeat;
   --shell-grain-attachment: fixed;
@@ -104,9 +178,8 @@
   --shell-border: #2e3848;
   --shell-text: #eaecf0;
   --shell-text-muted: #9aa1ab;
-  --shell-grain: var(--shell-grain-contrast);
-  --shell-blend-mode: soft-light;
-  --shell-grain-size: auto;
+  --shell-grain: var(--shell-grain-mesh);
+  --shell-grain-size: 60px 60px;
   --shell-grain-position: 0 0;
   --shell-grain-repeat: repeat;
   --shell-grain-attachment: fixed;
@@ -138,6 +211,58 @@
     --bullet-color: color-mix(in srgb, var(--text) 78%, black 22%);
   }
 
+  /* System Dark Preference Shell Overrides */
+  :root:not([data-theme="light"]) {
+    --shell-grain-seigaiha: var(--shell-grain-seigaiha-dark);
+    --shell-grain-flourish: var(--shell-grain-flourish-dark);
+    --shell-grain-mesh: var(--shell-grain-mesh-dark);
+  }
+  :root:not([data-theme="light"])[data-shell-color="violet"] {
+    --shell-bg: #292036;
+    --shell-border: #4d3a67;
+    --shell-text: #eee8f5;
+    --shell-text-muted: #aa9cbe;
+  }
+  :root:not([data-theme="light"])[data-shell-color="indigo"] {
+    --shell-bg: #1b2d46;
+    --shell-border: #315380;
+    --shell-text: #e8f1fc;
+    --shell-text-muted: #97b5da;
+  }
+  :root:not([data-theme="light"])[data-shell-color="olive"] {
+    --shell-bg: #272a1e;
+    --shell-border: #4a4f35;
+    --shell-text: #eeefea;
+    --shell-text-muted: #a6ad8f;
+  }
+
+  /* System Dark Preference High Contrast */
+  :root:not([data-theme="light"])[data-shell-contrast="high"] {
+    --shell-bg: #192434;
+    --shell-border: #526f99;
+    --shell-text: #f4f7fb;
+    --shell-text-muted: #c2d0e0;
+  }
+  :root:not([data-theme="light"])[data-shell-contrast="high"][data-shell-color="violet"] {
+    --shell-bg: #1e1529;
+    --shell-border: #714e9f;
+    --shell-text: #f9f6fc;
+    --shell-text-muted: #d0c2e4;
+  }
+  :root:not([data-theme="light"])[data-shell-contrast="high"][data-shell-color="indigo"] {
+    --shell-bg: #101e30;
+    --shell-border: #4275b8;
+    --shell-text: #f2f7fc;
+    --shell-text-muted: #b8d4f4;
+  }
+  :root:not([data-theme="light"])[data-shell-contrast="high"][data-shell-color="olive"] {
+    --shell-bg: #1b1e13;
+    --shell-border: #6e7943;
+    --shell-text: #fcfdf9;
+    --shell-text-muted: #c6cca8;
+  }
+
+  /* Legacy data-shell support in dark */
   :root:not([data-theme="light"])[data-shell="violet"] {
     --shell-bg: #292036;
     --shell-border: #4d3a67;
@@ -149,20 +274,21 @@
     --shell-border: #315380;
     --shell-text: #e8f1fc;
     --shell-text-muted: #97b5da;
-    --shell-grain: var(--shell-grain-indigo-dark);
+    --shell-grain: var(--shell-grain-seigaiha-dark);
   }
   :root:not([data-theme="light"])[data-shell="olive"] {
     --shell-bg: #272a1e;
     --shell-border: #4a4f35;
     --shell-text: #eeefea;
     --shell-text-muted: #a6ad8f;
-    --shell-grain: var(--shell-grain-olive-dark);
+    --shell-grain: var(--shell-grain-flourish-dark);
   }
   :root:not([data-theme="light"])[data-shell="contrast"] {
-    --shell-bg: #38465c;
-    --shell-border: #566c8e;
-    --shell-text: #f0f4f8;
+    --shell-bg: #192434;
+    --shell-border: #526f99;
+    --shell-text: #f4f7fb;
     --shell-text-muted: #c2d0e0;
+    --shell-grain: var(--shell-grain-mesh-dark);
   }
 }
 
@@ -189,8 +315,58 @@
   --shell-text: var(--text);
   --shell-text-muted: var(--text-muted);
   --bullet-color: color-mix(in srgb, var(--text) 78%, black 22%);
+  --shell-grain-seigaiha: var(--shell-grain-seigaiha-dark);
+  --shell-grain-flourish: var(--shell-grain-flourish-dark);
+  --shell-grain-mesh: var(--shell-grain-mesh-dark);
 }
 
+/* Dark Theme Shell Colors */
+:root[data-theme="dark"][data-shell-color="violet"] {
+  --shell-bg: #292036;
+  --shell-border: #4d3a67;
+  --shell-text: #eee8f5;
+  --shell-text-muted: #aa9cbe;
+}
+:root[data-theme="dark"][data-shell-color="indigo"] {
+  --shell-bg: #1b2d46;
+  --shell-border: #315380;
+  --shell-text: #e8f1fc;
+  --shell-text-muted: #97b5da;
+}
+:root[data-theme="dark"][data-shell-color="olive"] {
+  --shell-bg: #272a1e;
+  --shell-border: #4a4f35;
+  --shell-text: #eeefea;
+  --shell-text-muted: #a6ad8f;
+}
+
+/* Dark Theme High Contrast */
+:root[data-theme="dark"][data-shell-contrast="high"] {
+  --shell-bg: #192434;
+  --shell-border: #526f99;
+  --shell-text: #f4f7fb;
+  --shell-text-muted: #c2d0e0;
+}
+:root[data-theme="dark"][data-shell-contrast="high"][data-shell-color="violet"] {
+  --shell-bg: #1e1529;
+  --shell-border: #714e9f;
+  --shell-text: #f9f6fc;
+  --shell-text-muted: #d0c2e4;
+}
+:root[data-theme="dark"][data-shell-contrast="high"][data-shell-color="indigo"] {
+  --shell-bg: #101e30;
+  --shell-border: #4275b8;
+  --shell-text: #f2f7fc;
+  --shell-text-muted: #b8d4f4;
+}
+:root[data-theme="dark"][data-shell-contrast="high"][data-shell-color="olive"] {
+  --shell-bg: #1b1e13;
+  --shell-border: #6e7943;
+  --shell-text: #fcfdf9;
+  --shell-text-muted: #c6cca8;
+}
+
+/* Legacy data-shell in explicit dark */
 :root[data-theme="dark"][data-shell="violet"] {
   --shell-bg: #292036;
   --shell-border: #4d3a67;
@@ -202,20 +378,21 @@
   --shell-border: #315380;
   --shell-text: #e8f1fc;
   --shell-text-muted: #97b5da;
-  --shell-grain: var(--shell-grain-indigo-dark);
+  --shell-grain: var(--shell-grain-seigaiha-dark);
 }
 :root[data-theme="dark"][data-shell="olive"] {
   --shell-bg: #272a1e;
   --shell-border: #4a4f35;
   --shell-text: #eeefea;
   --shell-text-muted: #a6ad8f;
-  --shell-grain: var(--shell-grain-olive-dark);
+  --shell-grain: var(--shell-grain-flourish-dark);
 }
 :root[data-theme="dark"][data-shell="contrast"] {
-  --shell-bg: #38465c;
-  --shell-border: #566c8e;
-  --shell-text: #f0f4f8;
+  --shell-bg: #192434;
+  --shell-border: #526f99;
+  --shell-text: #f4f7fb;
   --shell-text-muted: #c2d0e0;
+  --shell-grain: var(--shell-grain-mesh-dark);
 }
 
 :root[data-theme="light"] {
@@ -241,8 +418,66 @@
   --shell-text: var(--text);
   --shell-text-muted: var(--text-muted);
   --bullet-color: #000000;
+  --shell-grain-seigaiha: var(--shell-grain-seigaiha-light);
+  --shell-grain-flourish: var(--shell-grain-flourish-light);
+  --shell-grain-mesh: var(--shell-grain-mesh-light);
 }
 
+/* Light Theme Shell Colors */
+:root[data-theme="light"][data-shell-color="violet"] {
+  --shell-bg: #d8d0e6;
+  --shell-border: #ada0c5;
+  --shell-text: #1d182b;
+  --shell-text-muted: #564c6d;
+}
+:root[data-theme="light"][data-shell-color="indigo"] {
+  --shell-bg: #b9d1ec;
+  --shell-border: #86aed8;
+  --shell-text: #121e2c;
+  --shell-text-muted: #485c75;
+}
+:root[data-theme="light"][data-shell-color="olive"] {
+  --shell-bg: #dad9c2;
+  --shell-border: #afac85;
+  --shell-text: #23241b;
+  --shell-text-muted: #61634f;
+}
+
+/* Light Theme High Contrast */
+:root:not([data-theme="dark"])[data-shell-contrast="high"] {
+  --shell-bg: #c9d8ec;
+  --shell-border: #7c9dc2;
+  --shell-text: #0d1622;
+  --shell-text-muted: #3a4b60;
+}
+:root:not([data-theme="dark"])[data-shell-contrast="high"][data-shell-color="violet"] {
+  --shell-bg: #cbbfe0;
+  --shell-border: #8972b5;
+  --shell-text: #12091c;
+  --shell-text-muted: #413259;
+}
+:root:not([data-theme="dark"])[data-shell-contrast="high"][data-shell-color="indigo"] {
+  --shell-bg: #a3c4eb;
+  --shell-border: #5289c5;
+  --shell-text: #08111c;
+  --shell-text-muted: #2d4564;
+}
+:root:not([data-theme="dark"])[data-shell-contrast="high"][data-shell-color="olive"] {
+  --shell-bg: #cac8a8;
+  --shell-border: #878248;
+  --shell-text: #15160e;
+  --shell-text-muted: #4a4a35;
+}
+
+/* High Contrast Structural Outlines */
+:root[data-shell-contrast="high"] .book-rail-nav,
+:root[data-shell-contrast="high"] .pane-nav,
+:root[data-shell-contrast="high"] .pane-data,
+:root[data-shell-contrast="high"] .floating-controls {
+  box-shadow: 0 0 0 1px var(--shell-border);
+}
+
+/* Legacy data-shell in explicit light */
 :root[data-theme="light"][data-shell="violet"] {
   --shell-bg: #d8d0e6;
   --shell-border: #ada0c5;
@@ -254,35 +489,21 @@
   --shell-border: #86aed8;
   --shell-text: #121e2c;
   --shell-text-muted: #485c75;
-  --shell-grain: var(--shell-grain-indigo-light);
+  --shell-grain: var(--shell-grain-seigaiha-light);
 }
 :root[data-theme="light"][data-shell="olive"] {
   --shell-bg: #dad9c2;
   --shell-border: #afac85;
   --shell-text: #23241b;
   --shell-text-muted: #61634f;
-  --shell-grain: var(--shell-grain-olive-light);
+  --shell-grain: var(--shell-grain-flourish-light);
 }
 :root[data-theme="light"][data-shell="contrast"] {
   --shell-bg: #1a222c;
   --shell-border: #2e3848;
   --shell-text: #eaecf0;
   --shell-text-muted: #9aa1ab;
-}
-
-:root[data-theme="light"][data-shell="contrast"] .pane-nav,
-:root[data-theme="light"][data-shell="contrast"] .pane-data,
-:root[data-theme="light"][data-shell="contrast"] .floating-controls {
-  --bg: #141a22;
-  --surface: #222b38;
-  --surface-subtle: #293444;
-  --border: #2e3848;
-  --border-subtle: #3a4759;
-  --recent-book-bg: #293444;
-}
-
-:root[data-theme="light"][data-shell="contrast"] .recent-items {
-  background: #141a22;
+  --shell-grain: var(--shell-grain-mesh-dark);
 }
 
 *, *::before, *::after {

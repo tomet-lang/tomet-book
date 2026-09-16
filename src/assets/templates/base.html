@@ -21,9 +21,30 @@
         if (savedTheme === 'dark' || savedTheme === 'light') {
           document.documentElement.setAttribute('data-theme', savedTheme);
         }
-        const savedShell = localStorage.getItem('tmtbook-shell');
-        if (savedShell && savedShell !== 'slate') {
-          document.documentElement.setAttribute('data-shell', savedShell);
+        // Shell customizations (Color, Pattern, Contrast)
+        let shellColor = localStorage.getItem('tmtbook-shell-color');
+        let shellPattern = localStorage.getItem('tmtbook-shell-pattern');
+        let shellContrast = localStorage.getItem('tmtbook-shell-contrast');
+        const legacyShell = localStorage.getItem('tmtbook-shell');
+        if (legacyShell && (!shellColor || !shellPattern)) {
+          if (legacyShell === 'violet') { shellColor = 'violet'; shellPattern = 'cloud'; }
+          else if (legacyShell === 'indigo') { shellColor = 'indigo'; shellPattern = 'seigaiha'; }
+          else if (legacyShell === 'olive') { shellColor = 'olive'; shellPattern = 'flourish'; }
+          else if (legacyShell === 'contrast') { shellColor = 'slate'; shellPattern = 'mesh'; shellContrast = 'high'; }
+          else { shellColor = 'slate'; shellPattern = 'marble'; }
+          localStorage.setItem('tmtbook-shell-color', shellColor);
+          localStorage.setItem('tmtbook-shell-pattern', shellPattern);
+          if (shellContrast) localStorage.setItem('tmtbook-shell-contrast', shellContrast);
+          localStorage.removeItem('tmtbook-shell');
+        }
+        if (shellColor && shellColor !== 'slate') {
+          document.documentElement.setAttribute('data-shell-color', shellColor);
+        }
+        if (shellPattern && shellPattern !== 'marble') {
+          document.documentElement.setAttribute('data-shell-pattern', shellPattern);
+        }
+        if (shellContrast === 'high') {
+          document.documentElement.setAttribute('data-shell-contrast', 'high');
         }
         // Decide the panes' collapsed state before the first paint. book.js
         // applies the real classes on DOMContentLoaded and clears these, but

@@ -458,10 +458,10 @@ html[data-view="classic"] .classic-view {
   box-shadow: 0 6px 22px rgba(0, 0, 0, 0.3),
               inset 0 1px 0 rgba(255, 255, 255, 0.15);
   padding: 8px;
-  width: 170px;
+  width: 232px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   box-sizing: border-box;
 }
 
@@ -469,37 +469,48 @@ html[data-view="classic"] .classic-view {
   display: none !important;
 }
 
+.palette-section {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.palette-section + .palette-section {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 5px;
+}
+
 .palette-header {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-muted);
-  padding: 2px 6px 4px;
-  border-bottom: 1px solid var(--border-subtle);
-  margin-bottom: 2px;
+  padding: 0 2px 2px;
 }
 
 .palette-swatches {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
 }
 
 .swatch-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
   width: 100%;
-  padding: 6px 8px;
+  padding: 4px 5px;
   background: transparent;
   border: 1px solid transparent;
   border-radius: 0;
   color: var(--text);
-  font-size: 0.8rem;
+  font-size: 0.73rem;
   cursor: pointer;
   text-align: left;
   transition: background 0.12s ease, border-color 0.12s ease;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .swatch-btn:hover {
@@ -512,9 +523,15 @@ html[data-view="classic"] .classic-view {
   font-weight: 600;
 }
 
+.swatch-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .swatch-dot {
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   border: 1px solid rgba(0, 0, 0, 0.2);
   flex-shrink: 0;
@@ -529,5 +546,126 @@ html[data-view="classic"] .classic-view {
 .swatch-violet { background: #8e78b8; }
 .swatch-indigo { background: #4a7ebb; }
 .swatch-olive { background: #7a7d58; }
-.swatch-contrast { background: linear-gradient(135deg, #1c222c 50%, #eaecf0 50%); }
+
+.pattern-preview {
+  width: 13px;
+  height: 13px;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
+  box-sizing: border-box;
+  background-color: var(--shell-bg);
+  background-repeat: repeat;
+  background-blend-mode: soft-light;
+}
+
+[data-theme="dark"] .pattern-preview {
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.preview-marble {
+  background-image: var(--shell-grain-marble);
+  background-size: 26px 26px;
+}
+
+.preview-cloud {
+  background-image: var(--shell-grain-cloud);
+  background-size: 26px 26px;
+}
+
+.preview-seigaiha {
+  background-image: var(--shell-grain-seigaiha);
+  background-size: 16px 8px;
+}
+
+.preview-flourish {
+  background-image: var(--shell-grain-flourish);
+  background-size: 14px 14px;
+}
+
+.preview-mesh {
+  background-image: var(--shell-grain-mesh);
+  background-size: 13px 13px;
+}
+
+.preview-none {
+  background: transparent;
+  position: relative;
+}
+
+.preview-none::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 1px;
+  right: 1px;
+  height: 1px;
+  background: var(--text-muted);
+  transform: rotate(-45deg);
+}
+
+/* Contrast Toggle Switch */
+.contrast-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 4px 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0;
+  color: var(--text);
+  font-size: 0.76rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s ease, border-color 0.12s ease;
+  box-sizing: border-box;
+}
+
+.contrast-toggle-btn:hover {
+  background: var(--surface-subtle);
+}
+
+.contrast-toggle-btn.is-active,
+.contrast-toggle-btn[aria-checked="true"] {
+  border-color: var(--link);
+  background: var(--surface-subtle);
+  font-weight: 600;
+}
+
+.contrast-toggle-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.contrast-switch {
+  width: 28px;
+  height: 16px;
+  background: var(--border);
+  border-radius: 8px;
+  position: relative;
+  transition: background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.contrast-switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease;
+}
+
+.contrast-toggle-btn[aria-checked="true"] .contrast-switch {
+  background: var(--link);
+}
+
+.contrast-toggle-btn[aria-checked="true"] .contrast-switch-knob {
+  transform: translateX(12px);
+}
 

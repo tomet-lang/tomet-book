@@ -45,34 +45,118 @@
     setupShellTheme();
   }
 
-  // ==================== SHELL THEME CONTROLLER ====================
-  const SHELL_THEMES = ['slate', 'violet', 'indigo', 'olive', 'contrast'];
+  // ==================== SHELL CUSTOMIZATION CONTROLLER ====================
+  const SHELL_COLORS = ['slate', 'violet', 'indigo', 'olive'];
+  const SHELL_PATTERNS = ['marble', 'cloud', 'seigaiha', 'flourish', 'mesh', 'none'];
 
+  function getShellColor() {
+    return document.documentElement.getAttribute('data-shell-color') || 'slate';
+  }
+
+  function setShellColor(color) {
+    if (!SHELL_COLORS.includes(color)) color = 'slate';
+    if (color === 'slate') {
+      document.documentElement.removeAttribute('data-shell-color');
+    } else {
+      document.documentElement.setAttribute('data-shell-color', color);
+    }
+    T.storage.set('tmtbook-shell-color', color);
+    syncShellUI();
+  }
+
+  function getShellPattern() {
+    return document.documentElement.getAttribute('data-shell-pattern') || 'marble';
+  }
+
+  function setShellPattern(pattern) {
+    if (!SHELL_PATTERNS.includes(pattern)) pattern = 'marble';
+    if (pattern === 'marble') {
+      document.documentElement.removeAttribute('data-shell-pattern');
+    } else {
+      document.documentElement.setAttribute('data-shell-pattern', pattern);
+    }
+    T.storage.set('tmtbook-shell-pattern', pattern);
+    syncShellUI();
+  }
+
+  function getShellContrast() {
+    return document.documentElement.getAttribute('data-shell-contrast') || 'normal';
+  }
+
+  function setShellContrast(contrast) {
+    if (contrast === 'high') {
+      document.documentElement.setAttribute('data-shell-contrast', 'high');
+      T.storage.set('tmtbook-shell-contrast', 'high');
+    } else {
+      document.documentElement.removeAttribute('data-shell-contrast');
+      T.storage.set('tmtbook-shell-contrast', 'normal');
+    }
+    syncShellUI();
+  }
+
+  function toggleShellContrast() {
+    const current = getShellContrast();
+    setShellContrast(current === 'high' ? 'normal' : 'high');
+  }
+
+  // Backwards compatibility for legacy shell theme calls
   function getShellTheme() {
-    return document.documentElement.getAttribute('data-shell') || 'slate';
+    return getShellColor();
   }
 
   function setShellTheme(theme) {
-    if (!SHELL_THEMES.includes(theme)) theme = 'slate';
-    if (theme === 'slate') {
-      document.documentElement.removeAttribute('data-shell');
-    } else {
-      document.documentElement.setAttribute('data-shell', theme);
+    if (SHELL_COLORS.includes(theme)) {
+      setShellColor(theme);
+    } else if (theme === 'contrast') {
+      setShellContrast('high');
     }
-    T.storage.set('tmtbook-shell', theme);
-    syncShellSwatches();
   }
 
-  function syncShellSwatches() {
-    const current = getShellTheme();
-    document.querySelectorAll('.swatch-btn').forEach((btn) => {
-      const isSelected = btn.dataset.shell === current;
+  function migrateLegacyShell() {
+    const legacy = T.storage.get('tmtbook-shell');
+    if (legacy) {
+      let color = 'slate';
+      let pattern = 'marble';
+      let contrast = 'normal';
+      if (legacy === 'violet') { color = 'violet'; pattern = 'cloud'; }
+      else if (legacy === 'indigo') { color = 'indigo'; pattern = 'seigaiha'; }
+      else if (legacy === 'olive') { color = 'olive'; pattern = 'flourish'; }
+      else if (legacy === 'contrast') { color = 'slate'; pattern = 'mesh'; contrast = 'high'; }
+
+      if (!T.storage.get('tmtbook-shell-color')) setShellColor(color);
+      if (!T.storage.get('tmtbook-shell-pattern')) setShellPattern(pattern);
+      if (!T.storage.get('tmtbook-shell-contrast') && contrast === 'high') setShellContrast('high');
+      T.storage.remove('tmtbook-shell');
+    }
+  }
+
+  function syncShellUI() {
+    const currentColor = getShellColor();
+    const currentPattern = getShellPattern();
+    const isHighContrast = getShellContrast() === 'high';
+
+    document.querySelectorAll('.color-btn[data-shell-color]').forEach((btn) => {
+      const isSelected = btn.dataset.shellColor === currentColor;
       btn.classList.toggle('is-active', isSelected);
       btn.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
     });
+
+    document.querySelectorAll('.pattern-btn[data-shell-pattern]').forEach((btn) => {
+      const isSelected = btn.dataset.shellPattern === currentPattern;
+      btn.classList.toggle('is-active', isSelected);
+      btn.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+    });
+
+    const contrastBtn = document.getElementById('shell-contrast-toggle');
+    if (contrastBtn) {
+      contrastBtn.setAttribute('aria-checked', isHighContrast ? 'true' : 'false');
+      contrastBtn.classList.toggle('is-active', isHighContrast);
+    }
   }
 
   function setupShellTheme() {
+    migrateLegacyShell();
+
     const paletteBtn = document.getElementById('btn-rail-palette');
     const popover = document.getElementById('shell-palette-popover');
     if (!paletteBtn || !popover) return;
@@ -88,20 +172,29 @@
       if (willOpen) {
         popover.hidden = false;
         paletteBtn.setAttribute('aria-expanded', 'true');
+        syncShellUI();
       } else {
         closePopover();
       }
     });
 
-    popover.querySelectorAll('.swatch-btn').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const targetShell = btn.dataset.shell;
-        if (targetShell) {
-          setShellTheme(targetShell);
-        }
-        closePopover();
-      });
+    popover.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const colorBtn = e.target.closest('.color-btn[data-shell-color]');
+      if (colorBtn) {
+        setShellColor(colorBtn.dataset.shellColor);
+        return;
+      }
+      const patternBtn = e.target.closest('.pattern-btn[data-shell-pattern]');
+      if (patternBtn) {
+        setShellPattern(patternBtn.dataset.shellPattern);
+        return;
+      }
+      const contrastBtn = e.target.closest('#shell-contrast-toggle');
+      if (contrastBtn) {
+        toggleShellContrast();
+        return;
+      }
     });
 
     document.addEventListener('click', (e) => {
@@ -116,13 +209,20 @@
       }
     });
 
-    syncShellSwatches();
+    syncShellUI();
   }
 
   Object.assign(T, {
     setupThemeToggle,
     getEffectiveTheme,
     setupShellTheme,
+    getShellColor,
+    setShellColor,
+    getShellPattern,
+    setShellPattern,
+    getShellContrast,
+    setShellContrast,
+    toggleShellContrast,
     getShellTheme,
     setShellTheme,
   });

@@ -41,6 +41,11 @@
         localStorage.setItem(key, value);
       } catch {}
     },
+    remove(key) {
+      try {
+        localStorage.removeItem(key);
+      } catch {}
+    },
   };
 
   const session = {

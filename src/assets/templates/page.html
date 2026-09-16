@@ -74,29 +74,71 @@
           </svg>
         </button>
         <div class="shell-palette-popover" id="shell-palette-popover" hidden data-pagefind-ignore>
-          <div class="palette-header">
-            <span>{{ t["theme.shell_label"] }}</span>
+          <div class="palette-section">
+            <div class="palette-header">
+              <span>{{ t["theme.shell.color_label"] | default('カラー') }}</span>
+            </div>
+            <div class="palette-swatches color-swatches">
+              <button type="button" class="swatch-btn color-btn" data-shell-color="slate" title="{{ t["theme.shell.color_slate"] | default('スレート') }} (Slate)">
+                <span class="swatch-dot swatch-slate"></span>
+                <span class="swatch-name">{{ t["theme.shell.color_slate"] | default('スレート') }}</span>
+              </button>
+              <button type="button" class="swatch-btn color-btn" data-shell-color="violet" title="{{ t["theme.shell.color_violet"] | default('バイオレット') }} (Violet)">
+                <span class="swatch-dot swatch-violet"></span>
+                <span class="swatch-name">{{ t["theme.shell.color_violet"] | default('バイオレット') }}</span>
+              </button>
+              <button type="button" class="swatch-btn color-btn" data-shell-color="indigo" title="{{ t["theme.shell.color_indigo"] | default('インディゴ') }} (Indigo)">
+                <span class="swatch-dot swatch-indigo"></span>
+                <span class="swatch-name">{{ t["theme.shell.color_indigo"] | default('インディゴ') }}</span>
+              </button>
+              <button type="button" class="swatch-btn color-btn" data-shell-color="olive" title="{{ t["theme.shell.color_olive"] | default('オリーブ') }} (Olive)">
+                <span class="swatch-dot swatch-olive"></span>
+                <span class="swatch-name">{{ t["theme.shell.color_olive"] | default('オリーブ') }}</span>
+              </button>
+            </div>
           </div>
-          <div class="palette-swatches">
-            <button type="button" class="swatch-btn" data-shell="slate" title="{{ t["theme.shell.slate"] | default('スレート') }} (Slate)">
-              <span class="swatch-dot swatch-slate"></span>
-              <span class="swatch-name">{{ t["theme.shell.slate"] | default('スレート') }}</span>
-            </button>
-            <button type="button" class="swatch-btn" data-shell="violet" title="{{ t["theme.shell.violet"] | default('バイオレット') }} (Violet / 鉱物紫)">
-              <span class="swatch-dot swatch-violet"></span>
-              <span class="swatch-name">{{ t["theme.shell.violet"] | default('バイオレット') }}</span>
-            </button>
-            <button type="button" class="swatch-btn" data-shell="indigo" title="{{ t["theme.shell.indigo"] | default('インディゴ') }} (Indigo / 濃藍)">
-              <span class="swatch-dot swatch-indigo"></span>
-              <span class="swatch-name">{{ t["theme.shell.indigo"] | default('インディゴ') }}</span>
-            </button>
-            <button type="button" class="swatch-btn" data-shell="olive" title="{{ t["theme.shell.olive"] | default('オリーブ') }} (Olive / 古書装丁)">
-              <span class="swatch-dot swatch-olive"></span>
-              <span class="swatch-name">{{ t["theme.shell.olive"] | default('オリーブ') }}</span>
-            </button>
-            <button type="button" class="swatch-btn" data-shell="contrast" title="{{ t["theme.shell.contrast"] | default('コントラスト') }} (Contrast / 二層反転)">
-              <span class="swatch-dot swatch-contrast"></span>
-              <span class="swatch-name">{{ t["theme.shell.contrast"] | default('コントラスト') }}</span>
+
+          <div class="palette-section">
+            <div class="palette-header">
+              <span>{{ t["theme.shell.pattern_label"] | default('模様') }}</span>
+            </div>
+            <div class="palette-swatches pattern-swatches">
+              <button type="button" class="swatch-btn pattern-btn" data-shell-pattern="marble" title="{{ t["theme.shell.pattern_marble"] | default('マーブル') }}">
+                <span class="pattern-preview preview-marble"></span>
+                <span class="swatch-name">{{ t["theme.shell.pattern_marble"] | default('マーブル') }}</span>
+              </button>
+              <button type="button" class="swatch-btn pattern-btn" data-shell-pattern="cloud" title="{{ t["theme.shell.pattern_cloud"] | default('クラウド') }}">
+                <span class="pattern-preview preview-cloud"></span>
+                <span class="swatch-name">{{ t["theme.shell.pattern_cloud"] | default('クラウド') }}</span>
+              </button>
+              <button type="button" class="swatch-btn pattern-btn" data-shell-pattern="seigaiha" title="{{ t["theme.shell.pattern_seigaiha"] | default('青海波') }}">
+                <span class="pattern-preview preview-seigaiha"></span>
+                <span class="swatch-name">{{ t["theme.shell.pattern_seigaiha"] | default('青海波') }}</span>
+              </button>
+              <button type="button" class="swatch-btn pattern-btn" data-shell-pattern="flourish" title="{{ t["theme.shell.pattern_flourish"] | default('古書装丁') }}">
+                <span class="pattern-preview preview-flourish"></span>
+                <span class="swatch-name">{{ t["theme.shell.pattern_flourish"] | default('古書装丁') }}</span>
+              </button>
+              <button type="button" class="swatch-btn pattern-btn" data-shell-pattern="mesh" title="{{ t["theme.shell.pattern_mesh"] | default('メッシュ') }}">
+                <span class="pattern-preview preview-mesh"></span>
+                <span class="swatch-name">{{ t["theme.shell.pattern_mesh"] | default('メッシュ') }}</span>
+              </button>
+              <button type="button" class="swatch-btn pattern-btn" data-shell-pattern="none" title="{{ t["theme.shell.pattern_none"] | default('なし') }}">
+                <span class="pattern-preview preview-none"></span>
+                <span class="swatch-name">{{ t["theme.shell.pattern_none"] | default('なし') }}</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="palette-section palette-contrast-section">
+            <div class="palette-header">
+              <span>{{ t["theme.shell.contrast_label"] | default('コントラスト') }}</span>
+            </div>
+            <button type="button" class="contrast-toggle-btn" id="shell-contrast-toggle" role="switch" aria-checked="false" aria-label="{{ t["theme.shell.contrast_high"] | default('ハイコントラスト') }}">
+              <span class="contrast-toggle-label">{{ t["theme.shell.contrast_high"] | default('ハイコントラスト') }}</span>
+              <span class="contrast-switch" aria-hidden="true">
+                <span class="contrast-switch-knob"></span>
+              </span>
             </button>
           </div>
         </div>
