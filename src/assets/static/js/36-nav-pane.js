@@ -12,6 +12,16 @@
       graph: t('pane.graph'),
     };
 
+    function updateBackdrop(isCollapsed) {
+      const backdrop = document.getElementById('pane-nav-backdrop');
+      if (!backdrop) return;
+      if (isCollapsed) {
+        backdrop.classList.remove('is-active');
+      } else {
+        backdrop.classList.add('is-active');
+      }
+    }
+
     function switchPanel(panelName, expandIfCollapsed = true) {
       const pNav = document.getElementById('pane-nav');
       if (!pNav) return;
@@ -24,6 +34,8 @@
       }
 
       const isCollapsed = pNav.classList.contains('is-collapsed');
+      updateBackdrop(isCollapsed);
+
       document.querySelectorAll('.rail-tab-nav').forEach((tab) => {
         if (tab.getAttribute('data-panel') === panelName && !isCollapsed) {
           tab.classList.add('is-active');
@@ -52,9 +64,13 @@
       const pNav = document.getElementById('pane-nav');
       if (!pNav) return;
       pNav.classList.add('is-collapsed');
+      updateBackdrop(true);
       document.querySelectorAll('.rail-tab-nav').forEach((tab) => tab.classList.remove('is-active'));
       T.storage.set('wiki-pane-nav-collapsed', 'true');
     }
+
+    // Expose collapseNavPane for other components (e.g. router)
+    T.collapseNavPane = collapsePane;
 
     // Restore collapsed and active state on page load/transition
     const pNav = document.getElementById('pane-nav');
@@ -85,32 +101,41 @@
         }
       }
 
-      // Track scroll position per active panel
+      // Track scroll position per active panel (debounced to avoid synchronous storage write lag)
       const paneScroll = pNav.querySelector('.pane-scroll');
       if (paneScroll && !paneScroll.dataset.scrollBound) {
         paneScroll.dataset.scrollBound = 'true';
-        const onScrollThrottled = T.rafThrottle
-          ? T.rafThrottle(() => {
-              const active = pNav.dataset.activePanel || 'toc';
-              if (active !== 'lookup') {
-                T.session?.set(`wiki-pane-nav-scroll-${active}`, String(paneScroll.scrollTop));
-              }
-            })
-          : () => {
-              const active = pNav.dataset.activePanel || 'toc';
-              if (active !== 'lookup') {
-                T.session?.set(`wiki-pane-nav-scroll-${active}`, String(paneScroll.scrollTop));
-              }
-            };
-        paneScroll.addEventListener('scroll', onScrollThrottled, { passive: true });
+        let scrollTimeout = null;
+        const saveScroll = () => {
+          const active = pNav.dataset.activePanel || 'toc';
+          if (active !== 'lookup') {
+            T.session?.set(`wiki-pane-nav-scroll-${active}`, String(paneScroll.scrollTop));
+          }
+        };
+        paneScroll.addEventListener(
+          'scroll',
+          () => {
+            if (scrollTimeout) clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(saveScroll, 150);
+          },
+          { passive: true }
+        );
       }
     }
 
-    // Global delegation for rail tabs and collapse buttons
+    // Global delegation for rail tabs, backdrop, and collapse buttons
     if (!window.__navPaneDelegated) {
       window.__navPaneDelegated = true;
 
       document.addEventListener('click', (e) => {
+        // Backdrop click (closes mobile drawer)
+        const backdrop = e.target.closest('#pane-nav-backdrop');
+        if (backdrop) {
+          e.stopPropagation();
+          collapsePane();
+          return;
+        }
+
         // Rail tabs
         const tab = e.target.closest('.rail-tab-nav');
         if (tab) {
@@ -141,7 +166,7 @@
           return;
         }
 
-        // Nav pane links (save scroll position before navigation)
+        // Nav pane links (save scroll position before navigation & close drawer on mobile)
         const navLink = e.target.closest('#pane-nav a');
         if (navLink) {
           const currentPane = document.getElementById('pane-nav');
@@ -150,10 +175,19 @@
           if (paneScroll && active !== 'lookup') {
             T.session?.set(`wiki-pane-nav-scroll-${active}`, String(paneScroll.scrollTop));
           }
+          if (window.innerWidth <= 768) {
+            collapsePane();
+          }
         }
       });
 
       document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          const currentPane = document.getElementById('pane-nav');
+          if (currentPane && !currentPane.classList.contains('is-collapsed')) {
+            collapsePane();
+          }
+        }
         if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('#header-collapse-nav')) {
           e.preventDefault();
           collapsePane();

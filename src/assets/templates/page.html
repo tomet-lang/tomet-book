@@ -173,6 +173,9 @@
     window.tmtPageUrl = {{ page_url | tojson }};
   </script>
 
+  <!-- Mobile nav drawer backdrop overlay -->
+  <div class="pane-backdrop" id="pane-nav-backdrop" aria-hidden="true"></div>
+
   <!-- Pane 1: navigation and tools -->
   <aside class="book-pane pane-nav" id="pane-nav" data-pagefind-ignore>
     <div class="pane-header pane-header-collapsible" id="header-collapse-nav" title="{{ t["pane.collapse"] }}" role="button" tabindex="0">

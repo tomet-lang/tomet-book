@@ -34,8 +34,8 @@
   --bullet-color: #000000;
   --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160' width='160' height='160'%3E%3Cfilter id='p' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.45' numOctaves='3' stitchTiles='stitch' x='0' y='0' width='100%25' height='100%25'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.10'/%3E%3C/svg%3E");
 
-  /* Shell background textures (fixed-pixel tiles, GPU cached, zero-jank resize) */
-  --shell-grain-marble: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 360' width='360' height='360'%3E%3Cfilter id='shell-marble' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.015 0.030' numOctaves='4' seed='33' stitchTiles='stitch' result='t1'/%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.030 0.015' numOctaves='3' seed='88' stitchTiles='stitch' result='t2'/%3E%3CfeComposite in='t1' in2='t2' operator='arithmetic' k1='1' k2='0.5' k3='0.5' k4='0' result='comp'/%3E%3CfeColorMatrix in='comp' type='saturate' values='0' result='mono'/%3E%3CfeComponentTransfer in='mono'%3E%3CfeFuncR type='table' tableValues='0.0 0.0 0.0 0.08 0.45 0.55 0.92 1.0 1.0 1.0'/%3E%3CfeFuncG type='table' tableValues='0.0 0.0 0.0 0.08 0.45 0.55 0.92 1.0 1.0 1.0'/%3E%3CfeFuncB type='table' tableValues='0.0 0.0 0.0 0.08 0.45 0.55 0.92 1.0 1.0 1.0'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23shell-marble)'/%3E%3C/svg%3E");
+  /* Shell background textures (Plan A: 920x1640 marble slab with 100px bleed margin to eliminate edge displacement artifact) */
+  --shell-grain-marble: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 920 1640' width='920' height='1640'%3E%3Cfilter id='shell-marble' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.007 0.014' numOctaves='4' seed='33' stitchTiles='stitch' result='warp'/%3E%3CfeTurbulence type='turbulence' baseFrequency='0.018 0.022' numOctaves='4' seed='88' stitchTiles='stitch' result='veins'/%3E%3CfeDisplacementMap in='veins' in2='warp' scale='80' xChannelSelector='R' yChannelSelector='G' result='disp'/%3E%3CfeColorMatrix in='disp' type='saturate' values='0' result='mono'/%3E%3CfeComponentTransfer in='mono'%3E%3CfeFuncR type='table' tableValues='0.0 0.0 0.0 0.08 0.45 0.55 0.92 1.0 1.0 1.0'/%3E%3CfeFuncG type='table' tableValues='0.0 0.0 0.0 0.08 0.45 0.55 0.92 1.0 1.0 1.0'/%3E%3CfeFuncB type='table' tableValues='0.0 0.0 0.0 0.08 0.45 0.55 0.92 1.0 1.0 1.0'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23shell-marble)'/%3E%3C/svg%3E");
   --shell-grain-violet: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 360' width='360' height='360'%3E%3Cfilter id='shell-violet' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.014' numOctaves='4' seed='50' stitchTiles='stitch' x='0' y='0' width='100%25' height='100%25'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='table' tableValues='0.0 0.0 0.0 0.05 0.5 0.5 0.5 0.95 1.0 1.0 1.0'/%3E%3CfeFuncG type='table' tableValues='0.0 0.0 0.0 0.05 0.5 0.5 0.5 0.95 1.0 1.0 1.0'/%3E%3CfeFuncB type='table' tableValues='0.0 0.0 0.0 0.05 0.5 0.5 0.5 0.95 1.0 1.0 1.0'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23shell-violet)'/%3E%3C/svg%3E");
   --shell-grain-cloud: var(--shell-grain-violet);
   --shell-grain-slate: var(--shell-grain-marble);
@@ -56,11 +56,11 @@
   --shell-grain-mesh: var(--shell-grain-mesh-light);
   --shell-grain-contrast: var(--shell-grain-mesh);
 
-  /* Active shell texture tokens (default: Marble tile) */
+  /* Active shell texture tokens (default: Marble 920x1640 slab with -100px bleed) */
   --shell-grain: var(--shell-grain-marble);
   --shell-blend-mode: soft-light;
-  --shell-grain-size: 360px 360px;
-  --shell-grain-position: 0 0;
+  --shell-grain-size: 920px 1640px;
+  --shell-grain-position: -100px -100px;
   --shell-grain-repeat: repeat;
   --shell-grain-attachment: fixed;
 }
@@ -68,8 +68,8 @@
 /* Shell Pattern Selectors (Texture is fully orthogonal to color) */
 :root[data-shell-pattern="marble"] {
   --shell-grain: var(--shell-grain-marble);
-  --shell-grain-size: 360px 360px;
-  --shell-grain-position: 0 0;
+  --shell-grain-size: 920px 1640px;
+  --shell-grain-position: -100px -100px;
   --shell-grain-repeat: repeat;
   --shell-grain-attachment: fixed;
 }
@@ -135,8 +135,8 @@
 /* Legacy data-shell attribute compatibility */
 :root[data-shell="slate"] {
   --shell-grain: var(--shell-grain-marble);
-  --shell-grain-size: 360px 360px;
-  --shell-grain-position: 0 0;
+  --shell-grain-size: 920px 1640px;
+  --shell-grain-position: -100px -100px;
   --shell-grain-repeat: repeat;
   --shell-grain-attachment: fixed;
 }
@@ -236,27 +236,42 @@
     --shell-text-muted: #a6ad8f;
   }
 
-  /* System Dark Preference High Contrast */
+  /* System Dark Preference High Contrast (Invert shell to bright frame) */
   :root:not([data-theme="light"])[data-shell-contrast="high"] {
-    --shell-bg: #192434;
-    --shell-border: #526f99;
-    --shell-text: #f4f7fb;
+    --shell-bg: #38465c;
+    --shell-border: #566c8e;
+    --shell-text: #f0f4f8;
     --shell-text-muted: #c2d0e0;
   }
+  :root:not([data-theme="light"])[data-shell-contrast="high"] .pane-nav,
+  :root:not([data-theme="light"])[data-shell-contrast="high"] .pane-data,
+  :root:not([data-theme="light"])[data-shell-contrast="high"] .floating-controls {
+    --bg: #253042;
+    --surface: #38465c;
+    --surface-subtle: #455670;
+    --border: #566c8e;
+    --border-subtle: #677fa3;
+    --recent-book-bg: #455670;
+    --text: #f0f4f8;
+    --text-muted: #c2d0e0;
+  }
+  :root:not([data-theme="light"])[data-shell-contrast="high"] .recent-items {
+    background: #253042;
+  }
   :root:not([data-theme="light"])[data-shell-contrast="high"][data-shell-color="violet"] {
-    --shell-bg: #1e1529;
+    --shell-bg: #4a3666;
     --shell-border: #714e9f;
     --shell-text: #f9f6fc;
     --shell-text-muted: #d0c2e4;
   }
   :root:not([data-theme="light"])[data-shell-contrast="high"][data-shell-color="indigo"] {
-    --shell-bg: #101e30;
+    --shell-bg: #26436b;
     --shell-border: #4275b8;
     --shell-text: #f2f7fc;
     --shell-text-muted: #b8d4f4;
   }
   :root:not([data-theme="light"])[data-shell-contrast="high"][data-shell-color="olive"] {
-    --shell-bg: #1b1e13;
+    --shell-bg: #3f4728;
     --shell-border: #6e7943;
     --shell-text: #fcfdf9;
     --shell-text-muted: #c6cca8;
@@ -340,27 +355,42 @@
   --shell-text-muted: #a6ad8f;
 }
 
-/* Dark Theme High Contrast */
+/* Dark Theme High Contrast (Invert shell to bright frame) */
 :root[data-theme="dark"][data-shell-contrast="high"] {
-  --shell-bg: #192434;
-  --shell-border: #526f99;
-  --shell-text: #f4f7fb;
+  --shell-bg: #38465c;
+  --shell-border: #566c8e;
+  --shell-text: #f0f4f8;
   --shell-text-muted: #c2d0e0;
 }
+:root[data-theme="dark"][data-shell-contrast="high"] .pane-nav,
+:root[data-theme="dark"][data-shell-contrast="high"] .pane-data,
+:root[data-theme="dark"][data-shell-contrast="high"] .floating-controls {
+  --bg: #253042;
+  --surface: #38465c;
+  --surface-subtle: #455670;
+  --border: #566c8e;
+  --border-subtle: #677fa3;
+  --recent-book-bg: #455670;
+  --text: #f0f4f8;
+  --text-muted: #c2d0e0;
+}
+:root[data-theme="dark"][data-shell-contrast="high"] .recent-items {
+  background: #253042;
+}
 :root[data-theme="dark"][data-shell-contrast="high"][data-shell-color="violet"] {
-  --shell-bg: #1e1529;
+  --shell-bg: #4a3666;
   --shell-border: #714e9f;
   --shell-text: #f9f6fc;
   --shell-text-muted: #d0c2e4;
 }
 :root[data-theme="dark"][data-shell-contrast="high"][data-shell-color="indigo"] {
-  --shell-bg: #101e30;
+  --shell-bg: #26436b;
   --shell-border: #4275b8;
   --shell-text: #f2f7fc;
   --shell-text-muted: #b8d4f4;
 }
 :root[data-theme="dark"][data-shell-contrast="high"][data-shell-color="olive"] {
-  --shell-bg: #1b1e13;
+  --shell-bg: #3f4728;
   --shell-border: #6e7943;
   --shell-text: #fcfdf9;
   --shell-text-muted: #c6cca8;
@@ -443,30 +473,56 @@
   --shell-text-muted: #61634f;
 }
 
-/* Light Theme High Contrast */
-:root:not([data-theme="dark"])[data-shell-contrast="high"] {
-  --shell-bg: #c9d8ec;
-  --shell-border: #7c9dc2;
-  --shell-text: #0d1622;
-  --shell-text-muted: #3a4b60;
+/* Light Theme High Contrast (Invert shell to dark/black frame against light content) */
+:root:not([data-theme="dark"])[data-shell-contrast="high"],
+:root[data-theme="light"][data-shell-contrast="high"] {
+  --shell-bg: #1a222c;
+  --shell-border: #2e3848;
+  --shell-text: #eaecf0;
+  --shell-text-muted: #9aa1ab;
+  --shell-grain-seigaiha: var(--shell-grain-seigaiha-dark);
+  --shell-grain-flourish: var(--shell-grain-flourish-dark);
+  --shell-grain-mesh: var(--shell-grain-mesh-dark);
 }
-:root:not([data-theme="dark"])[data-shell-contrast="high"][data-shell-color="violet"] {
-  --shell-bg: #cbbfe0;
-  --shell-border: #8972b5;
-  --shell-text: #12091c;
-  --shell-text-muted: #413259;
+:root:not([data-theme="dark"])[data-shell-contrast="high"] .pane-nav,
+:root:not([data-theme="dark"])[data-shell-contrast="high"] .pane-data,
+:root:not([data-theme="dark"])[data-shell-contrast="high"] .floating-controls,
+:root[data-theme="light"][data-shell-contrast="high"] .pane-nav,
+:root[data-theme="light"][data-shell-contrast="high"] .pane-data,
+:root[data-theme="light"][data-shell-contrast="high"] .floating-controls {
+  --bg: #141a22;
+  --surface: #222b38;
+  --surface-subtle: #293444;
+  --border: #2e3848;
+  --border-subtle: #3a4759;
+  --recent-book-bg: #293444;
+  --text: #eaecf0;
+  --text-muted: #9aa1ab;
 }
-:root:not([data-theme="dark"])[data-shell-contrast="high"][data-shell-color="indigo"] {
-  --shell-bg: #a3c4eb;
-  --shell-border: #5289c5;
-  --shell-text: #08111c;
-  --shell-text-muted: #2d4564;
+:root:not([data-theme="dark"])[data-shell-contrast="high"] .recent-items,
+:root[data-theme="light"][data-shell-contrast="high"] .recent-items {
+  background: #141a22;
 }
-:root:not([data-theme="dark"])[data-shell-contrast="high"][data-shell-color="olive"] {
-  --shell-bg: #cac8a8;
-  --shell-border: #878248;
-  --shell-text: #15160e;
-  --shell-text-muted: #4a4a35;
+:root:not([data-theme="dark"])[data-shell-contrast="high"][data-shell-color="violet"],
+:root[data-theme="light"][data-shell-contrast="high"][data-shell-color="violet"] {
+  --shell-bg: #292036;
+  --shell-border: #4d3a67;
+  --shell-text: #eee8f5;
+  --shell-text-muted: #aa9cbe;
+}
+:root:not([data-theme="dark"])[data-shell-contrast="high"][data-shell-color="indigo"],
+:root[data-theme="light"][data-shell-contrast="high"][data-shell-color="indigo"] {
+  --shell-bg: #1b2d46;
+  --shell-border: #315380;
+  --shell-text: #e8f1fc;
+  --shell-text-muted: #97b5da;
+}
+:root:not([data-theme="dark"])[data-shell-contrast="high"][data-shell-color="olive"],
+:root[data-theme="light"][data-shell-contrast="high"][data-shell-color="olive"] {
+  --shell-bg: #272a1e;
+  --shell-border: #4a4f35;
+  --shell-text: #eeefea;
+  --shell-text-muted: #a6ad8f;
 }
 
 /* High Contrast Structural Outlines */
