@@ -43,6 +43,9 @@
   z-index: 1000;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
+.search-results[hidden] {
+  display: none !important;
+}
 .search-result-item {
   display: block;
   padding: 8px 12px;

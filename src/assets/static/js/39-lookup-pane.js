@@ -53,13 +53,24 @@
   // Search results come from Pagefind's hydrated result data.
   function searchEntryHtml(data, hereUrl) {
     const isHere = hereUrl && data.url === hereUrl;
+    const isVisited = T.isVisited ? T.isVisited(data.url) : false;
+    const bgHtml = data.meta?.image
+      ? `<div class="book-index-bg"><img src="${data.meta.image}" alt="" loading="lazy" onerror="this.parentElement.remove()" /></div>`
+      : '';
+    const hasBody = Boolean(data.filters?.section || data.meta?.aliases || data.excerpt);
     return `
       <li class="book-index-item">
-        <a href="${data.url}" class="book-index-link${isHere ? ' is-here' : ''}"${isHere ? ' aria-current="page"' : ''}>
-          <span class="book-index-title">${data.meta?.title || data.url}</span>
-          ${data.filters?.section ? `<span class="book-index-meta">${data.filters.section}</span>` : ''}
-          ${data.meta?.aliases ? `<span class="search-result-aliases"><span class="alias-label">${t('search.aliases', '別名:')}</span> ${data.meta.aliases}</span>` : ''}
-          ${data.excerpt ? `<span class="search-result-excerpt">${data.excerpt}</span>` : ''}
+        <a href="${data.url}" class="book-index-link${isHere ? ' is-here' : ''}${isVisited ? ' is-visited' : ''}"${isHere ? ' aria-current="page"' : ''}>
+          ${bgHtml}
+          <div class="book-index-header">
+            <span class="book-index-title">${data.meta?.title || data.url}</span>
+          </div>
+          ${hasBody ? `
+          <div class="book-index-body">
+            ${data.filters?.section ? `<span class="book-index-meta">${data.filters.section}</span>` : ''}
+            ${data.meta?.aliases ? `<span class="search-result-aliases"><span class="alias-label">${t('search.aliases', '別名:')}</span> ${data.meta.aliases}</span>` : ''}
+            ${data.excerpt ? `<span class="search-result-excerpt">${data.excerpt}</span>` : ''}
+          </div>` : ''}
         </a>
       </li>
     `;
@@ -77,10 +88,58 @@
 
     const hereUrl = window.tmtPageUrl || null;
     const panelEl = document.getElementById('pane-panel-lookup');
-    const activeTags = new Set();
+    const paneScroll = panelEl?.closest('.pane-scroll') || document.querySelector('#pane-nav .pane-scroll');
+
+    // Restore state from sessionStorage if available
+    let savedState = null;
+    try {
+      savedState = JSON.parse(T.session?.get('wiki-lookup-state') || 'null');
+    } catch {}
+
+    const activeTags = new Set(Array.isArray(savedState?.tags) ? savedState.tags : []);
     let searchToken = 0;
-    let searchPage = 0;
+    let searchPage = typeof savedState?.page === 'number' ? savedState.page : 0;
     let searchResultRefs = null;
+    let pendingScrollTop = typeof savedState?.scrollTop === 'number' ? savedState.scrollTop : null;
+
+    if (savedState?.query) {
+      input.value = savedState.query;
+    }
+
+    function saveLookupState() {
+      if (!T.session) return;
+      const q = input.value.trim();
+      const tags = [...activeTags];
+      const sTop = paneScroll ? paneScroll.scrollTop : 0;
+      const state = {
+        query: q,
+        tags,
+        page: searchPage,
+        scrollTop: sTop,
+      };
+      T.session.set('wiki-lookup-state', JSON.stringify(state));
+    }
+
+    // Capture scroll position before navigating or during scroll
+    if (paneScroll) {
+      const onScrollThrottled = T.rafThrottle
+        ? T.rafThrottle(() => {
+            if (panelEl && !panelEl.hidden) {
+              saveLookupState();
+            }
+          })
+        : () => {
+            if (panelEl && !panelEl.hidden) saveLookupState();
+          };
+      paneScroll.addEventListener('scroll', onScrollThrottled, { passive: true });
+    }
+
+    // Save on result link click
+    results.addEventListener('click', (e) => {
+      if (e.target.closest('a')) {
+        saveLookupState();
+      }
+    });
 
     async function renderSearchPage(query) {
       const myToken = ++searchToken;
@@ -105,7 +164,7 @@
       }
 
       const totalPages = Math.ceil(searchResultRefs.length / SEARCH_PAGE_SIZE);
-      searchPage = Math.min(searchPage, totalPages - 1);
+      searchPage = Math.min(Math.max(0, searchPage), Math.max(0, totalPages - 1));
       const pageRefs = searchResultRefs.slice(
         searchPage * SEARCH_PAGE_SIZE,
         (searchPage + 1) * SEARCH_PAGE_SIZE
@@ -129,20 +188,48 @@
       results.querySelectorAll('.lookup-page-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
           searchPage += Number(btn.dataset.dir);
+          saveLookupState();
           renderSearchPage(query);
         });
       });
+
+      // Restore scroll position once results are rendered into the DOM
+      if (pendingScrollTop !== null && paneScroll) {
+        const top = pendingScrollTop;
+        pendingScrollTop = null;
+        requestAnimationFrame(() => {
+          paneScroll.scrollTop = top;
+        });
+      }
     }
 
-    function render() {
-      searchPage = 0;
+    function render(resetPage = true) {
+      if (resetPage) {
+        searchPage = 0;
+      }
+      saveLookupState();
       renderSearchPage(input.value.trim());
     }
 
     let inputDebounceTimer = null;
     input.addEventListener('input', () => {
       clearTimeout(inputDebounceTimer);
-      inputDebounceTimer = setTimeout(render, 150);
+      inputDebounceTimer = setTimeout(() => render(true), 150);
+    });
+
+    input.addEventListener('search', () => {
+      if (!input.value) {
+        clearTimeout(inputDebounceTimer);
+        render(true);
+      }
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && input.value) {
+        e.preventDefault();
+        input.value = '';
+        render(true);
+      }
     });
 
     // The manifest fetch, the tag chips it fills in, and the first Pagefind
@@ -155,7 +242,10 @@
         if (sections.length > 0) {
           tagsBox.hidden = false;
           tagsBox.innerHTML = sections
-            .map((s) => `<button type="button" class="lookup-tag-chip" data-tag="${s.name}">${s.name}</button>`)
+            .map((s) => {
+              const isActive = activeTags.has(s.name);
+              return `<button type="button" class="lookup-tag-chip${isActive ? ' is-active' : ''}" data-tag="${s.name}">${s.name}</button>`;
+            })
             .join('');
           tagsBox.addEventListener('click', (e) => {
             const chip = e.target.closest('.lookup-tag-chip');
@@ -168,10 +258,10 @@
               activeTags.add(tag);
               chip.classList.add('is-active');
             }
-            render();
+            render(true);
           });
         }
-        render();
+        render(false);
       });
     });
   }

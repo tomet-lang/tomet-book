@@ -19,6 +19,29 @@ html[data-view="classic"] .classic-view {
   box-sizing: border-box;
 }
 
+/* ==================== PAGE LOAD PROGRESS BAR ==================== */
+#page-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  background: var(--link);
+  z-index: 10000;
+  opacity: 0;
+  pointer-events: none;
+}
+#page-progress-bar.is-loading {
+  width: 80%;
+  opacity: 1;
+  transition: width 2.5s cubic-bezier(0.1, 0.5, 0.2, 1), opacity 0.12s ease;
+}
+#page-progress-bar.is-done {
+  width: 100%;
+  opacity: 1;
+  transition: width 0.18s ease, opacity 0.25s ease 0.18s;
+}
+
 /* ==================== PAGE TRANSITIONS (CROSS-DOCUMENT MPA) ==================== */
 @view-transition {
   navigation: auto;
@@ -63,8 +86,12 @@ html[data-view="classic"] .classic-view {
    navigation between a very short and a very long article with this rule
    toggled on and off, frame by frame; identical either way. */
 ::view-transition-group(root),
-::view-transition-group(article-content) {
+::view-transition-group(article-content),
+::view-transition-group(floating-controls) {
   animation: none;
+}
+::view-transition-group(floating-controls) {
+  z-index: 9000;
 }
 
 html[data-view="book"] .pane-article-container {
@@ -87,7 +114,8 @@ html[data-view="classic"] .classic-view {
   position: fixed;
   top: 10px;
   right: 14px;
-  z-index: 900;
+  z-index: 9000;
+  view-transition-name: floating-controls;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -224,11 +252,11 @@ html[data-view="classic"] .classic-view {
   cursor: pointer;
 }
 .pane-header-collapsible:hover {
-  background: var(--surface);
-  color: var(--text);
+  background: var(--shell-border);
+  color: var(--shell-text);
 }
 .pane-header-collapsible:hover .pane-collapse-arrow {
-  color: var(--link);
+  color: var(--shell-text);
 }
 .pane-collapse-arrow {
   font-size: 0.7rem;
@@ -269,7 +297,7 @@ html[data-view="classic"] .classic-view {
   display: flex;
   flex-direction: column;
   align-items: center;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--shell-border);
   box-sizing: border-box;
 }
 
@@ -293,7 +321,7 @@ html[data-view="classic"] .classic-view {
   background: transparent;
   border: none;
   border-radius: 0;
-  color: var(--text-muted);
+  color: var(--shell-text-muted);
   text-decoration: none !important;
   cursor: pointer;
   box-sizing: border-box;
@@ -301,26 +329,26 @@ html[data-view="classic"] .classic-view {
 }
 
 .rail-tab:hover {
-  background: var(--surface-subtle);
-  color: var(--link);
+  background: var(--shell-border);
+  color: var(--shell-text);
 }
 
 .rail-tab-title {
-  color: var(--text);
+  color: var(--shell-text);
   font-weight: 700;
 }
 .rail-tab-title:hover {
-  color: var(--link) !important;
+  color: var(--shell-text) !important;
 }
 
 .rail-tab-toc,
 .rail-tab-nav {
-  color: var(--text-muted);
+  color: var(--shell-text-muted);
 }
 .rail-tab-toc.is-active,
 .rail-tab-nav.is-active {
-  background: var(--surface-subtle);
-  color: var(--link);
+  background: var(--shell-border);
+  color: var(--shell-text);
   font-weight: 600;
   border-left: 2px solid var(--link);
 }
@@ -356,7 +384,7 @@ html[data-view="classic"] .classic-view {
   display: flex;
   flex-direction: column;
   align-items: center;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--shell-border);
   box-sizing: border-box;
 }
 
@@ -365,23 +393,15 @@ html[data-view="classic"] .classic-view {
   width: 100%;
   border: none;
   background: transparent;
-  color: var(--text-muted);
+  color: var(--shell-text-muted);
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   transition: background 0.15s ease, color 0.15s ease;
 }
 .rail-tab-theme:hover {
-  background: var(--surface-subtle);
-  color: var(--link);
-}
-.rail-tab-theme svg {
-  display: inline-block;
-  transition: transform 0.2s ease;
-}
-.rail-tab-theme:hover svg {
-  transform: scale(1.15);
+  background: var(--shell-border);
+  color: var(--shell-text);
 }
 
 .rail-tab-palette {

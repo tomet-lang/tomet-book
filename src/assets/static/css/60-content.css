@@ -93,6 +93,13 @@
   font-size: 1.5rem;
   vertical-align: middle;
 }
+.title-inline-icon .tm-doc-icon-img {
+  width: 1.2em;
+  height: 1.2em;
+  vertical-align: -0.2em;
+  object-fit: contain;
+  display: inline-block;
+}
 
 
 /* Classic View Infobox (Float right on desktop, full width on mobile) */
@@ -366,6 +373,13 @@ article rt {
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+.tm-doc-icon-img {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
+  object-fit: contain;
+  display: inline-block;
 }
 .tm-doc-icon-block {
   display: flex;

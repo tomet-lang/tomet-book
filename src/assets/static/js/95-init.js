@@ -14,6 +14,7 @@
   const initImageLightbox = (...a) => T.initImageLightbox(...a);
   const setupCostumeSwitchers = (...a) => T.setupCostumeSwitchers(...a);
   const setupEditDropdown = (...a) => T.setupEditDropdown(...a);
+  const setupClientRouter = (...a) => T.setupClientRouter?.(...a);
   const t = (key, fallback) => T.t(key, fallback);
 
   // ==================== INITIALIZE ====================
@@ -32,6 +33,7 @@
     initImageLightbox();
     setupCostumeSwitchers();
     setupEditDropdown();
+    setupClientRouter();
   }
 
   Object.assign(T, { initPage });

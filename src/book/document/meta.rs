@@ -40,6 +40,7 @@ pub struct MetaProperties {
     pub linked_slugs: Vec<String>,
     pub primary_color: Option<String>,
     pub icon: Option<String>,
+    pub icon_image_url: Option<String>,
     pub banner_url: Option<String>,
     pub banner_y: Option<f64>,
     pub images: Vec<String>,
@@ -250,6 +251,65 @@ fn extract_media_target(val: &Value) -> Option<String> {
     }
 }
 
+/// Helper to test if a string represents an image target (by file extension or scheme).
+fn is_image_target(s: &str) -> bool {
+    let s_clean = s.split('?').next().unwrap_or(s).split('#').next().unwrap_or(s);
+    let ext = Path::new(s_clean)
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_ascii_lowercase());
+    matches!(
+        ext.as_deref(),
+        Some("png" | "jpg" | "jpeg" | "gif" | "webp" | "svg" | "avif" | "ico")
+    )
+}
+
+/// Extracts page icon and optional image URL for optimization.
+///
+/// Supports:
+/// - `@embed("avatar.png")` / `@link(...)` elements -> `<img ...>`
+/// - Image file paths or URLs (`"avatar.png"`, `"https://..."`) -> `<img ...>`
+/// - Plain string / emoji (`"🎂"`, `"cat"`) -> raw string
+/// - `@doc.icon(...)` falls through to None here and is handled by `icon::meta_icon_element`.
+fn extract_icon(cx: &MetaCtx, map: &Map<String, Value>) -> (Option<String>, Option<String>) {
+    let Some(val) = map.get("icon") else {
+        return (None, None);
+    };
+
+    match val {
+        Value::String(s) => {
+            if is_image_target(s) || s.starts_with("http://") || s.starts_with("https://") {
+                let resolved = cx.media_path(s);
+                let html = format!(
+                    r#"<img class="tm-doc-icon-img" src="{}" alt="icon" loading="lazy">"#,
+                    super::html::escape_html(&resolved)
+                );
+                (Some(html), Some(resolved))
+            } else {
+                (Some(s.clone()), None)
+            }
+        }
+        Value::Object(obj) => {
+            let el_name = obj.get("element").and_then(|v| v.as_str());
+            if el_name == Some("embed") || el_name == Some("link") || el_name == Some("ref") {
+                if let Some(target) = extract_media_target(val) {
+                    let resolved = cx.media_path(&target);
+                    let html = format!(
+                        r#"<img class="tm-doc-icon-img" src="{}" alt="icon" loading="lazy">"#,
+                        super::html::escape_html(&resolved)
+                    );
+                    (Some(html), Some(resolved))
+                } else {
+                    (None, None)
+                }
+            } else {
+                (None, None)
+            }
+        }
+        _ => (None, None),
+    }
+}
+
 /// Read the page's chrome out of `@meta`.
 ///
 /// `kind` is the document's element kind, used as an infobox row when the
@@ -287,10 +347,13 @@ pub fn extract(
         }
     }
 
+    let (icon_html, icon_image_url) = extract_icon(&cx, map);
+
     MetaProperties {
         linked_slugs,
         primary_color: primary_color(map),
-        icon: map.get("icon").and_then(|v| v.as_str()).map(str::to_string),
+        icon: icon_html,
+        icon_image_url,
         banner_url: map
             .get("banner")
             .and_then(extract_media_target)
@@ -706,5 +769,37 @@ mod tests {
         let author_row = props.infobox_rows.iter().find(|r| r.label == "author").unwrap();
         assert!(author_row.value.contains(r#"href="/wiki/30-39 Knowledge/rust""#));
         assert!(author_row.value.contains("Rust Lang"));
+    }
+
+    #[test]
+    fn icon_as_embed_or_link_or_image_path_resolves() {
+        let props_embed = extract_from(
+            r#"{"icon": {"element": "embed", "args": {"target": "avatar.png"}}}"#,
+            None,
+        );
+        assert_eq!(
+            props_embed.icon.as_deref(),
+            Some(r#"<img class="tm-doc-icon-img" src="/vault/avatar.png" alt="icon" loading="lazy">"#)
+        );
+        assert_eq!(props_embed.icon_image_url.as_deref(), Some("/vault/avatar.png"));
+
+        let props_link = extract_from(
+            r#"{"icon": {"element": "link", "args": "avatar.png"}}"#,
+            None,
+        );
+        assert_eq!(
+            props_link.icon.as_deref(),
+            Some(r#"<img class="tm-doc-icon-img" src="/vault/avatar.png" alt="icon" loading="lazy">"#)
+        );
+
+        let props_str = extract_from(r#"{"icon": "profile.jpg"}"#, None);
+        assert_eq!(
+            props_str.icon.as_deref(),
+            Some(r#"<img class="tm-doc-icon-img" src="/vault/profile.jpg" alt="icon" loading="lazy">"#)
+        );
+
+        let props_emoji = extract_from(r#"{"icon": "🎂"}"#, None);
+        assert_eq!(props_emoji.icon.as_deref(), Some("🎂"));
+        assert_eq!(props_emoji.icon_image_url, None);
     }
 }

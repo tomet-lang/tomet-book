@@ -164,6 +164,12 @@ pub fn optimize_docs_media(
             targets.insert((ImagePreset::Banner, rel, abs));
         }
 
+        if let Some(icon_img) = &doc.icon_image_url
+            && let Some((rel, abs)) = resolve_local_media_path(icon_img, src_dir, asset_prefix)
+        {
+            targets.insert((ImagePreset::Thumb, rel, abs));
+        }
+
         for img in &doc.images {
             if let Some((rel, abs)) = resolve_local_media_path(img, src_dir, asset_prefix) {
                 targets.insert((ImagePreset::Profile, rel, abs));
@@ -201,6 +207,16 @@ pub fn optimize_docs_media(
             doc.banner_url = Some(cached_url.clone());
         }
 
+        if let Some(icon_img) = &doc.icon_image_url
+            && let Some((rel, _)) = resolve_local_media_path(icon_img, src_dir, asset_prefix)
+            && let Some(cached_url) = optimized_map.get(&(ImagePreset::Thumb, rel))
+        {
+            if let Some(icon_html) = &mut doc.icon {
+                *icon_html = icon_html.replace(icon_img, cached_url);
+            }
+            doc.icon_image_url = Some(cached_url.clone());
+        }
+
         for img in &mut doc.images {
             if let Some((rel, _)) = resolve_local_media_path(img, src_dir, asset_prefix)
                 && let Some(cached_url) = optimized_map.get(&(ImagePreset::Profile, rel))
@@ -229,6 +245,21 @@ pub fn optimize_single_doc_media(
             }
             Ok(None) => {}
             Err(e) => tracing::warn!("Failed to optimize banner {}: {e}", abs.display()),
+        }
+    }
+
+    if let Some(icon_img) = &doc.icon_image_url
+        && let Some((rel, abs)) = resolve_local_media_path(icon_img, src_dir, asset_prefix)
+    {
+        match optimize_image(&abs, &rel, ImagePreset::Thumb, out_dir) {
+            Ok(Some(cached_url)) => {
+                if let Some(icon_html) = &mut doc.icon {
+                    *icon_html = icon_html.replace(icon_img, &cached_url);
+                }
+                doc.icon_image_url = Some(cached_url);
+            }
+            Ok(None) => {}
+            Err(e) => tracing::warn!("Failed to optimize icon {}: {e}", abs.display()),
         }
     }
 
@@ -354,6 +385,7 @@ mod tests {
             kind: None,
             primary_color: None,
             icon: None,
+            icon_image_url: None,
             banner_url: Some("/vault/images/banner.png".to_string()),
             banner_original_url: Some("/vault/images/banner.png".to_string()),
             banner_y: None,

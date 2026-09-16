@@ -250,6 +250,26 @@
   justify-content: center;
   gap: 8px;
 }
+.infobox-title .infobox-icon,
+.infobox-title span:first-child:not(:last-child) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.infobox-title .tm-doc-icon-img {
+  width: 1.25em;
+  height: 1.25em;
+  object-fit: contain;
+  display: block;
+  flex-shrink: 0;
+}
+.infobox-title .tm-doc-icon {
+  width: 1.25em;
+  height: 1.25em;
+  vertical-align: middle;
+}
 
 .infobox-table {
   width: 100%;
@@ -460,14 +480,81 @@
   flex-direction: column;
   gap: 3px;
   padding: 13px 14px 22px;
-  color: var(--text);
+  color: var(--text) !important;
   text-decoration: none !important;
   background: var(--surface-subtle);
   border: 1px solid var(--border);
-  border-top: 3px solid var(--link);
-  border-radius: 3px 3px 2px 2px;
+  border-left: 3px solid var(--link);
+  border-radius: 3px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
-  transition: transform 0.15s ease, box-shadow 0.15s ease, color 0.12s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-left-color 0.15s ease;
+  overflow: hidden;
+}
+
+.book-index-link:visited,
+.book-index-link:hover,
+.book-index-link:focus-visible {
+  color: var(--text) !important;
+  text-decoration: none !important;
+}
+
+.book-index-link:visited,
+.book-index-link.is-visited {
+  border-left-color: var(--border) !important;
+}
+
+.book-index-bg {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 33.333%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.book-index-bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: right center;
+  opacity: 0.65;
+  filter: saturate(1.15);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0, 0, 0, 0.2) 20%,
+    rgba(0, 0, 0, 0.7) 60%,
+    rgba(0, 0, 0, 0.98) 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0, 0, 0, 0.2) 20%,
+    rgba(0, 0, 0, 0.7) 60%,
+    rgba(0, 0, 0, 0.98) 100%
+  );
+}
+
+.book-index-link:hover .book-index-bg img,
+.book-index-link:focus-visible .book-index-bg img {
+  opacity: 0.88;
+  transform: scale(1.03);
+}
+
+.book-index-header {
+  position: relative;
+  z-index: 1;
+  padding: 7px 10px 5px 8px;
+  background: linear-gradient(
+    to right,
+    var(--surface) 0%,
+    var(--surface) 50%,
+    color-mix(in srgb, var(--surface) 75%, transparent) 68%,
+    transparent 85%
+  );
 }
 
 .book-index-title {
@@ -478,6 +565,18 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--text) !important;
+  display: block;
+}
+
+.book-index-body {
+  position: relative;
+  z-index: 1;
+  padding: 5px 10px 8px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  box-sizing: border-box;
 }
 
 /* Section label, when an entry carries one -- a second, quieter line under
@@ -491,16 +590,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-/* Several entries side by side only reads as a shelf if the books differ --
-   cycle the spine color across siblings instead of repeating --link. The
-   currently-read page (.is-here) keeps its own tinted styling below. */
-.book-index-item:nth-child(6n+1) > .book-index-link:not(.is-here) { border-top-color: var(--spine-1); }
-.book-index-item:nth-child(6n+2) > .book-index-link:not(.is-here) { border-top-color: var(--spine-2); }
-.book-index-item:nth-child(6n+3) > .book-index-link:not(.is-here) { border-top-color: var(--spine-3); }
-.book-index-item:nth-child(6n+4) > .book-index-link:not(.is-here) { border-top-color: var(--spine-4); }
-.book-index-item:nth-child(6n+5) > .book-index-link:not(.is-here) { border-top-color: var(--spine-5); }
-.book-index-item:nth-child(6n+6) > .book-index-link:not(.is-here) { border-top-color: var(--spine-6); }
 
 /* ==================== CATALOG SHELF (index.html entries) ==================== */
 /* Same band styling as the sidebar's written index, but the catalog lists
@@ -523,7 +612,7 @@
 .book-index-link:hover,
 .book-index-link:focus-visible {
   z-index: 5;
-  color: var(--link);
+  color: var(--text) !important;
   transform: translateY(-6px);
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
 }
@@ -547,6 +636,10 @@
 }
 
 /* ==================== LOOKUP (A-Z / TAG BROWSE + FILTER) ==================== */
+#pane-panel-lookup .pane-tab-inner {
+  padding: 0;
+}
+
 .lookup-controls {
   padding: 10px 10px 8px;
   display: flex;
@@ -570,6 +663,9 @@
 .lookup-filter-input:focus {
   outline: none;
   border-color: var(--link);
+}
+.lookup-filter-input::placeholder {
+  color: var(--text-muted);
 }
 
 .lookup-tags {
@@ -603,6 +699,35 @@
 
 .lookup-results {
   padding: 10px 10px 26px;
+}
+
+.lookup-results .book-index-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lookup-results .book-index-items > .book-index-item + .book-index-item {
+  margin-top: 0;
+}
+
+.lookup-results .book-index-link {
+  padding: 0;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--link);
+}
+
+.lookup-results .book-index-link:visited,
+.lookup-results .book-index-link.is-visited {
+  border-left-color: var(--border-subtle) !important;
+}
+
+.lookup-results .book-index-link:hover,
+.lookup-results .book-index-link:focus-visible {
+  color: var(--text) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.16);
 }
 
 /* A letter/kana heading over each run of the A-Z index -- the shelf-edge

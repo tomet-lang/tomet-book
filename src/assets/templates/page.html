@@ -262,7 +262,7 @@
     <div class="pane-scroll pane-scroll-data">
       <div class="infobox" data-pagefind-body>
         <div class="infobox-title" data-pagefind-ignore {% if primary_color %}style="border-top: 3px solid #{{ primary_color }};"{% endif %}>
-          {% if icon %}<span>{{ icon | safe }}</span>{% endif %}
+          {% if icon %}<span class="infobox-icon">{{ icon | safe }}</span>{% endif %}
           <span>{{ page_title }}</span>
         </div>
         {% if images and images | length > 0 %}
@@ -298,6 +298,13 @@
     </div>
     <div class="pane-scroll pane-scroll-content" id="book-content-scroll">
       <div class="pane-article-container">
+        {% if not images or images | length == 0 %}
+          {% if icon_image_url %}
+        <img src="{{ icon_image_url }}" data-pagefind-meta="image[src]" alt="" hidden />
+          {% elif banner_url %}
+        <img src="{{ banner_url }}" data-pagefind-meta="image[src]" alt="" hidden />
+          {% endif %}
+        {% endif %}
         {% if banner_url or icon or (hero_chips and hero_chips | length > 0) %}
         <div class="book-hero-section">
           {% if banner_url %}
@@ -450,7 +457,7 @@
     {% if primary_color %}style="border-top: 3px solid #{{ primary_color }};"{% endif %}
   >
     <div class="infobox-title">
-      {% if icon %}<span>{{ icon | safe }}</span>{% endif %}
+      {% if icon %}<span class="infobox-icon">{{ icon | safe }}</span>{% endif %}
       <span>{{ page_title }}</span>
     </div>
     {% if images and images | length > 0 %}

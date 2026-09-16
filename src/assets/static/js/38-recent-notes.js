@@ -14,6 +14,56 @@
     return path.replace(/\/index\.html$/i, '').replace(/(.)\/+$/, '$1');
   }
 
+  function markVisited(path) {
+    const p = normalizePath(path);
+    if (!p || p === '/wiki' || p === '/') return;
+    try {
+      const set = new Set(JSON.parse(T.storage.get('wiki-visited-notes') || '[]'));
+      set.add(p);
+      T.storage.set('wiki-visited-notes', JSON.stringify([...set]));
+    } catch {}
+  }
+
+  function isVisited(path) {
+    const p = normalizePath(path);
+    if (!p) return false;
+    try {
+      const list = JSON.parse(T.storage.get('wiki-visited-notes') || '[]');
+      return list.includes(p);
+    } catch {
+      return false;
+    }
+  }
+
+  function syncVisitedClasses() {
+    try {
+      const list = JSON.parse(T.storage.get('wiki-visited-notes') || '[]');
+      if (!list.length) return;
+      const set = new Set(list);
+      document.querySelectorAll('.book-index-link, .search-result-item').forEach((a) => {
+        const href = normalizePath(a.getAttribute('href'));
+        if (href && set.has(href)) {
+          a.classList.add('is-visited');
+        }
+      });
+    } catch {}
+  }
+
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a');
+    const href = a?.getAttribute('href');
+    if (href && (href.startsWith('/wiki/') || href.startsWith('wiki/'))) {
+      markVisited(href);
+      a.classList.add('is-visited');
+    }
+  });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', syncVisitedClasses);
+  } else {
+    syncVisitedClasses();
+  }
+
   /** A note's spine height: mostly a fixed shelf height, nudged by a few
    *  pixels either way so the shelf still reads as a row of individual books
    *  rather than identical tiles -- but never so that a shorter title ends
@@ -38,6 +88,8 @@
     const currentTitle = titleEl?.textContent?.trim() || document.title.replace(/\s*\|.*$/, '');
 
     if (!currentPath || !currentTitle || currentPath === '/wiki' || currentPath === '/') return;
+
+    markVisited(currentPath);
 
     let recents = [];
     try {
@@ -83,5 +135,5 @@
     }
   }
 
-  Object.assign(T, { updateRecentNotes });
+  Object.assign(T, { updateRecentNotes, normalizePath, markVisited, isVisited, syncVisitedClasses });
 })();

@@ -43,6 +43,26 @@
     },
   };
 
+  const session = {
+    get(key) {
+      try {
+        return sessionStorage.getItem(key);
+      } catch {
+        return null;
+      }
+    },
+    set(key, value) {
+      try {
+        sessionStorage.setItem(key, value);
+      } catch {}
+    },
+    remove(key) {
+      try {
+        sessionStorage.removeItem(key);
+      } catch {}
+    },
+  };
+
   /** Heading ID indicated by the current URL hash. Safely handles malformed strings. */
   function readHash() {
     const raw = (window.location.hash || '').slice(1);
@@ -212,6 +232,7 @@
   Object.assign(T, {
     rafThrottle,
     storage,
+    session,
     readHash,
     syncHeadingHash,
     createScrollSpy,

@@ -29,6 +29,7 @@ pub struct ProcessedDoc {
     pub kind: Option<String>,
     pub primary_color: Option<String>,
     pub icon: Option<String>,
+    pub icon_image_url: Option<String>,
     pub banner_url: Option<String>,
     pub banner_original_url: Option<String>,
     pub banner_y: Option<f64>,
@@ -261,7 +262,7 @@ mod kind_tests {
         let out = process_tomet_document(
             r#"@meta{
     banner: @link(ref:+771a262c8eeb5a2459a01a44a2404eaa2999bc54.svg),
-    images: list(@link(ref: "a.png"), @link(ref: "b.png"))
+    images: [@link(ref: "a.png"), @link(ref: "b.png")]
 }
 
 #[ Page ]
@@ -285,6 +286,39 @@ body
             out.images,
             vec!["/vault/a.png", "/vault/b.png"]
         );
+    }
+
+    #[test]
+    fn a_meta_icon_written_as_embed_element_renders_as_img() {
+        let config = BookConfig::default();
+        let vault = tomet_links::VaultLinkIndex::from_paths(&[
+            "page.tmt".to_string(),
+            "avatar.png".to_string(),
+        ]);
+
+        let out = process_tomet_document(
+            r#"@meta{
+    icon: @embed("avatar.png")
+}
+
+#[ Page ]
+
+body
+"#,
+            "page.tmt",
+            None,
+            &config,
+            &vault,
+            None,
+            &HashSet::new(),
+        )
+        .unwrap();
+
+        assert_eq!(
+            out.icon.as_deref(),
+            Some(r#"<img class="tm-doc-icon-img" src="/vault/avatar.png" alt="icon" loading="lazy">"#)
+        );
+        assert_eq!(out.icon_image_url.as_deref(), Some("/vault/avatar.png"));
     }
 
     #[test]
@@ -478,6 +512,7 @@ pub fn process_parsed_document_with_blocks(
     // so this is the one path that can still see it.
     if let Some(icon_html) = icon::meta_icon_element(raw_meta.as_ref()) {
         props.icon = Some(icon_html);
+        props.icon_image_url = None;
     }
 
     // Merge links from @meta into body links, dropping self-references and duplicates.
@@ -504,6 +539,7 @@ pub fn process_parsed_document_with_blocks(
         has_data: props.has_data(),
         primary_color: props.primary_color,
         icon: props.icon,
+        icon_image_url: props.icon_image_url,
         banner_url: props.banner_url,
         banner_original_url,
         banner_y: props.banner_y,

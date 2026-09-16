@@ -214,8 +214,27 @@
   --shell-text-muted: #9aa1ab;
 }
 
+:root[data-theme="light"][data-shell="contrast"] .pane-nav,
+:root[data-theme="light"][data-shell="contrast"] .pane-data,
+:root[data-theme="light"][data-shell="contrast"] .floating-controls {
+  --bg: #141a22;
+  --surface: #222b38;
+  --surface-subtle: #293444;
+  --border: #2e3848;
+  --border-subtle: #3a4759;
+  --recent-book-bg: #293444;
+}
+
+:root[data-theme="light"][data-shell="contrast"] .recent-items {
+  background: #141a22;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
 }
 
 /* Chromium's UA stylesheet gives <button> its own default font (a plain
@@ -400,10 +419,10 @@ html[data-view="classic"] .floating-controls .view-btn-classic {
   padding: 4px 6px;
   border-radius: 0;
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-grid;
+  place-items: center;
   line-height: 1;
+  position: relative;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 .theme-toggle-btn:hover {
@@ -412,16 +431,100 @@ html[data-view="classic"] .floating-controls .view-btn-classic {
   background: var(--surface-subtle);
 }
 
-/* Theme SVG Icon Display Toggle */
-.icon-theme.icon-sun { display: none; }
-.icon-theme.icon-moon { display: inline-block; }
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .icon-theme.icon-sun { display: inline-block; }
-  :root:not([data-theme="light"]) .icon-theme.icon-moon { display: none; }
+/* Theme SVG Icon Display & Hover Animation (matches shell palette button) */
+.theme-toggle-btn .icon-theme {
+  grid-area: 1 / 1;
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  transition: transform 0.22s ease, opacity 0.18s ease;
 }
-:root[data-theme="dark"] .icon-theme.icon-sun { display: inline-block; }
-:root[data-theme="dark"] .icon-theme.icon-moon { display: none; }
-:root[data-theme="light"] .icon-theme.icon-sun { display: none; }
-:root[data-theme="light"] .icon-theme.icon-moon { display: inline-block; }
+
+/* Default / Light theme: Show Sun idle (rotate 0deg), Moon hidden */
+.theme-toggle-btn .icon-sun {
+  opacity: 1;
+  transform: rotate(0deg);
+}
+.theme-toggle-btn .icon-moon {
+  opacity: 0;
+  transform: rotate(-25deg);
+  pointer-events: none;
+}
+/* Light theme on hover: Sun rotates out (-25deg), Moon rotates in (25deg) */
+.theme-toggle-btn:hover .icon-sun {
+  opacity: 0;
+  transform: rotate(-25deg);
+  pointer-events: none;
+}
+.theme-toggle-btn:hover .icon-moon {
+  opacity: 1;
+  transform: rotate(25deg);
+  pointer-events: auto;
+}
+
+/* Dark theme: Show Moon idle (rotate 0deg), Sun hidden */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-toggle-btn .icon-sun {
+    opacity: 0;
+    transform: rotate(-25deg);
+    pointer-events: none;
+  }
+  :root:not([data-theme="light"]) .theme-toggle-btn .icon-moon {
+    opacity: 1;
+    transform: rotate(0deg);
+    pointer-events: auto;
+  }
+  :root:not([data-theme="light"]) .theme-toggle-btn:hover .icon-sun {
+    opacity: 1;
+    transform: rotate(25deg);
+    pointer-events: auto;
+  }
+  :root:not([data-theme="light"]) .theme-toggle-btn:hover .icon-moon {
+    opacity: 0;
+    transform: rotate(-25deg);
+    pointer-events: none;
+  }
+}
+
+:root[data-theme="dark"] .theme-toggle-btn .icon-sun {
+  opacity: 0;
+  transform: rotate(-25deg);
+  pointer-events: none;
+}
+:root[data-theme="dark"] .theme-toggle-btn .icon-moon {
+  opacity: 1;
+  transform: rotate(0deg);
+  pointer-events: auto;
+}
+:root[data-theme="dark"] .theme-toggle-btn:hover .icon-sun {
+  opacity: 1;
+  transform: rotate(25deg);
+  pointer-events: auto;
+}
+:root[data-theme="dark"] .theme-toggle-btn:hover .icon-moon {
+  opacity: 0;
+  transform: rotate(-25deg);
+  pointer-events: none;
+}
+
+:root[data-theme="light"] .theme-toggle-btn .icon-sun {
+  opacity: 1;
+  transform: rotate(0deg);
+  pointer-events: auto;
+}
+:root[data-theme="light"] .theme-toggle-btn .icon-moon {
+  opacity: 0;
+  transform: rotate(-25deg);
+  pointer-events: none;
+}
+:root[data-theme="light"] .theme-toggle-btn:hover .icon-sun {
+  opacity: 0;
+  transform: rotate(-25deg);
+  pointer-events: none;
+}
+:root[data-theme="light"] .theme-toggle-btn:hover .icon-moon {
+  opacity: 1;
+  transform: rotate(25deg);
+  pointer-events: auto;
+}
 

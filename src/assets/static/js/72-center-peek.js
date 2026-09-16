@@ -40,12 +40,20 @@
     // 1. Extract metadata & breadcrumbs
     const title = doc.querySelector('.content-title')?.textContent?.trim() || doc.querySelector('h1')?.textContent?.trim() || '';
     const section = doc.querySelector('.crumb-val')?.textContent?.trim() || doc.querySelector('.breadcrumb-section')?.textContent?.trim() || '';
-    const icon = doc.querySelector('.hero-avatar .avatar-icon, .infobox-title span:first-child')?.textContent?.trim() || '';
+    const iconEl = doc.querySelector('.hero-avatar .avatar-icon, .infobox-title span:first-child');
+    let iconHtml = '';
+    if (iconEl) {
+      if (iconEl.querySelector('svg, img')) {
+        iconHtml = iconEl.innerHTML.trim();
+      } else {
+        iconHtml = iconEl.textContent.trim();
+      }
+    }
 
     // Build header crumbs
     let crumbHtml = '';
-    if (icon) {
-      crumbHtml += `<span class="crumb-icon">${icon}</span>`;
+    if (iconHtml) {
+      crumbHtml += `<span class="crumb-icon">${iconHtml}</span>`;
     }
     if (section) {
       crumbHtml += `<span>${section}</span><span style="opacity:0.4;">/</span>`;

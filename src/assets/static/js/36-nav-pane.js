@@ -71,6 +71,39 @@
       }
       // The pre-paint hint has done its job; the class is authoritative now.
       document.documentElement.removeAttribute('data-nav-collapsed');
+
+      // Restore scroll position for non-lookup panels (e.g. index)
+      if (!isCollapsed && currentPanel !== 'lookup') {
+        const savedScroll = T.session?.get(`wiki-pane-nav-scroll-${currentPanel}`);
+        if (savedScroll) {
+          const paneScroll = pNav.querySelector('.pane-scroll');
+          if (paneScroll) {
+            requestAnimationFrame(() => {
+              paneScroll.scrollTop = parseInt(savedScroll, 10) || 0;
+            });
+          }
+        }
+      }
+
+      // Track scroll position per active panel
+      const paneScroll = pNav.querySelector('.pane-scroll');
+      if (paneScroll && !paneScroll.dataset.scrollBound) {
+        paneScroll.dataset.scrollBound = 'true';
+        const onScrollThrottled = T.rafThrottle
+          ? T.rafThrottle(() => {
+              const active = pNav.dataset.activePanel || 'toc';
+              if (active !== 'lookup') {
+                T.session?.set(`wiki-pane-nav-scroll-${active}`, String(paneScroll.scrollTop));
+              }
+            })
+          : () => {
+              const active = pNav.dataset.activePanel || 'toc';
+              if (active !== 'lookup') {
+                T.session?.set(`wiki-pane-nav-scroll-${active}`, String(paneScroll.scrollTop));
+              }
+            };
+        paneScroll.addEventListener('scroll', onScrollThrottled, { passive: true });
+      }
     }
 
     // Global delegation for rail tabs and collapse buttons
@@ -106,6 +139,17 @@
           e.stopPropagation();
           collapsePane();
           return;
+        }
+
+        // Nav pane links (save scroll position before navigation)
+        const navLink = e.target.closest('#pane-nav a');
+        if (navLink) {
+          const currentPane = document.getElementById('pane-nav');
+          const paneScroll = currentPane?.querySelector('.pane-scroll');
+          const active = currentPane?.dataset.activePanel || 'toc';
+          if (paneScroll && active !== 'lookup') {
+            T.session?.set(`wiki-pane-nav-scroll-${active}`, String(paneScroll.scrollTop));
+          }
         }
       });
 

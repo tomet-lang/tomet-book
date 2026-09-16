@@ -51,10 +51,13 @@
       if (!card) return;
 
       const target = e.target.closest('a');
-      if (!target || !target.closest('article')) return;
+      if (!target) return;
+
+      const validContainer = target.closest('article, #pane-panel-lookup, #wiki-search-results, #pane-recent, .book-backlinks');
+      if (!validContainer) return;
 
       const href = target.getAttribute('href');
-      if (!href || href.startsWith('#') || href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:')) {
+      if (!href || href.startsWith('#') || href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:') || href.startsWith('javascript:')) {
         return;
       }
 
@@ -72,7 +75,7 @@
           const title = doc.querySelector('.content-title')?.textContent?.trim() || doc.querySelector('h1')?.textContent?.trim() || '';
           const section = doc.querySelector('.crumb-val')?.textContent?.trim() || doc.querySelector('.breadcrumb-section')?.textContent?.trim() || '';
           const excerpt = doc.querySelector('article p, article li, article blockquote')?.textContent?.trim() || '';
-          const imgEl = doc.querySelector('.hero-banner-img, .infobox-main-img, article img');
+          const imgEl = doc.querySelector('.hero-banner-img, .infobox-main-img, .hero-avatar img, article img');
           const image = imgEl?.getAttribute('src') || '';
 
           data = { title, section, excerpt, image };
@@ -104,14 +107,21 @@
         const rect = target.getBoundingClientRect();
         const cardWidth = 320;
         let left = rect.left;
-        if (left + cardWidth > window.innerWidth - 16) {
-          left = window.innerWidth - cardWidth - 16;
-        }
-        if (left < 16) left = 16;
-
         let top = rect.bottom + 8;
-        if (top + 140 > window.innerHeight && rect.top > 150) {
-          top = rect.top - 140;
+
+        const isSidebar = target.closest('#pane-panel-lookup, #pane-recent');
+        if (isSidebar && rect.right + cardWidth + 24 <= window.innerWidth) {
+          left = rect.right + 12;
+          top = Math.max(16, Math.min(rect.top, window.innerHeight - 180));
+        } else {
+          if (left + cardWidth > window.innerWidth - 16) {
+            left = window.innerWidth - cardWidth - 16;
+          }
+          if (left < 16) left = 16;
+
+          if (top + 140 > window.innerHeight && rect.top > 150) {
+            top = rect.top - 140;
+          }
         }
 
         card.dataset.href = href;

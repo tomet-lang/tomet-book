@@ -99,6 +99,7 @@ impl<'a> BookRenderer<'a> {
             kind => &doc.kind,
             primary_color => &doc.primary_color,
             icon => &doc.icon,
+            icon_image_url => &doc.icon_image_url,
             banner_url => &doc.banner_url,
             banner_original_url => &doc.banner_original_url,
             banner_y => doc.banner_y,
