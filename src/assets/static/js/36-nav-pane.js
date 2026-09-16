@@ -193,6 +193,51 @@
           collapsePane();
         }
       });
+
+      // Touch swipe gestures for mobile nav drawer (edge swipe right to open, swipe left to close)
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let touchStartTime = 0;
+
+      document.addEventListener(
+        'touchstart',
+        (e) => {
+          if (window.innerWidth > 768 || e.touches.length !== 1) return;
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+          touchStartTime = Date.now();
+        },
+        { passive: true }
+      );
+
+      document.addEventListener(
+        'touchend',
+        (e) => {
+          if (window.innerWidth > 768 || e.changedTouches.length !== 1) return;
+          const deltaX = e.changedTouches[0].clientX - touchStartX;
+          const deltaY = e.changedTouches[0].clientY - touchStartY;
+          const duration = Date.now() - touchStartTime;
+
+          // Require quick horizontal swipe (< 450ms, |deltaX| >= 45px, dominantly horizontal)
+          if (duration > 450 || Math.abs(deltaX) < 45 || Math.abs(deltaX) <= Math.abs(deltaY) * 1.5) {
+            return;
+          }
+
+          const currentPane = document.getElementById('pane-nav');
+          if (!currentPane) return;
+          const isCollapsed = currentPane.classList.contains('is-collapsed');
+
+          // Edge swipe right from rail area (<= 60px) -> open drawer
+          if (deltaX > 0 && touchStartX <= 60 && isCollapsed) {
+            switchPanel(currentPane.dataset.activePanel || 'toc', true);
+          }
+          // Swipe left on open drawer or backdrop -> close drawer
+          else if (deltaX < 0 && !isCollapsed) {
+            collapsePane();
+          }
+        },
+        { passive: true }
+      );
     }
   }
 

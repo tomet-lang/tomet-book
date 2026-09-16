@@ -43,6 +43,33 @@
       window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && !overlay.hidden) closeLightbox();
       });
+
+      // Mobile swipe down to close
+      let touchStartY = 0;
+      let touchStartX = 0;
+      overlay.addEventListener(
+        'touchstart',
+        (e) => {
+          if (e.touches.length === 1) {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+          }
+        },
+        { passive: true }
+      );
+      overlay.addEventListener(
+        'touchend',
+        (e) => {
+          if (e.changedTouches.length === 1) {
+            const deltaY = e.changedTouches[0].clientY - touchStartY;
+            const deltaX = e.changedTouches[0].clientX - touchStartX;
+            if (deltaY > 60 && deltaY > Math.abs(deltaX) * 1.5) {
+              closeLightbox();
+            }
+          }
+        },
+        { passive: true }
+      );
     }
 
     // These, by contrast, are page content: new nodes every time.

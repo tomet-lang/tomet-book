@@ -151,6 +151,13 @@
       });
     }
 
+    resultsContainer.addEventListener('click', (e) => {
+      if (e.target.closest('a')) {
+        resultsContainer.hidden = true;
+        input.blur();
+      }
+    });
+
     document.addEventListener('click', (e) => {
       if (!input.contains(e.target) && !resultsContainer.contains(e.target)) {
         resultsContainer.hidden = true;

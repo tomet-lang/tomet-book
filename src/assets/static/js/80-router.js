@@ -240,6 +240,7 @@
     T.hidePopover?.();
     if (window.innerWidth <= 768) {
       T.collapseNavPane?.();
+      T.collapseDataPane?.();
     }
     const searchResults = document.getElementById('wiki-search-results');
     if (searchResults) searchResults.hidden = true;
