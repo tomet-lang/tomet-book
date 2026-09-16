@@ -144,7 +144,10 @@ impl MetaCtx<'_> {
                     _ => (None, None),
                 };
                 let target = target?;
-                if target.starts_with('/') || target.starts_with("http://") || target.starts_with("https://") {
+                if target.starts_with('/')
+                    || target.starts_with("http://")
+                    || target.starts_with("https://")
+                {
                     let label = alias.map(str::to_string).unwrap_or_else(|| {
                         Path::new(target)
                             .file_stem()
@@ -158,7 +161,9 @@ impl MetaCtx<'_> {
                         raw: target.to_string(),
                     })
                 } else if let Some(unres) = target.strip_prefix("unresolved:") {
-                    let label = alias.map(str::to_string).unwrap_or_else(|| unres.to_string());
+                    let label = alias
+                        .map(str::to_string)
+                        .unwrap_or_else(|| unres.to_string());
                     Some(MetaLinkInfo {
                         href: None,
                         label,
@@ -253,7 +258,13 @@ fn extract_media_target(val: &Value) -> Option<String> {
 
 /// Helper to test if a string represents an image target (by file extension or scheme).
 fn is_image_target(s: &str) -> bool {
-    let s_clean = s.split('?').next().unwrap_or(s).split('#').next().unwrap_or(s);
+    let s_clean = s
+        .split('?')
+        .next()
+        .unwrap_or(s)
+        .split('#')
+        .next()
+        .unwrap_or(s);
     let ext = Path::new(s_clean)
         .extension()
         .and_then(|e| e.to_str())
@@ -516,7 +527,11 @@ fn row_value(cx: &MetaCtx, key: &str, val: &Value) -> Option<String> {
     }
 
     if let Value::Bool(b) = val {
-        return Some(if *b { "Yes".to_string() } else { "No".to_string() });
+        return Some(if *b {
+            "Yes".to_string()
+        } else {
+            "No".to_string()
+        });
     }
 
     let render_info = |info: &MetaLinkInfo| -> String {
@@ -764,10 +779,22 @@ mod tests {
             props.hero_chips[0].href.as_deref(),
             Some("/wiki/30-39 Knowledge/rust")
         );
-        assert!(props.linked_slugs.contains(&"30-39 Knowledge/rust".to_string()));
+        assert!(
+            props
+                .linked_slugs
+                .contains(&"30-39 Knowledge/rust".to_string())
+        );
 
-        let author_row = props.infobox_rows.iter().find(|r| r.label == "author").unwrap();
-        assert!(author_row.value.contains(r#"href="/wiki/30-39 Knowledge/rust""#));
+        let author_row = props
+            .infobox_rows
+            .iter()
+            .find(|r| r.label == "author")
+            .unwrap();
+        assert!(
+            author_row
+                .value
+                .contains(r#"href="/wiki/30-39 Knowledge/rust""#)
+        );
         assert!(author_row.value.contains("Rust Lang"));
     }
 
@@ -779,9 +806,14 @@ mod tests {
         );
         assert_eq!(
             props_embed.icon.as_deref(),
-            Some(r#"<img class="tm-doc-icon-img" src="/vault/avatar.png" alt="icon" loading="lazy">"#)
+            Some(
+                r#"<img class="tm-doc-icon-img" src="/vault/avatar.png" alt="icon" loading="lazy">"#
+            )
         );
-        assert_eq!(props_embed.icon_image_url.as_deref(), Some("/vault/avatar.png"));
+        assert_eq!(
+            props_embed.icon_image_url.as_deref(),
+            Some("/vault/avatar.png")
+        );
 
         let props_link = extract_from(
             r#"{"icon": {"element": "link", "args": "avatar.png"}}"#,
@@ -789,13 +821,17 @@ mod tests {
         );
         assert_eq!(
             props_link.icon.as_deref(),
-            Some(r#"<img class="tm-doc-icon-img" src="/vault/avatar.png" alt="icon" loading="lazy">"#)
+            Some(
+                r#"<img class="tm-doc-icon-img" src="/vault/avatar.png" alt="icon" loading="lazy">"#
+            )
         );
 
         let props_str = extract_from(r#"{"icon": "profile.jpg"}"#, None);
         assert_eq!(
             props_str.icon.as_deref(),
-            Some(r#"<img class="tm-doc-icon-img" src="/vault/profile.jpg" alt="icon" loading="lazy">"#)
+            Some(
+                r#"<img class="tm-doc-icon-img" src="/vault/profile.jpg" alt="icon" loading="lazy">"#
+            )
         );
 
         let props_emoji = extract_from(r#"{"icon": "🎂"}"#, None);

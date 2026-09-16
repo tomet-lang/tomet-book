@@ -229,7 +229,11 @@ a.tm-ref-unresolved:hover {
   color: var(--shell-text-muted);
   background-color: var(--shell-bg);
   background-image: var(--shell-grain);
-  background-blend-mode: soft-light;
+  background-blend-mode: var(--shell-blend-mode, soft-light);
+  background-size: var(--shell-grain-size, auto);
+  background-position: var(--shell-grain-position, 0 0);
+  background-repeat: var(--shell-grain-repeat, repeat);
+  background-attachment: var(--shell-grain-attachment, scroll);
   border: 1px solid var(--shell-border);
   border-radius: 50%;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
@@ -256,7 +260,11 @@ a.tm-ref-unresolved:hover {
   min-width: 135px;
   background-color: var(--shell-bg);
   background-image: var(--shell-grain);
-  background-blend-mode: soft-light;
+  background-blend-mode: var(--shell-blend-mode, soft-light);
+  background-size: var(--shell-grain-size, auto);
+  background-position: var(--shell-grain-position, 0 0);
+  background-repeat: var(--shell-grain-repeat, repeat);
+  background-attachment: var(--shell-grain-attachment, scroll);
   border: 1px solid var(--shell-border);
   box-shadow: 0 6px 22px rgba(0, 0, 0, 0.35),
               inset 0 1px 0 rgba(255, 255, 255, 0.15);

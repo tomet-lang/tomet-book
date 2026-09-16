@@ -33,33 +33,83 @@
   --shell-text-muted: var(--text-muted);
   --bullet-color: #000000;
   --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160' width='160' height='160'%3E%3Cfilter id='p' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.45' numOctaves='3' stitchTiles='stitch' x='0' y='0' width='100%25' height='100%25'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.10'/%3E%3C/svg%3E");
-  --shell-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 360' width='360' height='360'%3E%3Cfilter id='m' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.014' numOctaves='4' seed='50' stitchTiles='stitch' x='0' y='0' width='100%25' height='100%25'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='table' tableValues='0.0 0.0 0.0 0.05 0.5 0.5 0.5 0.95 1.0 1.0 1.0'/%3E%3CfeFuncG type='table' tableValues='0.0 0.0 0.0 0.05 0.5 0.5 0.5 0.95 1.0 1.0 1.0'/%3E%3CfeFuncB type='table' tableValues='0.0 0.0 0.0 0.05 0.5 0.5 0.5 0.95 1.0 1.0 1.0'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E");
+
+  /* Shell background textures per theme (customizable independently) */
+  --shell-grain-slate: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 360' width='360' height='360'%3E%3Cfilter id='shell-slate' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.007 0.014' numOctaves='4' seed='33' stitchTiles='stitch' result='warp'/%3E%3CfeTurbulence type='turbulence' baseFrequency='0.018 0.022' numOctaves='4' seed='88' stitchTiles='stitch' result='veins'/%3E%3CfeDisplacementMap in='veins' in2='warp' scale='80' xChannelSelector='R' yChannelSelector='G' result='disp'/%3E%3CfeColorMatrix in='disp' type='saturate' values='0' result='mono'/%3E%3CfeComponentTransfer in='mono'%3E%3CfeFuncR type='table' tableValues='0.0 0.0 0.0 0.08 0.45 0.55 0.92 1.0 1.0 1.0'/%3E%3CfeFuncG type='table' tableValues='0.0 0.0 0.0 0.08 0.45 0.55 0.92 1.0 1.0 1.0'/%3E%3CfeFuncB type='table' tableValues='0.0 0.0 0.0 0.08 0.45 0.55 0.92 1.0 1.0 1.0'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23shell-slate)'/%3E%3C/svg%3E");
+  --shell-grain-violet: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 360' width='360' height='360'%3E%3Cfilter id='shell-violet' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.014' numOctaves='4' seed='50' stitchTiles='stitch' x='0' y='0' width='100%25' height='100%25'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='table' tableValues='0.0 0.0 0.0 0.05 0.5 0.5 0.5 0.95 1.0 1.0 1.0'/%3E%3CfeFuncG type='table' tableValues='0.0 0.0 0.0 0.05 0.5 0.5 0.5 0.95 1.0 1.0 1.0'/%3E%3CfeFuncB type='table' tableValues='0.0 0.0 0.0 0.05 0.5 0.5 0.5 0.95 1.0 1.0 1.0'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23shell-violet)'/%3E%3C/svg%3E");
+  --shell-grain-indigo-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 40' width='80' height='40'%3E%3Cdefs%3E%3Cfilter id='shell-indigo-l' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.06' numOctaves='2' seed='5' result='turb'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='turb' scale='4' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23shell-indigo-l)' fill='none' stroke='%23121e2c' stroke-width='1.2' opacity='0.35'%3E%3Cpath d='M0,40 A40,40 0 0,1 80,40 M10,40 A30,30 0 0,1 70,40 M20,40 A20,20 0 0,1 60,40 M30,40 A10,10 0 0,1 50,40'/%3E%3Cpath d='M-40,20 A40,40 0 0,1 40,20 M-30,20 A30,30 0 0,1 30,20 M-20,20 A20,20 0 0,1 20,20 M-10,20 A10,10 0 0,1 10,20'/%3E%3Cpath d='M40,20 A40,40 0 0,1 120,20 M50,20 A30,30 0 0,1 110,20 M60,20 A20,20 0 0,1 100,20 M70,20 A10,10 0 0,1 90,20'/%3E%3Cpath d='M0,0 A40,40 0 0,1 80,0 M10,0 A30,30 0 0,1 70,0 M20,0 A20,20 0 0,1 60,0 M30,0 A10,10 0 0,1 50,0'/%3E%3C/g%3E%3C/svg%3E");
+  --shell-grain-indigo-dark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 40' width='80' height='40'%3E%3Cdefs%3E%3Cfilter id='shell-indigo-d' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.06' numOctaves='2' seed='5' result='turb'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='turb' scale='4' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23shell-indigo-d)' fill='none' stroke='%23ffffff' stroke-width='1.2' opacity='0.25'%3E%3Cpath d='M0,40 A40,40 0 0,1 80,40 M10,40 A30,30 0 0,1 70,40 M20,40 A20,20 0 0,1 60,40 M30,40 A10,10 0 0,1 50,40'/%3E%3Cpath d='M-40,20 A40,40 0 0,1 40,20 M-30,20 A30,30 0 0,1 30,20 M-20,20 A20,20 0 0,1 20,20 M-10,20 A10,10 0 0,1 10,20'/%3E%3Cpath d='M40,20 A40,40 0 0,1 120,20 M50,20 A30,30 0 0,1 110,20 M60,20 A20,20 0 0,1 100,20 M70,20 A10,10 0 0,1 90,20'/%3E%3Cpath d='M0,0 A40,40 0 0,1 80,0 M10,0 A30,30 0 0,1 70,0 M20,0 A20,20 0 0,1 60,0 M30,0 A10,10 0 0,1 50,0'/%3E%3C/g%3E%3C/svg%3E");
+  --shell-grain-indigo: var(--shell-grain-indigo-light);
+  --shell-grain-olive-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' width='64' height='64'%3E%3Cdefs%3E%3Cfilter id='shell-olive-l' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.05' numOctaves='2' seed='16' result='grain'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='grain' scale='2.5' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23shell-olive-l)' fill='none' stroke='%2323241b' stroke-width='1' opacity='0.30'%3E%3Crect x='0' y='0' width='64' height='64' stroke-width='0.5' stroke-dasharray='2,2'/%3E%3Cpath d='M32,4 L60,32 L32,60 L4,32 Z'/%3E%3Ccircle cx='32' cy='32' r='8'/%3E%3Cpath d='M32,20 C32,28 28,32 20,32 C28,32 32,36 32,44 C32,36 36,32 44,32 C36,32 32,28 32,20 Z' fill='%2323241b' fill-opacity='0.15'/%3E%3Ccircle cx='32' cy='32' r='2' fill='%2323241b'/%3E%3Ccircle cx='4' cy='32' r='2' fill='%2323241b'/%3E%3Ccircle cx='60' cy='32' r='2' fill='%2323241b'/%3E%3Ccircle cx='32' cy='4' r='2' fill='%2323241b'/%3E%3Ccircle cx='32' cy='60' r='2' fill='%2323241b'/%3E%3C/g%3E%3C/svg%3E");
+  --shell-grain-olive-dark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' width='64' height='64'%3E%3Cdefs%3E%3Cfilter id='shell-olive-d' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.05' numOctaves='2' seed='16' result='grain'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='grain' scale='2.5' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23shell-olive-d)' fill='none' stroke='%23ffffff' stroke-width='1' opacity='0.22'%3E%3Crect x='0' y='0' width='64' height='64' stroke-width='0.5' stroke-dasharray='2,2'/%3E%3Cpath d='M32,4 L60,32 L32,60 L4,32 Z'/%3E%3Ccircle cx='32' cy='32' r='8'/%3E%3Cpath d='M32,20 C32,28 28,32 20,32 C28,32 32,36 32,44 C32,36 36,32 44,32 C36,32 32,28 32,20 Z' fill='%23ffffff' fill-opacity='0.15'/%3E%3Ccircle cx='32' cy='32' r='2' fill='%23ffffff'/%3E%3Ccircle cx='4' cy='32' r='2' fill='%23ffffff'/%3E%3Ccircle cx='60' cy='32' r='2' fill='%23ffffff'/%3E%3Ccircle cx='32' cy='4' r='2' fill='%23ffffff'/%3E%3Ccircle cx='32' cy='60' r='2' fill='%23ffffff'/%3E%3C/g%3E%3C/svg%3E");
+  --shell-grain-olive: var(--shell-grain-olive-light);
+  --shell-grain-contrast: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60' width='60' height='60'%3E%3Cdefs%3E%3Cfilter id='shell-contrast'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.05' numOctaves='2' seed='55' result='n'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='n' scale='2.5' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23shell-contrast)' fill='none' stroke='%23ffffff' opacity='0.22' stroke-width='0.8'%3E%3Cpath d='M0,0 L60,60 M60,0 L0,60 M30,0 L30,60 M0,30 L60,30'/%3E%3Ccircle cx='30' cy='30' r='10'/%3E%3Ccircle cx='30' cy='30' r='4' fill='%23ffffff' fill-opacity='0.15'/%3E%3Ccircle cx='0' cy='0' r='5'/%3E%3Ccircle cx='60' cy='0' r='5'/%3E%3Ccircle cx='0' cy='60' r='5'/%3E%3Ccircle cx='60' cy='60' r='5'/%3E%3C/g%3E%3C/svg%3E");
+
+  /* Active shell texture tokens (default: Slate) */
+  --shell-grain: var(--shell-grain-slate);
+  --shell-blend-mode: soft-light;
+  --shell-grain-size: calc(100vw + 240px) calc(100vh + 240px);
+  --shell-grain-position: -120px -120px;
+  --shell-grain-repeat: no-repeat;
+  --shell-grain-attachment: fixed;
 }
 
 /* Shell Themes (Light Default: Slate) */
+:root[data-shell="slate"] {
+  --shell-grain: var(--shell-grain-slate);
+  --shell-blend-mode: soft-light;
+  --shell-grain-size: calc(100vw + 240px) calc(100vh + 240px);
+  --shell-grain-position: -120px -120px;
+  --shell-grain-repeat: no-repeat;
+  --shell-grain-attachment: fixed;
+}
 :root[data-shell="violet"] {
   --shell-bg: #d8d0e6;
   --shell-border: #ada0c5;
   --shell-text: #1d182b;
   --shell-text-muted: #564c6d;
+  --shell-grain: var(--shell-grain-violet);
+  --shell-blend-mode: soft-light;
+  --shell-grain-size: cover;
+  --shell-grain-position: center;
+  --shell-grain-repeat: no-repeat;
+  --shell-grain-attachment: fixed;
 }
 :root[data-shell="indigo"] {
   --shell-bg: #b9d1ec;
   --shell-border: #86aed8;
   --shell-text: #121e2c;
   --shell-text-muted: #485c75;
+  --shell-grain: var(--shell-grain-indigo-light);
+  --shell-blend-mode: soft-light;
+  --shell-grain-size: auto;
+  --shell-grain-position: 0 0;
+  --shell-grain-repeat: repeat;
+  --shell-grain-attachment: fixed;
 }
 :root[data-shell="olive"] {
   --shell-bg: #dad9c2;
   --shell-border: #afac85;
   --shell-text: #23241b;
   --shell-text-muted: #61634f;
+  --shell-grain: var(--shell-grain-olive-light);
+  --shell-blend-mode: soft-light;
+  --shell-grain-size: auto;
+  --shell-grain-position: 0 0;
+  --shell-grain-repeat: repeat;
+  --shell-grain-attachment: fixed;
 }
 :root[data-shell="contrast"] {
   --shell-bg: #1a222c;
   --shell-border: #2e3848;
   --shell-text: #eaecf0;
   --shell-text-muted: #9aa1ab;
+  --shell-grain: var(--shell-grain-contrast);
+  --shell-blend-mode: soft-light;
+  --shell-grain-size: auto;
+  --shell-grain-position: 0 0;
+  --shell-grain-repeat: repeat;
+  --shell-grain-attachment: fixed;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -99,12 +149,14 @@
     --shell-border: #315380;
     --shell-text: #e8f1fc;
     --shell-text-muted: #97b5da;
+    --shell-grain: var(--shell-grain-indigo-dark);
   }
   :root:not([data-theme="light"])[data-shell="olive"] {
     --shell-bg: #272a1e;
     --shell-border: #4a4f35;
     --shell-text: #eeefea;
     --shell-text-muted: #a6ad8f;
+    --shell-grain: var(--shell-grain-olive-dark);
   }
   :root:not([data-theme="light"])[data-shell="contrast"] {
     --shell-bg: #38465c;
@@ -150,12 +202,14 @@
   --shell-border: #315380;
   --shell-text: #e8f1fc;
   --shell-text-muted: #97b5da;
+  --shell-grain: var(--shell-grain-indigo-dark);
 }
 :root[data-theme="dark"][data-shell="olive"] {
   --shell-bg: #272a1e;
   --shell-border: #4a4f35;
   --shell-text: #eeefea;
   --shell-text-muted: #a6ad8f;
+  --shell-grain: var(--shell-grain-olive-dark);
 }
 :root[data-theme="dark"][data-shell="contrast"] {
   --shell-bg: #38465c;
@@ -200,12 +254,14 @@
   --shell-border: #86aed8;
   --shell-text: #121e2c;
   --shell-text-muted: #485c75;
+  --shell-grain: var(--shell-grain-indigo-light);
 }
 :root[data-theme="light"][data-shell="olive"] {
   --shell-bg: #dad9c2;
   --shell-border: #afac85;
   --shell-text: #23241b;
   --shell-text-muted: #61634f;
+  --shell-grain: var(--shell-grain-olive-light);
 }
 :root[data-theme="light"][data-shell="contrast"] {
   --shell-bg: #1a222c;

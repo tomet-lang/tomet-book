@@ -282,10 +282,7 @@ body
             out.banner_url.as_deref(),
             Some("/vault/+771a262c8eeb5a2459a01a44a2404eaa2999bc54.svg")
         );
-        assert_eq!(
-            out.images,
-            vec!["/vault/a.png", "/vault/b.png"]
-        );
+        assert_eq!(out.images, vec!["/vault/a.png", "/vault/b.png"]);
     }
 
     #[test]
@@ -316,7 +313,9 @@ body
 
         assert_eq!(
             out.icon.as_deref(),
-            Some(r#"<img class="tm-doc-icon-img" src="/vault/avatar.png" alt="icon" loading="lazy">"#)
+            Some(
+                r#"<img class="tm-doc-icon-img" src="/vault/avatar.png" alt="icon" loading="lazy">"#
+            )
         );
         assert_eq!(out.icon_image_url.as_deref(), Some("/vault/avatar.png"));
     }
@@ -357,8 +356,16 @@ body
 
         assert!(out.outgoing.contains(&"30-39 Knowledge/rust".to_string()));
 
-        let author_row = out.infobox_rows.iter().find(|r| r.label == "author").unwrap();
-        assert!(author_row.value.contains(r#"href="/wiki/30-39 Knowledge/rust""#));
+        let author_row = out
+            .infobox_rows
+            .iter()
+            .find(|r| r.label == "author")
+            .unwrap();
+        assert!(
+            author_row
+                .value
+                .contains(r#"href="/wiki/30-39 Knowledge/rust""#)
+        );
     }
 }
 

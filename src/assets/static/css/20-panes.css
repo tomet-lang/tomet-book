@@ -7,8 +7,11 @@
   height: 100%;
   background-color: var(--shell-bg);
   background-image: var(--shell-grain);
-  background-blend-mode: soft-light;
-  background-repeat: repeat;
+  background-blend-mode: var(--shell-blend-mode, soft-light);
+  background-size: var(--shell-grain-size, auto);
+  background-position: var(--shell-grain-position, 0 0);
+  background-repeat: var(--shell-grain-repeat, repeat);
+  background-attachment: var(--shell-grain-attachment, scroll);
   border-right: 1px solid var(--shell-border);
   box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.10);
   color: var(--shell-text);
@@ -46,8 +49,11 @@
 .pane-data > .pane-header {
   background-color: color-mix(in srgb, var(--shell-bg), black 6%);
   background-image: var(--shell-grain);
-  background-blend-mode: soft-light;
-  background-repeat: repeat;
+  background-blend-mode: var(--shell-blend-mode, soft-light);
+  background-size: var(--shell-grain-size, auto);
+  background-position: var(--shell-grain-position, 0 0);
+  background-repeat: var(--shell-grain-repeat, repeat);
+  background-attachment: var(--shell-grain-attachment, scroll);
   border-bottom: 1px solid var(--shell-border);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
   color: var(--shell-text-muted);
@@ -89,8 +95,11 @@
   user-select: none;
   background-color: var(--shell-bg);
   background-image: var(--shell-grain);
-  background-blend-mode: soft-light;
-  background-repeat: repeat;
+  background-blend-mode: var(--shell-blend-mode, soft-light);
+  background-size: var(--shell-grain-size, auto);
+  background-position: var(--shell-grain-position, 0 0);
+  background-repeat: var(--shell-grain-repeat, repeat);
+  background-attachment: var(--shell-grain-attachment, scroll);
   border-right: 1px solid var(--shell-border);
   color: var(--shell-text-muted);
   box-sizing: border-box;
@@ -112,8 +121,11 @@
   height: 100%;
   background-color: var(--shell-bg);
   background-image: var(--shell-grain);
-  background-blend-mode: soft-light;
-  background-repeat: repeat;
+  background-blend-mode: var(--shell-blend-mode, soft-light);
+  background-size: var(--shell-grain-size, auto);
+  background-position: var(--shell-grain-position, 0 0);
+  background-repeat: var(--shell-grain-repeat, repeat);
+  background-attachment: var(--shell-grain-attachment, scroll);
   border-right: 1px solid var(--shell-border);
   box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.10);
   flex-shrink: 0;
@@ -137,7 +149,11 @@
 .pane-data.is-collapsed:hover .pane-collapsed-bar {
   background-color: color-mix(in srgb, var(--shell-bg), black 6%);
   background-image: var(--shell-grain);
-  background-blend-mode: soft-light;
+  background-blend-mode: var(--shell-blend-mode, soft-light);
+  background-size: var(--shell-grain-size, auto);
+  background-position: var(--shell-grain-position, 0 0);
+  background-repeat: var(--shell-grain-repeat, repeat);
+  background-attachment: var(--shell-grain-attachment, scroll);
   color: var(--shell-text);
 }
 [data-data-collapsed] .pane-data .pane-scroll-data,

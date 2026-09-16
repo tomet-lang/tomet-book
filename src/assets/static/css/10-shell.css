@@ -121,8 +121,11 @@ html[data-view="classic"] .classic-view {
   gap: 6px;
   background-color: var(--shell-bg);
   background-image: var(--shell-grain);
-  background-blend-mode: soft-light;
-  background-repeat: repeat;
+  background-blend-mode: var(--shell-blend-mode, soft-light);
+  background-size: var(--shell-grain-size, auto);
+  background-position: var(--shell-grain-position, 0 0);
+  background-repeat: var(--shell-grain-repeat, repeat);
+  background-attachment: var(--shell-grain-attachment, scroll);
   color: var(--shell-text);
   --text: var(--shell-text);
   --text-muted: var(--shell-text-muted);
@@ -276,8 +279,11 @@ html[data-view="classic"] .classic-view {
   height: 100vh;
   background-color: var(--shell-bg);
   background-image: var(--shell-grain);
-  background-blend-mode: soft-light;
-  background-repeat: repeat;
+  background-blend-mode: var(--shell-blend-mode, soft-light);
+  background-size: var(--shell-grain-size, auto);
+  background-position: var(--shell-grain-position, 0 0);
+  background-repeat: var(--shell-grain-repeat, repeat);
+  background-attachment: var(--shell-grain-attachment, scroll);
   border-right: 1px solid var(--shell-border);
   box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.12),
               inset 1px 0 0 rgba(255, 255, 255, 0.08);
@@ -443,7 +449,11 @@ html[data-view="classic"] .classic-view {
   z-index: 1050;
   background-color: var(--shell-bg);
   background-image: var(--shell-grain);
-  background-blend-mode: soft-light;
+  background-blend-mode: var(--shell-blend-mode, soft-light);
+  background-size: var(--shell-grain-size, auto);
+  background-position: var(--shell-grain-position, 0 0);
+  background-repeat: var(--shell-grain-repeat, repeat);
+  background-attachment: var(--shell-grain-attachment, scroll);
   border: 1px solid var(--shell-border);
   box-shadow: 0 6px 22px rgba(0, 0, 0, 0.3),
               inset 0 1px 0 rgba(255, 255, 255, 0.15);
