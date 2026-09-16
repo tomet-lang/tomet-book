@@ -2,6 +2,7 @@
   const T = (window.TMT ??= {});
 
   let isNavigating = false;
+  let currentPath = normalizePath(window.location.href);
 
   function normalizePath(url) {
     if (!url) return '';
@@ -13,7 +14,22 @@
     }
   }
 
-  function swapContent(newDoc, url, cleanUrl, hash, pushState) {
+  function saveCurrentScrollState() {
+    const scrollContainer = document.getElementById('book-content-scroll');
+    const scrollTop = scrollContainer ? scrollContainer.scrollTop : window.scrollY;
+    try {
+      history.replaceState(
+        {
+          ...(history.state || {}),
+          scrollTop,
+          path: window.location.href,
+        },
+        document.title
+      );
+    } catch {}
+  }
+
+  function swapContent(newDoc, url, cleanUrl, hash, pushState, savedScrollTop) {
     // 1. Title & URL
     document.title = newDoc.title;
     const scriptEl = Array.from(newDoc.querySelectorAll('script')).find((s) =>
@@ -31,15 +47,17 @@
     }
 
     if (pushState) {
-      history.pushState(null, newDoc.title, url);
+      history.pushState({ path: url, scrollTop: 0 }, newDoc.title, url);
     }
+
+    currentPath = normalizePath(cleanUrl);
 
     // 2. Mark visited
     T.markVisited?.(cleanUrl);
 
-    // 3. Breadcrumb in TOC panel
-    const currentBreadcrumb = document.querySelector('#pane-panel-toc .nav-breadcrumb');
-    const newBreadcrumb = newDoc.querySelector('#pane-panel-toc .nav-breadcrumb');
+    // 3. Breadcrumbs in TOC panel
+    const currentBreadcrumb = document.querySelector('#pane-panel-toc .nav-breadcrumbs');
+    const newBreadcrumb = newDoc.querySelector('#pane-panel-toc .nav-breadcrumbs');
     if (currentBreadcrumb && newBreadcrumb) {
       currentBreadcrumb.innerHTML = newBreadcrumb.innerHTML;
     }
@@ -125,8 +143,10 @@
       currentClassic.innerHTML = newClassic.innerHTML;
     }
 
-    // 11. Scroll article to top or hash
+    // 11. Scroll article to hash, saved position, or top
     const scrollContainer = document.getElementById('book-content-scroll');
+    const isClassic = document.documentElement.getAttribute('data-view') === 'classic';
+
     if (hash) {
       const target = document.getElementById(hash);
       if (target && scrollContainer) {
@@ -134,26 +154,32 @@
       } else if (scrollContainer) {
         scrollContainer.scrollTop = 0;
       }
-    } else if (scrollContainer) {
-      scrollContainer.scrollTop = 0;
-    }
-
-    if (document.documentElement.getAttribute('data-view') === 'classic') {
-      if (hash) {
-        const target = document.getElementById(hash);
+      if (isClassic) {
         if (target) {
           window.scrollTo({ top: target.offsetTop - 32, behavior: 'auto' });
         } else {
           window.scrollTo(0, 0);
         }
-      } else {
+      }
+    } else if (savedScrollTop !== null && savedScrollTop !== undefined) {
+      if (scrollContainer) {
+        scrollContainer.scrollTop = savedScrollTop;
+      }
+      if (isClassic) {
+        window.scrollTo({ top: savedScrollTop, behavior: 'auto' });
+      }
+    } else {
+      if (scrollContainer) {
+        scrollContainer.scrollTop = 0;
+      }
+      if (isClassic) {
         window.scrollTo(0, 0);
       }
     }
 
     // 12. Rebind interactions
     T.setupBookViewInteraction?.();
-    if (document.documentElement.getAttribute('data-view') === 'classic') {
+    if (isClassic) {
       T.setupClassicViewInteraction?.();
     }
     T.setupCostumeSwitchers?.();
@@ -165,31 +191,44 @@
     T.finishPageProgress?.();
   }
 
-  async function navigateTo(url, pushState = true) {
+  async function navigateTo(url, pushState = true, savedScrollTop = null) {
     if (isNavigating) return;
 
-    const currentNorm = normalizePath(window.location.href);
     const targetNorm = normalizePath(url);
     const hash = url.includes('#') ? url.split('#')[1] : '';
 
-    // Same document section jump
-    if (currentNorm === targetNorm && hash) {
-      const targetEl = document.getElementById(hash);
-      const scrollContainer = document.getElementById('book-content-scroll');
-      if (targetEl) {
+    // Same document jump (heading anchor or top)
+    if (currentPath === targetNorm) {
+      if (hash) {
+        const targetEl = document.getElementById(hash);
+        const scrollContainer = document.getElementById('book-content-scroll');
+        if (targetEl) {
+          if (document.documentElement.getAttribute('data-view') === 'classic') {
+            window.scrollTo({ top: targetEl.offsetTop - 32, behavior: 'smooth' });
+          } else if (scrollContainer) {
+            scrollContainer.scrollTo({
+              top: targetEl.offsetTop - scrollContainer.offsetTop - 16,
+              behavior: 'smooth',
+            });
+          }
+        }
+      } else {
+        const scrollContainer = document.getElementById('book-content-scroll');
         if (document.documentElement.getAttribute('data-view') === 'classic') {
-          window.scrollTo({ top: targetEl.offsetTop - 32, behavior: 'smooth' });
+          window.scrollTo({ top: 0, behavior: 'smooth' });
         } else if (scrollContainer) {
-          scrollContainer.scrollTo({
-            top: targetEl.offsetTop - scrollContainer.offsetTop - 16,
-            behavior: 'smooth',
-          });
+          scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
         }
       }
       if (pushState) {
-        history.pushState(null, '', url);
+        history.pushState({ path: url, scrollTop: 0 }, '', url);
       }
       return;
+    }
+
+    // Save scroll position for the page we are about to leave
+    if (pushState) {
+      saveCurrentScrollState();
     }
 
     isNavigating = true;
@@ -207,7 +246,11 @@
       const newDoc = await T.fetchDocument?.(cleanUrl);
       if (!newDoc) {
         T.finishPageProgress?.();
-        window.location.href = url;
+        if (!pushState) {
+          window.location.reload();
+        } else {
+          window.location.href = url;
+        }
         return;
       }
 
@@ -217,21 +260,29 @@
       // If either page is not a note (e.g. index catalog or different layout), fallback to full navigation
       if (!currentBookView || !newBookView) {
         T.finishPageProgress?.();
-        window.location.href = url;
+        if (!pushState) {
+          window.location.reload();
+        } else {
+          window.location.href = url;
+        }
         return;
       }
 
       if (document.startViewTransition) {
         document.startViewTransition(() => {
-          swapContent(newDoc, url, cleanUrl, hash, pushState);
+          swapContent(newDoc, url, cleanUrl, hash, pushState, savedScrollTop);
         });
       } else {
-        swapContent(newDoc, url, cleanUrl, hash, pushState);
+        swapContent(newDoc, url, cleanUrl, hash, pushState, savedScrollTop);
       }
     } catch (err) {
       console.warn('PJAX navigation failed, falling back:', err);
       T.finishPageProgress?.();
-      window.location.href = url;
+      if (!pushState) {
+        window.location.reload();
+      } else {
+        window.location.href = url;
+      }
     } finally {
       isNavigating = false;
     }
@@ -240,6 +291,20 @@
   function setupClientRouter() {
     if (window.__clientRouterInitialized) return;
     window.__clientRouterInitialized = true;
+
+    currentPath = normalizePath(window.location.href);
+
+    // Seed initial history state with scroll position
+    try {
+      if (!history.state || history.state.scrollTop === undefined) {
+        const scrollContainer = document.getElementById('book-content-scroll');
+        const scrollTop = scrollContainer ? scrollContainer.scrollTop : window.scrollY;
+        history.replaceState(
+          { ...(history.state || {}), path: window.location.href, scrollTop },
+          document.title
+        );
+      }
+    } catch {}
 
     document.addEventListener('click', (e) => {
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
@@ -250,7 +315,7 @@
       const href = a.getAttribute('href');
       if (!href) return;
 
-      // Ignore external, non-wiki, mailto, target="_blank", or hash-only links
+      // Ignore external, mailto, target="_blank", or hash-only links
       if (
         href.startsWith('http://') ||
         href.startsWith('https://') ||
@@ -271,8 +336,9 @@
       navigateTo(href, true);
     });
 
-    window.addEventListener('popstate', () => {
-      navigateTo(window.location.href, false);
+    window.addEventListener('popstate', (e) => {
+      const savedScroll = e.state?.scrollTop;
+      navigateTo(window.location.href, false, savedScroll);
     });
   }
 
