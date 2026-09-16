@@ -93,10 +93,73 @@
   .pane-nav > .pane-header {
     width: 100%;
   }
+  /* Prevent iOS Safari 16px input zoom */
+  #wiki-search-input,
+  .lookup-filter-input,
+  input[type="search"],
+  input[type="text"] {
+    font-size: 16px !important;
+  }
+
+  /* Pane Data on mobile: overlay drawer instead of consuming horizontal flow space */
   .pane-data {
-    width: calc(100vw - 38px);
-    min-width: calc(100vw - 38px);
-    max-width: calc(100vw - 38px);
+    position: absolute !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    right: 0 !important;
+    width: min(calc(100vw - 38px), 340px) !important;
+    min-width: 0 !important;
+    max-width: min(calc(100vw - 38px), 340px) !important;
+    height: 100% !important;
+    z-index: 52 !important;
+    transform: translateX(0);
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.4);
+    transition: transform 0.22s cubic-bezier(0.2, 0, 0, 1), opacity 0.18s ease;
+  }
+  .pane-data.is-collapsed,
+  [data-data-collapsed] .pane-data {
+    transform: translateX(100%) !important;
+    width: min(calc(100vw - 38px), 340px) !important;
+    min-width: 0 !important;
+    max-width: min(calc(100vw - 38px), 340px) !important;
+    flex: 0 0 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  /* Floating right-edge trigger for collapsed data pane on mobile */
+  .pane-data.is-collapsed .pane-collapsed-bar,
+  [data-data-collapsed] .pane-data .pane-collapsed-bar {
+    position: fixed !important;
+    top: 80px !important;
+    right: 0 !important;
+    left: auto !important;
+    width: 32px !important;
+    height: 52px !important;
+    border-radius: 6px 0 0 6px !important;
+    border: 1px solid var(--shell-border) !important;
+    border-right: none !important;
+    box-shadow: -2px 2px 10px rgba(0, 0, 0, 0.25) !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+    z-index: 40 !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .pane-data.is-collapsed .pane-collapsed-bar .collapsed-label,
+  .pane-data.is-collapsed .pane-collapsed-bar .collapsed-arrow,
+  [data-data-collapsed] .pane-data .pane-collapsed-bar .collapsed-label,
+  [data-data-collapsed] .pane-data .pane-collapsed-bar .collapsed-arrow {
+    display: none !important;
+  }
+  .pane-data.is-collapsed .pane-collapsed-bar .collapsed-icon,
+  [data-data-collapsed] .pane-data .pane-collapsed-bar .collapsed-icon {
+    font-size: 1.15rem !important;
   }
   .pane-data > .pane-scroll,
   .pane-data > .pane-header {
@@ -141,16 +204,25 @@
   #wiki-search-input {
     width: 100%;
   }
-  /* Opens upward instead of downward -- downward would run the dropdown
-     off the bottom of the screen from a bar already docked there. */
+  /* Mobile search overlay: full-width sheet anchored above the bottom dock */
   .search-results {
-    top: auto;
-    bottom: calc(100% + 4px);
-    left: 0;
-    right: 0;
-    width: auto;
-    max-width: none;
-    margin-top: 0;
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: calc(var(--mobile-bottom-bar-height) + env(safe-area-inset-bottom, 0px)) !important;
+    top: auto !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    max-height: calc(100dvh - var(--mobile-bottom-bar-height) - env(safe-area-inset-bottom, 0px) - 52px) !important;
+    box-sizing: border-box !important;
+    border-radius: 12px 12px 0 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35) !important;
+    margin-top: 0 !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+    z-index: 9999 !important;
   }
 
   /* In classic view, body scroll needs clearance for the docked controls */
@@ -161,6 +233,20 @@
   .pane-scroll,
   .pane-scroll-content {
     padding-bottom: 16px;
+  }
+
+  /* Sticky tabs: cancel rotateX inversion on touch devices and enable native swipe */
+  .sticky-tabs-bar {
+    transform: none !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-x: contain !important;
+    scrollbar-width: none !important;
+  }
+  .sticky-tabs-bar::-webkit-scrollbar {
+    display: none !important;
+  }
+  .sticky-tabs-bar > .sticky-tabs-list {
+    transform: none !important;
   }
 
   /* Sticky tabs: bigger tap targets. Desktop sizes tabs tightly (down to

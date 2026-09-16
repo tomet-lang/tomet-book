@@ -334,6 +334,10 @@ article table {
   border: 1px solid var(--border);
   background-color: var(--surface);
   width: 100%;
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 article th {
   background-color: var(--surface-subtle);

@@ -861,3 +861,18 @@ html[data-view="classic"] .floating-controls .view-btn-classic {
   pointer-events: auto;
 }
 
+/* Mobile & touch optimizations */
+button,
+a,
+input,
+select,
+textarea,
+[role="button"],
+.rail-tab,
+.sticky-tab-btn,
+.swatch-btn,
+.view-btn {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
