@@ -267,9 +267,16 @@ mod kind_tests {
         )
         .unwrap();
 
-        assert!(!out.body_html.contains("<svg class=\"tm-doc-icon\""), "no svg icons when disabled");
-        assert!(out.body_html.contains("<span class=\"tm-list-marker tm-list-marker-badge\" data-marker=\"x\">x</span>"));
-        assert!(out.body_html.contains("<span class=\"tm-list-marker tm-list-marker-badge\" data-marker=\"12:01\">12:01</span>"));
+        assert!(
+            !out.body_html.contains("<svg class=\"tm-doc-icon\""),
+            "no svg icons when disabled"
+        );
+        assert!(out.body_html.contains(
+            "<span class=\"tm-list-marker tm-list-marker-badge\" data-marker=\"x\">x</span>"
+        ));
+        assert!(out.body_html.contains(
+            "<span class=\"tm-list-marker tm-list-marker-badge\" data-marker=\"12:01\">12:01</span>"
+        ));
     }
 
     #[test]
@@ -289,9 +296,17 @@ mod kind_tests {
         )
         .unwrap();
 
-        assert!(out.body_html.contains("class=\"tm-task-item tm-task-done tm-strikethrough\""));
-        assert!(out.body_html.contains("<use href=\"/icons/lucide.svg#square-check\"></use>"));
-        assert!(out.body_html.contains("<span class=\"tm-list-marker tm-list-marker-badge\" data-marker=\"12:01\">12:01</span>"));
+        assert!(
+            out.body_html
+                .contains("class=\"tm-task-item tm-task-done tm-strikethrough\"")
+        );
+        assert!(
+            out.body_html
+                .contains("<use href=\"/icons/lucide.svg#square-check\"></use>")
+        );
+        assert!(out.body_html.contains(
+            "<span class=\"tm-list-marker tm-list-marker-badge\" data-marker=\"12:01\">12:01</span>"
+        ));
     }
 
     #[test]

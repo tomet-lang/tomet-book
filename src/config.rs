@@ -528,4 +528,3 @@ fire = { icon = "flame", color = "#f97316" }
         assert_eq!(fire.pkg(), "lucide");
     }
 }
-

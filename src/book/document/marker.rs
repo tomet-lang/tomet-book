@@ -2,21 +2,20 @@
 //! into Lucide SVG icons (for checkboxes and task markers) or clean badge pills (for
 //! timestamps, tags, and unmapped text).
 
-use std::sync::LazyLock;
 use regex::Regex;
+use std::sync::LazyLock;
 
-use crate::config::MarkersConfig;
 use super::html::escape_html;
 use super::icon::is_lucide_icon;
+use crate::config::MarkersConfig;
 
 static LI_MARKER_RE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?s)<li([^>]*)>(\s*)<span class="tm-list-marker"([^>]*)>(.*?)</span>"#)
         .expect("valid regex for list item marker")
 });
 
-static DATA_MARKER_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"data-marker="([^"]*)""#).expect("valid regex for data-marker")
-});
+static DATA_MARKER_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"data-marker="([^"]*)""#).expect("valid regex for data-marker"));
 
 enum ResolvedMarker {
     Icon {
@@ -209,7 +208,11 @@ fn resolve_marker(raw_val: &str, content: &str, config: &MarkersConfig) -> Resol
 fn add_class_to_attrs(attrs: &str, new_class: &str) -> String {
     if let Some(pos) = attrs.find("class=\"") {
         let insert_pos = pos + "class=\"".len();
-        format!("{}{new_class} {}", &attrs[..insert_pos], &attrs[insert_pos..])
+        format!(
+            "{}{new_class} {}",
+            &attrs[..insert_pos],
+            &attrs[insert_pos..]
+        )
     } else {
         format!(" class=\"{new_class}\"{attrs}")
     }
@@ -284,8 +287,8 @@ pub fn enhance_list_markers(body_html: &str, config: &MarkersConfig) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::HashMap;
     use crate::config::MarkerEntryConfig;
+    use std::collections::HashMap;
 
     #[test]
     fn disabled_by_default_renders_all_markers_as_badges_without_icons_or_strikethrough() {
@@ -293,11 +296,18 @@ mod tests {
         let html = "<ul>\n<li><span class=\"tm-list-marker\" data-marker=\"x\">[x]</span> task</li>\n<li><span class=\"tm-list-marker\" data-marker=\"12:01\">[12:01]</span> breakfast</li>\n</ul>";
         let out = enhance_list_markers(html, &config);
 
-        assert!(!out.contains("<svg"), "must not contain svg icon when disabled");
+        assert!(
+            !out.contains("<svg"),
+            "must not contain svg icon when disabled"
+        );
         assert!(!out.contains("tm-task-done"), "must not have done class");
         assert!(out.contains("<li class=\"tm-list-item-with-badge\">"));
-        assert!(out.contains("<span class=\"tm-list-marker tm-list-marker-badge\" data-marker=\"x\">x</span>"));
-        assert!(out.contains("<span class=\"tm-list-marker tm-list-marker-badge\" data-marker=\"12:01\">12:01</span>"));
+        assert!(out.contains(
+            "<span class=\"tm-list-marker tm-list-marker-badge\" data-marker=\"x\">x</span>"
+        ));
+        assert!(out.contains(
+            "<span class=\"tm-list-marker tm-list-marker-badge\" data-marker=\"12:01\">12:01</span>"
+        ));
     }
 
     #[test]
@@ -396,7 +406,9 @@ mod tests {
 
         assert!(!out.contains("<svg"));
         assert!(out.contains("<li class=\"tm-list-item-with-badge\">"));
-        assert!(out.contains("<span class=\"tm-list-marker tm-list-marker-badge\" data-marker=\"12:01\">12:01</span>"));
+        assert!(out.contains(
+            "<span class=\"tm-list-marker tm-list-marker-badge\" data-marker=\"12:01\">12:01</span>"
+        ));
     }
 
     #[test]

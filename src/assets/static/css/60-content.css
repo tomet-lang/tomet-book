@@ -305,10 +305,19 @@ article ol > li::marker {
 
 /* ==================== LIST ITEM MARKERS (ICONS & BADGES) ==================== */
 
-/* Remove standard bullet ONLY for task checkbox items (icons replace the bullet) */
-article li.tm-task-item {
+/* Remove standard bullet for task checkbox and badge items (Plan A: markers replace the bullet) */
+article li.tm-task-item,
+article li.tm-list-item-with-badge {
   list-style: none;
   margin-inline-start: -1.25em;
+}
+
+/* Ensure nested lists inside marker/badge items indent cleanly by 1 character step */
+article li.tm-task-item > ul,
+article li.tm-task-item > ol,
+article li.tm-list-item-with-badge > ul,
+article li.tm-list-item-with-badge > ol {
+  padding-inline-start: 2.25em;
 }
 
 /* Icon list marker (checkbox, task icons) */
@@ -317,7 +326,7 @@ article li.tm-task-item {
   align-items: center;
   justify-content: center;
   vertical-align: -0.18em;
-  margin-right: 0.4em;
+  margin-right: 0.35em;
   color: var(--marker-color, currentColor);
   line-height: 1;
 }

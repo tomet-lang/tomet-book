@@ -1,8 +1,8 @@
 //! Code block enhancement: wraps `<pre><code>` blocks with a header bar containing
 //! an optional language label (top-left) and a clipboard copy button (top-right).
 
-use std::sync::LazyLock;
 use regex::Regex;
+use std::sync::LazyLock;
 
 use super::html::escape_html;
 
@@ -73,8 +73,10 @@ enable = true</code></pre>"#;
         assert!(out.contains("class=\"code-copy-btn\""));
         assert!(out.contains("title=\"コードをコピー\""));
         assert!(out.contains("<use href=\"/icons/lucide.svg#copy\"></use>"));
-        assert!(out.contains(r#"<pre><code class="language-toml">[ui.markers]
-enable = true</code></pre>"#));
+        assert!(out.contains(
+            r#"<pre><code class="language-toml">[ui.markers]
+enable = true</code></pre>"#
+        ));
     }
 
     #[test]
