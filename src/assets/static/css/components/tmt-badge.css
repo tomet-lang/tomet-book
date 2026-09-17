@@ -1,11 +1,11 @@
 :host{display:inline-flex;vertical-align:middle;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :host([hidden]){display:none!important}
-.tmt-badge-inner{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:4px;margin:0;padding:0 7px;height:22px;font-family:inherit;font-size:11px;font-weight:500;line-height:1;white-space:nowrap;user-select:none;border-radius:var(--tmt-badge-radius,4px);border:1px solid var(--border-subtle,#c8ccd1);background:var(--surface-subtle,#eaecf0);color:var(--text,#202122);text-decoration:none;transition:background-color .15s ease,border-color .15s ease,color .15s ease}
-:host([size="xs"]) .tmt-badge-inner{height:18px;padding:0 5px;font-size:10px}
-:host([size="sm"]) .tmt-badge-inner{height:22px;padding:0 7px;font-size:11px}
-:host([size="md"]) .tmt-badge-inner{height:26px;padding:0 9px;font-size:12px}
+.tmt-badge-inner{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:var(--tmt-space-1,4px);margin:0;padding:0 var(--tmt-space-2,6px);height:var(--tmt-chip-sm,22px);font-family:inherit;font-size:var(--tmt-text-xs,11px);font-weight:500;line-height:1;white-space:nowrap;user-select:none;border-radius:var(--tmt-badge-radius,var(--tmt-radius,4px));border:1px solid var(--border-subtle,#c8ccd1);background:var(--surface-subtle,#eaecf0);color:var(--text,#202122);text-decoration:none;transition:background-color var(--tmt-transition,.15s ease),border-color var(--tmt-transition,.15s ease),color var(--tmt-transition,.15s ease)}
+:host([size="xs"]) .tmt-badge-inner{height:var(--tmt-chip-xs,18px);padding:0 var(--tmt-space-1,4px);font-size:var(--tmt-text-2xs,10px)}
+:host([size="sm"]) .tmt-badge-inner{height:var(--tmt-chip-sm,22px);padding:0 var(--tmt-space-2,6px);font-size:var(--tmt-text-xs,11px)}
+:host([size="md"]) .tmt-badge-inner{height:var(--tmt-chip-md,26px);padding:0 var(--tmt-space-4,10px);font-size:var(--tmt-text-sm,12px)}
 :host([shape="pill"]) .tmt-badge-inner{border-radius:9999px}
-:host([shape="rect"]) .tmt-badge-inner{border-radius:var(--tmt-badge-radius,4px)}
+:host([shape="rect"]) .tmt-badge-inner{border-radius:var(--tmt-badge-radius,var(--tmt-radius,4px))}
 :host([variant="subtle"]) .tmt-badge-inner,:host(:not([variant])) .tmt-badge-inner{border-color:var(--border-subtle,#c8ccd1);background:var(--surface-subtle,#eaecf0);color:var(--text,#202122)}
 :host([variant="outline"]) .tmt-badge-inner{border-color:var(--border,#a2a9b1);background:transparent;color:var(--text,#202122)}
 :host([variant="solid"]) .tmt-badge-inner{border-color:var(--link,#3366cc);background:var(--link,#3366cc);color:#fff}

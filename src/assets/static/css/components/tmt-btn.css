@@ -1,17 +1,17 @@
 :host{display:inline-flex;vertical-align:middle;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :host([hidden]){display:none!important}
-.tmt-btn-inner{appearance:none;-webkit-appearance:none;box-sizing:border-box;margin:0;padding:0;border:2px solid transparent;border-radius:var(--tmt-btn-radius,4px);background:transparent;color:var(--tmt-btn-color,var(--text,currentColor));font-family:inherit;font-size:13px;font-weight:500;line-height:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;user-select:none;white-space:nowrap;text-decoration:none;width:100%;height:100%;transition:background-color .15s ease,border-color .15s ease,color .15s ease,opacity .15s ease}
-:host([size="xs"]) .tmt-btn-inner{height:22px;padding:0 6px;font-size:11px}
-:host([size="sm"]) .tmt-btn-inner{height:28px;padding:0 8px;font-size:12px}
-:host([size="md"]) .tmt-btn-inner,:host(:not([size])) .tmt-btn-inner{height:34px;padding:0 12px;font-size:13px}
-:host([shape="square"]) .tmt-btn-inner{padding:0;width:34px}
-:host([shape="square"][size="xs"]) .tmt-btn-inner{padding:0;width:22px}
-:host([shape="square"][size="sm"]) .tmt-btn-inner{padding:0;width:28px}
-:host([shape="circle"]) .tmt-btn-inner{padding:0;width:34px;border-radius:50%}
-:host([shape="circle"][size="xs"]) .tmt-btn-inner{padding:0;width:22px;border-radius:50%}
-:host([shape="circle"][size="sm"]) .tmt-btn-inner{padding:0;width:28px;border-radius:50%}
+.tmt-btn-inner{appearance:none;-webkit-appearance:none;box-sizing:border-box;margin:0;padding:0;border:2px solid transparent;border-radius:var(--tmt-btn-radius,var(--tmt-radius,4px));background:transparent;color:var(--tmt-btn-color,var(--text,currentColor));font-family:inherit;font-size:var(--tmt-text-md,13px);font-weight:500;line-height:1;display:inline-flex;align-items:center;justify-content:center;gap:var(--tmt-space-2,6px);cursor:pointer;user-select:none;white-space:nowrap;text-decoration:none;width:100%;height:100%;transition:background-color var(--tmt-transition,.15s ease),border-color var(--tmt-transition,.15s ease),color var(--tmt-transition,.15s ease),opacity var(--tmt-transition,.15s ease)}
+:host([size="xs"]) .tmt-btn-inner{height:var(--tmt-control-xs,22px);padding:0 var(--tmt-space-2,6px);font-size:var(--tmt-text-xs,11px)}
+:host([size="sm"]) .tmt-btn-inner{height:var(--tmt-control-sm,28px);padding:0 var(--tmt-space-3,8px);font-size:var(--tmt-text-sm,12px)}
+:host([size="md"]) .tmt-btn-inner,:host(:not([size])) .tmt-btn-inner{height:var(--tmt-control-md,34px);padding:0 var(--tmt-space-5,12px);font-size:var(--tmt-text-md,13px)}
+:host([shape="square"]) .tmt-btn-inner{padding:0;width:var(--tmt-control-md,34px)}
+:host([shape="square"][size="xs"]) .tmt-btn-inner{padding:0;width:var(--tmt-control-xs,22px)}
+:host([shape="square"][size="sm"]) .tmt-btn-inner{padding:0;width:var(--tmt-control-sm,28px)}
+:host([shape="circle"]) .tmt-btn-inner{padding:0;width:var(--tmt-control-md,34px);border-radius:50%}
+:host([shape="circle"][size="xs"]) .tmt-btn-inner{padding:0;width:var(--tmt-control-xs,22px);border-radius:50%}
+:host([shape="circle"][size="sm"]) .tmt-btn-inner{padding:0;width:var(--tmt-control-sm,28px);border-radius:50%}
 :host([shape="column"]){display:flex;width:100%}
-:host([shape="column"]) .tmt-btn-inner{display:grid;place-items:center;width:100%;height:auto;padding:var(--tmt-btn-column-padding,14px 0);border-radius:0}
+:host([shape="column"]) .tmt-btn-inner{display:grid;place-items:center;width:100%;height:auto;padding:var(--tmt-btn-column-padding,var(--tmt-space-6,14px) 0);border-radius:0}
 :host([variant="outline"]) .tmt-btn-inner,:host(:not([variant])) .tmt-btn-inner{border-color:var(--tmt-btn-border,var(--border-subtle,#c8ccd1));background:var(--tmt-btn-bg,var(--surface,#fff));color:var(--tmt-btn-color,var(--text,#202122))}
 :host([variant="outline"]:not([active]):not(.active):not(.is-active):not([disabled]):not([aria-disabled="true"])) .tmt-btn-inner:hover{border-color:var(--tmt-btn-hover-border,var(--link,#3366cc));background:var(--tmt-btn-hover-bg,var(--surface-subtle,#eaecf0))}
 :host([variant="ghost"]) .tmt-btn-inner{border-color:transparent;background:transparent;color:var(--tmt-btn-color,var(--text-muted,inherit))}

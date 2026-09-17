@@ -32,6 +32,48 @@
   --shell-text: var(--text);
   --shell-text-muted: var(--text-muted);
   --bullet-color: #000000;
+
+  /* ---- tmt-* component scale ----
+     Shared tokens so <tmt-btn>/<tmt-badge>/<tmt-icon>/<tmt-swatch>/
+     <tmt-switch> pull their padding/text/height from one place instead of
+     each inventing its own numbers. The three height families (control/
+     chip/icon) stay separate on purpose: a tap target, a decorative badge,
+     and a bare icon glyph are different things, and collapsing them onto
+     one height would be a regression, not a fix -- only the *step values*
+     within each are meant to line up. */
+  --tmt-space-1: 4px;
+  --tmt-space-2: 6px;
+  --tmt-space-3: 8px;
+  --tmt-space-4: 10px;
+  --tmt-space-5: 12px;
+  --tmt-space-6: 14px;
+
+  --tmt-text-2xs: 10px;
+  --tmt-text-xs: 11px;
+  --tmt-text-sm: 12px;
+  --tmt-text-md: 13px;
+
+  --tmt-radius: 4px;
+  --tmt-transition: 0.15s ease;
+
+  /* Tap-target height (tmt-btn) */
+  --tmt-control-xs: 22px;
+  --tmt-control-sm: 28px;
+  --tmt-control-md: 34px;
+
+  /* Decorative chip height (tmt-badge) -- one size step below tmt-btn at
+     the same xs/sm/md label, since a badge isn't a tap target. */
+  --tmt-chip-xs: 18px;
+  --tmt-chip-sm: 22px;
+  --tmt-chip-md: 26px;
+
+  /* Icon glyph size (tmt-icon) */
+  --tmt-icon-xs: 12px;
+  --tmt-icon-sm: 14px;
+  --tmt-icon-md: 16px;
+  --tmt-icon-lg: 20px;
+  --tmt-icon-xl: 24px;
+
   --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160' width='160' height='160'%3E%3Cfilter id='p' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.45' numOctaves='3' stitchTiles='stitch' x='0' y='0' width='100%25' height='100%25'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='0.10'/%3E%3C/svg%3E");
 
   /* Shell background textures (Plan A: 920x1640 marble slab with 100px bleed margin to eliminate edge displacement artifact) */
