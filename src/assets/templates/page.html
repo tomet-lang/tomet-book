@@ -375,11 +375,11 @@
           {% endif %}
         {% endif %}
         {% if banner_url or icon or (hero_chips and hero_chips | length > 0) %}
-        <div class="book-hero-section">
+        <div class="book-hero-section relative bg-surface border border-border -mt-6 -mx-8 mb-7 overflow-visible z-10">
           {% if banner_url %}
 {{ ui.hero_banner(banner_url, banner_y, page_title, t, banner_original_url) }}
           {% endif %}
-          <div class="hero-content" {% if primary_color %}style="border-bottom-color: #{{ primary_color }};"{% endif %}>
+          <div class="hero-content relative flex items-end gap-4 border-b-2 border-border py-4 px-6" {% if primary_color %}style="border-bottom-color: #{{ primary_color }};"{% endif %}>
             {% if icon %}
             <div class="hero-avatar" data-pagefind-ignore {% if primary_color %}style="border-color: #{{ primary_color }};"{% endif %}>
               <span class="avatar-icon">{{ icon | safe }}</span>

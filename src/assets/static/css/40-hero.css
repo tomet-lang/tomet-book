@@ -1,27 +1,12 @@
-/* ==================== HERO CARD ==================== */
-.book-hero-section {
-  position: relative;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  margin: -24px -32px 28px -32px;
-  overflow: visible;
-  z-index: 10;
-}
-
-.hero-banner-wrapper {
-  position: relative;
-  width: 100%;
-  height: 220px;
-  overflow: hidden;
-  background: var(--surface-subtle);
-}
-
-.hero-banner-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
+/* ==================== HERO CARD ====================
+   book-hero-section / hero-banner-wrapper / hero-banner-img / hero-content
+   are styled with Tailwind utility classes directly in the templates now
+   (tailwind.config.js maps its colors to these same --text/--link/--surface
+   etc. tokens, so theming still works). The class names stay in the markup
+   -- hero-banner-wrapper/-img are queried by 75-lightbox.js and friends,
+   book-hero-section/hero-content are still targeted by 90-responsive.css's
+   mobile override, which must keep winning at its breakpoint -- see
+   BOOK_CSS's ordering comment in assets.rs. */
 
 /* Positioning only -- the skin is <tmt-btn> now (variant="outline" size="xs"
    shape="rect"), see macros.html's hero_banner / dsd_btn_shadow. */
@@ -30,15 +15,6 @@
   top: 8px;
   right: 8px;
   z-index: 2;
-}
-
-.hero-content {
-  position: relative;
-  padding: 16px 24px;
-  display: flex;
-  align-items: flex-end;
-  gap: 18px;
-  border-bottom: 2px solid var(--border);
 }
 
 .hero-avatar {

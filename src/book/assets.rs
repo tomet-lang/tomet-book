@@ -10,7 +10,14 @@ use super::loader::MediaFileInfo;
 use crate::config::BookConfig;
 
 /// The stylesheet, assembled in cascade order. The numeric prefixes are that
-/// order -- moving a file changes which rule wins.
+/// order -- moving a file changes which rule wins. Tailwind's compiled
+/// output (build.rs runs the standalone `tailwindcss` CLI against
+/// tailwind-input.css, scanning the Jinja templates for classes actually
+/// used) is positioned so its utilities win over the always-on hand-authored
+/// rules above, but *before* 90-responsive.css -- that file's media-query
+/// overrides must still win within their own breakpoint, which an
+/// unconditional utility positioned after them would otherwise clobber at
+/// every viewport width, not just the ones the media query targets.
 pub const BOOK_CSS: &str = concat!(
     include_str!("../assets/static/css/00-base.css"),
     include_str!("../assets/static/css/10-shell.css"),
@@ -22,6 +29,7 @@ pub const BOOK_CSS: &str = concat!(
     include_str!("../assets/static/css/60-content.css"),
     include_str!("../assets/static/css/70-widgets.css"),
     include_str!("../assets/static/css/72-center-peek.css"),
+    include_str!(concat!(env!("OUT_DIR"), "/tailwind.css")),
     include_str!("../assets/static/css/90-responsive.css"),
     include_str!("../assets/static/css/98-no-js.css"),
 );

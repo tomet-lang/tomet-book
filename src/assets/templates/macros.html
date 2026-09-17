@@ -46,12 +46,12 @@
 {% endmacro %}
 
 {% macro hero_banner(banner_url, banner_y, page_title, t, banner_original_url=none) %}
-<div class="hero-banner-wrapper">
+<div class="hero-banner-wrapper relative w-full h-[220px] overflow-hidden bg-surface-subtle">
   <img
     src="{{ banner_url }}"
     {% if banner_original_url %}data-original="{{ banner_original_url }}"{% endif %}
     alt="{{ page_title }} {{ t["image.banner_alt"] }}"
-    class="hero-banner-img"
+    class="hero-banner-img w-full h-full object-cover block"
     {% if banner_y %}style="object-position: center {{ banner_y }}%;"{% endif %}
     loading="eager"
     decoding="async"
