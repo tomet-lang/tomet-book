@@ -207,11 +207,11 @@ html[data-view="classic"] .classic-view {
 }
 
 .floating-controls.is-collapsed .collapse-icon-minimize {
-  display: none;
+  display: none !important;
 }
 
 .floating-controls:not(.is-collapsed) .collapse-icon-maximize {
-  display: none;
+  display: none !important;
 }
 
 .floating-controls .view-btn-icon {

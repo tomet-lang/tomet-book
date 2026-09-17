@@ -26,6 +26,8 @@
 
       const use = btn.querySelector('use');
       if (use) use.setAttribute('href', '/icons/lucide.svg#check');
+      const icon = btn.querySelector('tmt-icon');
+      if (icon) icon.setAttribute('name', 'check');
       btn.classList.add('is-copied');
       btn.setAttribute('title', t('code.copied', 'コピーしました'));
       btn.setAttribute('aria-label', t('code.copied', 'コピーしました'));
@@ -33,6 +35,7 @@
       if (btn._resetTimer) clearTimeout(btn._resetTimer);
       btn._resetTimer = setTimeout(() => {
         if (use) use.setAttribute('href', '/icons/lucide.svg#copy');
+        if (icon) icon.setAttribute('name', 'copy');
         btn.classList.remove('is-copied');
         btn.setAttribute('title', t('code.copy', 'コードをコピー'));
         btn.setAttribute('aria-label', t('code.copy', 'コードをコピー'));

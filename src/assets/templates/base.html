@@ -115,34 +115,17 @@
         <div class="view-switcher view-mode-switcher" role="group" aria-label="{{ t["view.switch"] }}">
           <tmt-btn variant="ghost" size="sm" shape="square" class="view-btn view-btn-icon view-btn-book" id="btn-view-book" title="{{ t["view.book_title"] }}" aria-label="{{ t["view.book_title"] }}">
             {{ ui.dsd_btn_shadow(title=t["view.book_title"], aria_label=t["view.book_title"]) }}
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-            </svg>
+            {{ ui.tmt_icon(name="book", size="xs") }}
           </tmt-btn>
           <tmt-btn variant="ghost" size="sm" shape="square" class="view-btn view-btn-icon view-btn-classic" id="btn-view-classic" title="{{ t["view.classic_title"] }}" aria-label="{{ t["view.classic_title"] }}">
             {{ ui.dsd_btn_shadow(title=t["view.classic_title"], aria_label=t["view.classic_title"]) }}
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="16" y1="13" x2="8" y2="13"></line>
-              <line x1="16" y1="17" x2="8" y2="17"></line>
-              <line x1="10" y1="9" x2="8" y2="9"></line>
-            </svg>
+            {{ ui.tmt_icon(name="file-text", size="xs") }}
           </tmt-btn>
         </div>
         <tmt-btn variant="ghost" size="sm" shape="square" class="floating-collapse-btn" id="btn-floating-collapse" title="{{ t["floating.collapse"] }}" aria-label="{{ t["floating.collapse"] }}">
           {{ ui.dsd_btn_shadow(title=t["floating.collapse"], aria_label=t["floating.collapse"]) }}
-          <svg class="collapse-icon-minimize" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <polyline points="4 14 10 14 10 20"></polyline>
-            <polyline points="20 10 14 10 14 4"></polyline>
-          </svg>
-          <svg class="collapse-icon-maximize" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <polyline points="15 3 21 3 21 9"></polyline>
-            <polyline points="9 21 3 21 3 15"></polyline>
-            <line x1="21" y1="3" x2="14" y2="10"></line>
-            <line x1="3" y1="21" x2="10" y2="14"></line>
-          </svg>
+          {{ ui.tmt_icon(name="minimize-2", size="xs", class="collapse-icon-minimize") }}
+          {{ ui.tmt_icon(name="maximize-2", size="xs", class="collapse-icon-maximize") }}
         </tmt-btn>
       </div>
 
