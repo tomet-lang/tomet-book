@@ -25,17 +25,19 @@ mkShell rec {
     twrit
     pagefind
 
-    #[ Rust ]
+    #[ Develop ]
+    tailwindcss
+    just
+    ##[ Rust ]
     rust-toolchain
     cargo-edit
     cargo-nextest
 
-    #[ Misc ]
-    just
+    #[ Runtime ]
     pkg-config
   ];
 
   shellHook = ''
-    echo "📖 tmtbook - Rust dev shell ready"
+    echo "📖 rust tomet"
   '';
 }
