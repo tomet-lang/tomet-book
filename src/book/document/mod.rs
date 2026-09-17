@@ -1,5 +1,6 @@
 //! One source document, turned into everything a page needs.
 
+mod code;
 mod html;
 mod icon;
 mod links;
@@ -527,6 +528,7 @@ pub fn process_parsed_document_with_blocks(
     };
     let (raw_body_html, outline) = tomet_html::render_body_with_outline(&doc, &render_opts);
     let body_html = marker::enhance_list_markers(&raw_body_html, &config.ui.markers);
+    let body_html = code::enhance_code_blocks(&body_html, Some(&config.book.lang));
 
     // 6. Table of contents, title, and the sticky-tab tree
     let (first_h1, mut toc) = toc_from_outline(&outline);

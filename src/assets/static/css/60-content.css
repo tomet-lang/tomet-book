@@ -360,6 +360,80 @@ article li.tm-strikethrough > .tm-list-marker {
 }
 
 article img { max-width: 100%; height: auto; display: block; margin: 16px auto; cursor: zoom-in; }
+
+/* Code blocks: wrapped with header bar containing language and copy button */
+.code-block-wrapper {
+  margin: 16px 0;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px 4px 14px;
+  background: var(--surface-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  min-height: 32px;
+  box-sizing: border-box;
+}
+
+.code-block-header .code-lang {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  user-select: none;
+}
+
+.code-block-header .code-copy-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 6px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.code-block-header .code-copy-btn:hover {
+  color: var(--text);
+  background-color: var(--surface);
+}
+
+.code-block-header .code-copy-btn .tm-doc-icon {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.code-block-header .code-copy-btn.is-copied {
+  color: #16a34a;
+}
+
+[data-theme="dark"] .code-block-header .code-copy-btn.is-copied {
+  color: #4ade80;
+}
+
+article .code-block-wrapper pre,
+.code-block-wrapper pre {
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  padding: 12px 16px;
+  overflow-x: auto;
+}
+
 article pre {
   background: var(--surface);
   border: 1px solid var(--border-subtle);

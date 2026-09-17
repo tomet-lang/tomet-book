@@ -105,6 +105,8 @@ pub fn ui_strings() -> HashMap<String, String> {
         ("edit.copy_path_title", "ファイルパスをコピー"),
         ("toast.copied", "📋 パスをクリップボードにコピーしました"),
         ("toast.copy_failed", "❌ コピーに失敗しました"),
+        ("code.copy", "コードをコピー"),
+        ("code.copied", "コピーしました"),
         // Links that point at a page nobody has written yet
         ("link.unresolved", "未作成のページ"),
     ]

@@ -105,6 +105,8 @@ pub fn ui_strings() -> HashMap<String, String> {
         ("edit.copy_path_title", "Copy file path"),
         ("toast.copied", "📋 Copied path to clipboard"),
         ("toast.copy_failed", "❌ Failed to copy path"),
+        ("code.copy", "Copy code"),
+        ("code.copied", "Copied"),
         // Links that point at a page nobody has written yet
         ("link.unresolved", "Page not yet created"),
     ]

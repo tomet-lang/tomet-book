@@ -49,6 +49,7 @@ pub const BOOK_JS: &str = concat!(
     include_str!("../assets/static/js/80-router.js"),
     include_str!("../assets/static/js/85-classic-view.js"),
     include_str!("../assets/static/js/90-edit-menu.js"),
+    include_str!("../assets/static/js/92-code-copy.js"),
     include_str!("../assets/static/js/95-init.js"),
     include_str!("../assets/static/js/97-live-reload.js"),
     include_str!("../assets/static/js/99-bootstrap.js"),
