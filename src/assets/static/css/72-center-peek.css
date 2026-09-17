@@ -1,16 +1,20 @@
-/* ==================== NOTION-STYLE CENTER PEEK ==================== */
+/* ==================== NOTION-STYLE CENTER PEEK ====================
+   peek-overlay/-dialog/-header/-header-crumbs/-header-actions box models
+   are Tailwind utility classes in the markup now (base.html) -- except
+   properties this file's own @media (max-width: 768px) block further down
+   also sets (peek-overlay/-dialog's width/height/max-*/border/border-radius,
+   peek-scroll-body's padding): those stay here, since an unconditional
+   utility on the same element would win over this file's own mobile
+   override at every width, not just below 768px (Tailwind's output sits
+   after this whole file, same reasoning as BOOK_CSS's ordering comment in
+   assets.rs for 90-responsive.css). Grain background and the appear
+   animation stay together with the properties they're grouped with, for
+   the same "don't split what's easier to read as one block" reasoning as
+   .hero-action-btn's skin in 40-hero.css. */
 .peek-overlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.65);
+  padding: 20px;
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
-  z-index: 95000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  box-sizing: border-box;
 }
 
 .peek-overlay[hidden] {
@@ -18,7 +22,6 @@
 }
 
 .peek-dialog {
-  position: relative;
   width: 900px;
   max-width: 94vw;
   height: 88vh;
@@ -27,11 +30,7 @@
   background-image: var(--paper-grain);
   background-repeat: repeat;
   border: 1px solid var(--border);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
   border-radius: 6px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
   animation: peek-appear 0.15s ease-out;
 }
 
@@ -44,29 +43,6 @@
   }
 }
 
-.peek-header {
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 14px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border-subtle);
-  flex-shrink: 0;
-  user-select: none;
-}
-
-.peek-header-crumbs {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.825rem;
-  color: var(--text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .peek-header-crumbs .crumb-icon {
   font-size: 0.95rem;
   line-height: 1;
@@ -77,21 +53,11 @@
   font-weight: 600;
 }
 
-.peek-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
 /* peek-action-btn's own skin is <tmt-btn> now (variant="ghost" size="sm"
    shape="square") -- see base.html and macros.html's dsd_btn_shadow. */
 
 .peek-scroll-body {
-  flex: 1;
-  overflow-y: auto;
   padding: 32px 48px 48px;
-  box-sizing: border-box;
 }
 
 .peek-loading {
@@ -118,23 +84,6 @@
 .wiki-preview-card:hover {
   border-color: var(--link);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
-}
-
-.preview-footer {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  margin-top: 8px;
-  padding-top: 6px;
-  border-top: 1px solid var(--border-subtle);
-}
-
-.preview-peek-hint {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
 }
 
 .preview-peek-hint svg {

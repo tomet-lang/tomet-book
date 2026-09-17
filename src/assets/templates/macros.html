@@ -113,8 +113,8 @@
   </div>
   {% if images | length > 1 %}
   <div class="infobox-costume-switcher" role="tablist" data-pagefind-ignore>
-    <span class="switcher-label">{{ t["costume.label"] }}</span>
-    <div class="switcher-buttons">
+    <span class="switcher-label text-xs text-text-muted">{{ t["costume.label"] }}</span>
+    <div class="switcher-buttons flex flex-wrap gap-1 justify-center">
       {% for img in images %}
       <tmt-btn
         class="costume-btn{% if loop.first %} active{% endif %}"
@@ -127,8 +127,8 @@
         title="{{ t["costume.item"] }} {{ loop.index }}"
       >
         {{ dsd_btn_shadow(title=t["costume.item"] ~ " " ~ loop.index) }}
-        <img class="costume-thumb" src="{{ img }}" alt="" loading="lazy" />
-        <span class="costume-btn-num">{{ loop.index }}</span>
+        <img class="costume-thumb w-full h-full object-cover rounded-[2px] block" src="{{ img }}" alt="" loading="lazy" />
+        <span class="costume-btn-num hidden">{{ loop.index }}</span>
       </tmt-btn>
       {% endfor %}
     </div>

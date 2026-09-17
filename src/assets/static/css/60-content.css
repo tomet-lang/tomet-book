@@ -1,20 +1,14 @@
-/* ==================== CLASSIC VIEW STYLES ==================== */
-.breadcrumb {
-  font-size: 0.875rem;
-  color: var(--text-muted);
-  margin: 0 0 16px 0;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border-subtle);
-}
+/* ==================== CLASSIC VIEW STYLES ====================
+   .breadcrumb/-section's own box model/color are Tailwind utility classes
+   in the markup now; the plain <a> inside has no class of its own; these
+   descendant rules still apply regardless (they only need the .breadcrumb
+   ancestor class, unaffected either way). */
 .breadcrumb a {
   color: var(--link);
   text-decoration: none;
 }
 .breadcrumb a:hover {
   text-decoration: underline;
-}
-.breadcrumb-section {
-  color: var(--text-muted);
 }
 
 /* hero-section itself and hero-content/hero-avatar/hero-title-area/
@@ -129,7 +123,12 @@
   text-decoration: underline;
 }
 
-/* ==================== ARTICLE MARKUP STYLES ==================== */
+/* ==================== ARTICLE MARKUP STYLES ====================
+   Not converted to Tailwind: everything from here to the end of this file
+   (ARTICLE MARKUP/LINKS/LIST ITEM MARKERS) styles the <article> body --
+   tomet-html's Rust-rendered document content (tm-heading-number, tm-url,
+   etc.), inserted as raw HTML, never present in a scanned template file.
+   Same reasoning as 40-hero.css's file header. */
 article {
   font-size: 0.95rem;
   line-height: 1.7;

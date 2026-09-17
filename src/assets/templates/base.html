@@ -72,7 +72,7 @@
     <div id="page-progress-bar" data-pagefind-ignore></div>
     <div class="container is-fluid">
       <div class="floating-controls" id="floating-controls" data-pagefind-ignore>
-        <div class="floating-drag-handle" id="floating-drag-handle" title="{{ t["drag.handle"] }}" aria-label="{{ t["drag.handle"] }}">
+        <div class="floating-drag-handle flex items-center justify-center w-[14px] h-6 text-text-muted cursor-grab [touch-action:none] rounded-none shrink-0" id="floating-drag-handle" title="{{ t["drag.handle"] }}" aria-label="{{ t["drag.handle"] }}">
           <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" aria-hidden="true">
             <circle cx="2.5" cy="2" r="1.5" />
             <circle cx="7.5" cy="2" r="1.5" />
@@ -82,9 +82,9 @@
             <circle cx="7.5" cy="12" r="1.5" />
           </svg>
         </div>
-        <div class="search-container">
-          <div class="search-input-wrapper">
-            {{ ui.tmt_icon(name="search", size="xs", class="search-input-icon") }}
+        <div class="search-container relative inline-block">
+          <div class="search-input-wrapper flex items-center relative">
+            {{ ui.tmt_icon(name="search", size="xs", class="search-input-icon absolute left-2 text-text-muted pointer-events-none block") }}
             <input
               type="search"
               id="wiki-search-input"
@@ -94,7 +94,7 @@
             />
             <tmt-badge variant="kbd" size="xs" shape="rect" clickable class="search-shortcut-badge" title="Ctrl+K / /" aria-label="Ctrl+K / /">{{ ui.dsd_badge_shadow() }}⌘K</tmt-badge>
           </div>
-          <div id="wiki-search-results" class="search-results" hidden></div>
+          <div id="wiki-search-results" class="search-results absolute top-full left-0 mt-1 w-[440px] max-w-[calc(100vw-32px)] max-h-[420px] overflow-y-auto bg-surface border border-border z-[1000] shadow-[0_4px_12px_rgba(0,0,0,0.12)]" hidden></div>
         </div>
         <div class="view-switcher tabs-side-switcher" role="group" aria-label="{{ t["tabs.side"] }}">
           <tmt-btn variant="ghost" size="sm" shape="square" class="view-btn view-btn-icon" id="btn-tabs-top" title="{{ t["tabs.top_title"] }}" aria-label="{{ t["tabs.top_title"] }}">
@@ -133,17 +133,17 @@
     </div>
 
     <!-- Hover Page Preview -->
-    <div id="wiki-page-preview" class="wiki-preview-card" hidden data-pagefind-ignore>
-      <div class="preview-header">
-        <span class="preview-title"></span>
-        <span class="preview-section"></span>
+    <div id="wiki-page-preview" class="wiki-preview-card fixed w-[320px] max-w-[calc(100vw-32px)] bg-surface border border-border py-3 px-4 shadow-[0_4px_16px_rgba(0,0,0,0.15)] z-[10000] pointer-events-auto box-border" hidden data-pagefind-ignore>
+      <div class="preview-header flex items-baseline justify-between gap-2 mb-1.5 pb-1 border-b border-border-subtle">
+        <span class="preview-title text-[0.95rem] font-bold text-link overflow-hidden text-ellipsis whitespace-nowrap"></span>
+        <span class="preview-section text-xs text-text-muted whitespace-nowrap"></span>
       </div>
-      <div class="preview-content">
-        <div class="preview-body"></div>
-        <img class="preview-thumb" src="" alt="" hidden />
+      <div class="preview-content flex gap-3 items-start">
+        <div class="preview-body flex-1 min-w-0 text-[0.85rem] text-text leading-relaxed max-h-24 line-clamp-4 break-words"></div>
+        <img class="preview-thumb w-16 h-16 object-cover shrink-0 border border-border-subtle bg-surface-subtle block" src="" alt="" hidden />
       </div>
-      <div class="preview-footer">
-        <span class="preview-peek-hint">
+      <div class="preview-footer flex items-center justify-end mt-2 pt-1.5 border-t border-border-subtle">
+        <span class="preview-peek-hint text-[0.7rem] text-text-muted inline-flex items-center gap-1">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
           {{ t["preview.open_peek"] }}
         </span>
@@ -151,11 +151,11 @@
     </div>
 
     <!-- Center Peek Modal (Notion-style page peek) -->
-    <div id="wiki-center-peek" class="peek-overlay" hidden data-pagefind-ignore>
-      <div class="peek-dialog" role="dialog" aria-modal="true">
-        <header class="peek-header">
-          <div class="peek-header-crumbs" id="peek-crumbs"></div>
-          <div class="peek-header-actions">
+    <div id="wiki-center-peek" class="peek-overlay fixed inset-0 bg-[rgba(0,0,0,0.65)] z-[95000] flex items-center justify-center box-border" hidden data-pagefind-ignore>
+      <div class="peek-dialog relative shadow-[0_16px_48px_rgba(0,0,0,0.28)] flex flex-col overflow-hidden" role="dialog" aria-modal="true">
+        <header class="peek-header h-11 flex items-center justify-between px-3.5 bg-surface border-b border-border-subtle shrink-0 select-none">
+          <div class="peek-header-crumbs flex items-center gap-2 text-[0.825rem] text-text-muted overflow-hidden text-ellipsis whitespace-nowrap" id="peek-crumbs"></div>
+          <div class="peek-header-actions flex items-center gap-1.5 shrink-0">
             <tmt-btn variant="ghost" size="sm" shape="square" class="peek-action-btn peek-btn-fullscreen" id="peek-btn-fullscreen" title="{{ t["peek.fullscreen"] }}" aria-label="{{ t["peek.fullscreen"] }}">
               {{ ui.dsd_btn_shadow(title=t["peek.fullscreen"], aria_label=t["peek.fullscreen"]) }}
               <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -171,7 +171,7 @@
             </tmt-btn>
           </div>
         </header>
-        <div class="peek-scroll-body" id="peek-body"></div>
+        <div class="peek-scroll-body flex-1 overflow-y-auto box-border" id="peek-body"></div>
       </div>
     </div>
 
@@ -182,16 +182,16 @@
     </div>
 
     <!-- Image Lightbox Modal -->
-    <div id="wiki-image-lightbox" class="lightbox-overlay" hidden data-pagefind-ignore>
-      <div class="lightbox-dialog">
+    <div id="wiki-image-lightbox" class="lightbox-overlay fixed inset-0 bg-[rgba(0,0,0,0.8)] z-[100000] flex items-center justify-center p-5" hidden data-pagefind-ignore>
+      <div class="lightbox-dialog relative max-w-[92vw] max-h-[92vh] flex flex-col items-center bg-surface border border-border shadow-[0_8px_32px_rgba(0,0,0,0.4)] p-3">
         <tmt-btn variant="outline" size="sm" shape="square" class="lightbox-close" aria-label="{{ t["lightbox.close"] }}">
           {{ ui.dsd_btn_shadow(aria_label=t["lightbox.close"]) }}
           ✕
         </tmt-btn>
-        <div class="lightbox-img-wrapper">
+        <div class="lightbox-img-wrapper max-w-full max-h-[calc(92vh-64px)] flex items-center justify-center overflow-hidden">
           <img id="lightbox-img" src="" alt="" />
         </div>
-        <div class="lightbox-caption" id="lightbox-caption"></div>
+        <div class="lightbox-caption mt-2 text-[0.85rem] text-text-muted text-center max-w-full overflow-hidden text-ellipsis whitespace-nowrap" id="lightbox-caption"></div>
       </div>
     </div>
 

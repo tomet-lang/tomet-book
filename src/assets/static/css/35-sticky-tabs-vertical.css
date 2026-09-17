@@ -7,7 +7,10 @@
    the vertical version features tabs grounded to the left (article side) extending to the right.
    Both keep the flat edge flush against content and the rounded edge facing outward.
    Because the axes swap, corner radius, extension direction, shadows, and peek orientation
-   all rotate 90 degrees. */
+   all rotate 90 degrees.
+
+   Not converted to Tailwind utility classes -- see 30-sticky-tabs.css's
+   file header for why the sticky-tab-btn system stays hand-written. */
 
 /* Arrange to the right of content rather than below header */
 [data-tabs="right"] .pane-content {

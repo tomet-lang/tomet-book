@@ -1,4 +1,12 @@
-/* ==================== STICKY TABS (Horizontal Expanding Accordion) ==================== */
+/* ==================== STICKY TABS (Horizontal Expanding Accordion) ====================
+   Not converted to Tailwind utility classes (this file, 35-sticky-tabs-
+   vertical.css): the sticky-tab-btn tree is an explicitly bespoke widget
+   (drag-scroll, hover popovers, rotateX-flipped scrollbar trick, branch
+   state) that was kept out of the tmt-* atom rollout earlier in this same
+   session for the same reason -- it's one tightly-coupled system, not a
+   set of independent pieces worth picking apart. .pane-content-header's
+   height/padding also can't move without breaking .pane-header's cascade
+   position (10-shell.css) -- see that file's .book-pane comment. */
 .pane-content-header {
   background: #dfe3e8; /* Darker header background to distinctly separate from tabs */
   padding: 0 8px;

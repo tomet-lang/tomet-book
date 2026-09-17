@@ -144,27 +144,18 @@ html[data-view="classic"] .classic-view {
   user-select: none;
 }
 
+/* view-btn/tmt-btn dropped from this selector: .floating-controls already
+   sets --tmt-btn-radius: 0 above, which is the var the shadow stylesheet
+   actually reads -- a plain border-radius set here on a <tmt-btn> host
+   paints nothing (no visible box of its own). .floating-drag-handle is a
+   real <div>, kept. */
 .floating-controls input,
-.floating-controls .view-switcher,
-.floating-controls .view-btn,
-.floating-controls tmt-btn {
+.floating-controls .view-switcher {
   border-radius: 0 !important;
 }
 
-.floating-drag-handle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 14px;
-  height: 24px;
-  color: var(--text-muted);
-  cursor: grab;
-  touch-action: none;
-  border-radius: 0;
-  transition: background 0.15s ease, color 0.15s ease;
-  flex-shrink: 0;
-}
-
+/* Box model is Tailwind utilities in the markup now; hover stays here
+   (2 properties, not worth threading through the markup). */
 .floating-drag-handle:hover {
   color: var(--text);
   background: var(--shell-border);
@@ -175,26 +166,12 @@ html[data-view="classic"] .classic-view {
   cursor: grabbing !important;
 }
 
-.floating-collapse-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  flex-shrink: 0;
-  border-radius: 0;
-  transition: color 0.15s ease, background-color 0.15s ease;
-}
-
-.floating-collapse-btn:hover {
-  color: var(--text);
-  background: var(--shell-border);
-}
+/* .floating-collapse-btn and .view-btn-icon (below) are <tmt-btn
+   variant="ghost" size="sm" shape="square"> now (base.html) -- their own
+   box model/skin lives in tmt-btn.css and the --tmt-btn-* vars above; a
+   dead leftover from that migration (background/color/border/width/height
+   set directly on the host, which doesn't paint) has been removed rather
+   than converted, since there was nothing live to convert. */
 
 .floating-controls.is-collapsed {
   padding: 4px 6px;
@@ -214,43 +191,14 @@ html[data-view="classic"] .classic-view {
   display: none !important;
 }
 
-.floating-controls .view-btn-icon {
-  width: 24px;
-  height: 24px;
-  padding: 0 !important;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
 .floating-controls .view-btn-icon svg {
   pointer-events: none;
 }
 
 /* ==================== BOOK VIEW LAYOUT ==================== */
-.book-shell {
-  display: flex;
-  flex-direction: row;
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
-  background: var(--surface-subtle);
-}
-
-.book-view {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: row;
-  height: 100vh;
-  overflow-x: auto;
-  overflow-y: hidden;
-  background: var(--surface-subtle);
-  scroll-snap-type: x proximity;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
-}
+/* book-shell/book-view's own box model is Tailwind utility classes in the
+   markup now (page.html) -- the pseudo-element scrollbar styling below has
+   no utility equivalent, so it stays. */
 .book-view::-webkit-scrollbar {
   height: 8px;
 }
@@ -265,6 +213,20 @@ html[data-view="classic"] .classic-view {
   background: var(--text-muted);
 }
 
+/* .book-pane and .pane-header below are NOT converted to Tailwind utility
+   classes, on purpose: 20-panes.css's `.pane-nav > .pane-header,
+   .pane-data > .pane-header { ... }` and `.pane-nav`/`.pane-data`
+   themselves override most of these same properties, at equal specificity
+   to a plain utility class (one class selector each) -- today that's
+   resolved by source order (20-panes.css comes after this file). Moving
+   these properties onto utility classes on the *same* 3 markup instances
+   (pane-nav/pane-data/pane-content all share .book-pane/.pane-header) would
+   put them in BOOK_CSS's cascade after 20-panes.css (Tailwind's output is
+   near the end), so the utility would incorrectly win instead. Same story
+   for .pane-content-header (30-sticky-tabs.css) versus .pane-header's own
+   height/padding. Fixing this properly means per-instance utility sets
+   instead of one shared class, which is more churn than the three
+   uncontested properties below are worth. */
 .book-pane {
   display: flex;
   flex-direction: column;
@@ -329,14 +291,11 @@ html[data-view="classic"] .classic-view {
 }
 
 /* ==================== PERMANENT LEFT RAIL ==================== */
+/* Box model is Tailwind utility classes in the markup now; the grain
+   texture/border/shadow and the --text/--text-muted rail-scoping (read by
+   every tmt-btn inside it, see the rail-tab-nav comment further down) stay
+   here. */
 .book-rail-nav {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 38px;
-  min-width: 38px;
-  max-width: 38px;
-  height: 100vh;
   background-color: var(--shell-bg);
   background-image: var(--shell-grain);
   background-blend-mode: var(--shell-blend-mode, soft-light);
@@ -350,31 +309,11 @@ html[data-view="classic"] .classic-view {
   color: var(--shell-text);
   --text: var(--shell-text);
   --text-muted: var(--shell-text-muted);
-  flex-shrink: 0;
-  box-sizing: border-box;
-  padding: 0;
-  z-index: 50;
-  user-select: none;
 }
 
-/* 1. Brand Section (Top: Logo / Home Link) */
-.rail-brand {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  border-bottom: 1px solid var(--shell-border);
-  box-sizing: border-box;
-}
-
-/* 2. Tools Section (Navigation / Action Buttons) */
-.rail-tools {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  box-sizing: border-box;
-}
+/* 1. Brand Section (Top: Logo / Home Link) and
+   2. Tools Section (Navigation / Action Buttons): Tailwind utility classes
+   in the markup now. */
 
 /* Rail Navigation Tabs. rail-tab-nav/-theme/-palette are <tmt-btn
    variant="ghost" shape="column"> now (see page.html) -- their own skin
@@ -396,61 +335,16 @@ html[data-view="classic"] .classic-view {
   --tmt-btn-column-padding: 12px 0;
 }
 
-.rail-tab-title {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  padding: 14px 0;
-  background: transparent;
-  border: none;
-  box-sizing: border-box;
-  color: var(--shell-text);
-  font-weight: 700;
-  text-decoration: none !important;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-}
+/* rail-tab-title/rail-letters(-brand) are Tailwind utility classes in the
+   markup now (page.html) -- rail-tab-title is a real <a> (a navigation
+   link, not a button), so it never went through the tmt-btn migration.
+   rail-letters-toc was dead: no template ever applied it. */
 .rail-tab-title:hover {
   background: var(--shell-border);
-  color: var(--shell-text) !important;
 }
 
-.rail-letters {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  font-size: 0.72rem;
-  line-height: 1.15;
-  letter-spacing: 0.08em;
-}
-
-.rail-letters-brand {
-  font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: 0.08em;
-  text-transform: lowercase;
-}
-
-.rail-letters-toc {
-  font-size: 0.72rem;
-  line-height: 1.25;
-  letter-spacing: 0.12em;
-  font-weight: 500;
-  gap: 2px;
-}
-
-/* 3. Rail Footer (Theme Switcher at the bottom of the Left Rail) */
-.rail-footer {
-  margin-top: auto;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  border-top: 1px solid var(--shell-border);
-  box-sizing: border-box;
-}
+/* 3. Rail Footer (Theme Switcher at the bottom of the Left Rail): Tailwind
+   utility classes in the markup now. */
 
 /* rail-tab-theme/-palette skin is <tmt-btn> now (see the --tmt-btn-* block
    above). tmt-btn's `active` state means "already selected, clicks no-op"
@@ -469,16 +363,11 @@ html[data-view="classic"] .classic-view {
 }
 
 /* ==================== SHELL PALETTE POPOVER ==================== */
-.rail-palette-container {
-  position: relative;
-  width: 100%;
-}
-
+/* rail-palette-container/palette-section/-header/palette-swatches/swatch-dot
+   box models are Tailwind utility classes in the markup now (page.html).
+   shell-palette-popover keeps its grain texture/border/box-shadow here --
+   same reasoning as .hero-action-btn in 40-hero.css. */
 .shell-palette-popover {
-  position: absolute;
-  left: calc(100% + 8px);
-  bottom: 0;
-  z-index: 1050;
   background-color: var(--shell-bg);
   background-image: var(--shell-grain);
   background-blend-mode: var(--shell-blend-mode, soft-light);
@@ -489,55 +378,20 @@ html[data-view="classic"] .classic-view {
   border: 1px solid var(--shell-border);
   box-shadow: 0 6px 22px rgba(0, 0, 0, 0.3),
               inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  padding: 8px;
-  width: 232px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  box-sizing: border-box;
 }
 
+/* Author-level reinforcement -- see edit-dropdown-menu[hidden] in
+   40-hero.css for why this survives even with a plain class rule. */
 .shell-palette-popover[hidden] {
   display: none !important;
 }
 
-.palette-section {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
+/* Adjacent-sibling border: not expressible as a utility class on one
+   element (there's no "unless first-child" Tailwind variant that fits
+   cleanly here without templating the condition), so this one stays. */
 .palette-section + .palette-section {
   border-top: 1px solid var(--border-subtle);
   padding-top: 5px;
-}
-
-.palette-header {
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-  padding: 0 2px 2px;
-}
-
-.palette-swatches {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3px;
-}
-
-/* .color-btn/.pattern-btn's own row skin is <tmt-swatch> now (tmt-swatch.css)
-   -- only the preview content (dot/pattern swatch, genuinely per-instance
-   data, not component skin) stays here. */
-
-.swatch-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  flex-shrink: 0;
-  box-sizing: border-box;
 }
 
 [data-theme="dark"] .swatch-dot {

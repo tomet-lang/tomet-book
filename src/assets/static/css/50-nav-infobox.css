@@ -1,52 +1,35 @@
-/* ==================== BREADCRUMBS & TOC ==================== */
-.nav-breadcrumbs {
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border-subtle);
-  box-shadow: 0 2px 3px -2px rgba(0, 0, 0, 0.12);
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 0.75rem;
-}
-.nav-crumb-home {
-  color: var(--link);
-  font-weight: bold;
-}
-.nav-crumb-section {
-  display: flex;
-  gap: 4px;
-  color: var(--text-muted);
-}
+/* ==================== BREADCRUMBS & TOC ====================
+   nav-breadcrumbs/-crumb-home/-crumb-section, toc-heading, toc-items (split
+   off from .recent-items below -- that one's JS-generated, see
+   38-recent-notes.js, and stays), toc-item, book-toc-link's box model, and
+   pane-graph-box are Tailwind utility classes in the markup now.
+   pane-nav-section and toc-number were dead: neither appears in any
+   template or script.
 
+   pane-toc and pane-placeholder-box stay hand-written even though they also
+   appear in page.html: 80-router.js creates a bare `<div class="pane-toc">`
+   with `document.createElement` + `className` (no utility classes) when a
+   client-side navigation lands on a page whose TOC panel didn't exist yet,
+   and 39-lookup-pane.js's loading/empty states build pane-placeholder-box
+   via `innerHTML` the same bare way -- removing either rule would leave
+   those JS-rendered states unstyled. Appearing in a template is necessary
+   but not sufficient for Tailwind conversion -- it also has to be the
+   *only* place the class is produced. */
 .pane-toc {
   padding: 12px 14px;
 }
-.toc-heading {
+.pane-placeholder-box {
+  padding: 10px 12px;
+  border: 1px dashed var(--border-subtle);
+  background: var(--surface-subtle);
   font-size: 0.75rem;
-  font-weight: bold;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 8px;
+  text-align: center;
 }
-.toc-items, .recent-items {
+.recent-items {
   list-style: none;
   margin: 0;
   padding: 0;
-}
-.toc-item {
-  margin: 4px 0;
-  line-height: 1.35;
-}
-.book-toc-link {
-  display: block;
-  padding: 4px 6px;
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  text-decoration: none !important;
-  border-left: 2px solid transparent;
-  transition: background 0.12s ease, border-left-color 0.12s ease, color 0.12s ease;
 }
 .book-toc-link:hover {
   color: var(--link);
@@ -59,35 +42,6 @@
   background: var(--surface-subtle);
 }
 
-.toc-number {
-  display: inline-block;
-  margin-right: 0.5em;
-  color: var(--text-muted);
-  font-size: 0.85em;
-  font-weight: 500;
-}
-
-.pane-nav-section {
-  padding: 12px 14px;
-  border-top: 1px solid var(--border-subtle);
-  box-shadow: 0 2px 3px -2px rgba(0, 0, 0, 0.12);
-  position: relative;
-}
-.pane-placeholder-box {
-  padding: 10px 12px;
-  border: 1px dashed var(--border-subtle);
-  background: var(--surface-subtle);
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  text-align: center;
-}
-.pane-graph-box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 70px;
-}
 .pane-graph-box .placeholder-icon {
   font-size: 1.1rem;
 }
@@ -240,19 +194,11 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
-.infobox-title {
-  background-color: var(--surface-subtle);
-  padding: 10px 12px;
-  font-size: 1.05rem;
-  font-weight: bold;
-  text-align: center;
-  border-top: 3px solid var(--link);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
+/* .infobox-title/-table/-label/-data(base)/-data-val are Tailwind utility
+   classes in the markup now. Everything nested under .infobox-icon and
+   .infobox-data's .tm-link stays hand-written: both come from icon.rs /
+   tomet-html's Rust-rendered content (inserted via `| safe`), which never
+   appears in a scanned template file -- see 40-hero.css's file header. */
 .infobox-title .infobox-icon,
 .infobox-title span:first-child:not(:last-child) {
   display: inline-flex;
@@ -290,34 +236,6 @@
   vertical-align: middle;
 }
 
-.infobox-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.infobox-label {
-  width: 36%;
-  padding: 7px 10px;
-  font-weight: 600;
-  color: var(--text-muted);
-  background-color: transparent;
-  border-top: 1px solid var(--border-subtle);
-  text-align: left;
-  vertical-align: middle;
-  font-size: 0.78rem;
-  letter-spacing: 0.02em;
-}
-.infobox-data {
-  position: relative;
-  padding: 7px 28px 7px 10px;
-  border-top: 1px solid var(--border-subtle);
-  vertical-align: middle;
-  word-break: break-word;
-  font-size: 0.82rem;
-  color: var(--text);
-}
-.infobox-data-val {
-  display: inline;
-}
 .infobox-data .tm-link {
   display: inline-flex;
   align-items: center;
@@ -457,116 +375,34 @@
   width: 100%;
 }
 
-.switcher-label {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
+/* switcher-label/-buttons/costume-thumb/-btn-num box models are Tailwind
+   utility classes in the markup now. .costume-btn itself needed no
+   replacement at all: it's <tmt-btn variant="outline" size="sm"
+   shape="square"> (macros.html), and this whole rule set -- base box model,
+   :focus, :not(.active):hover, .active -- was dead leftover from before
+   that migration. tmt-btn's own default outline-variant hover/active
+   styling (tmt-btn.css) already reproduces the same border-color swap to
+   var(--link) with zero var overrides needed; none of these properties,
+   set on the host, ever painted anything (same reasoning as
+   .floating-collapse-btn in 10-shell.css). */
 
-.switcher-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  justify-content: center;
-}
-
-.costume-btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border-radius: 4px;
-  border: 2px solid var(--border-subtle);
-  background: var(--surface-subtle);
-  color: var(--text);
-  overflow: hidden;
-  outline: none;
-  box-shadow: none !important;
-  transition: border-color 0.12s ease;
-}
-
-.costume-btn:focus,
-.costume-btn:focus-visible {
-  outline: none;
-  box-shadow: none !important;
-}
-
-.costume-btn:not(.active) {
-  cursor: pointer;
-}
-
-.costume-btn:not(.active):hover {
-  border-color: var(--link);
-}
-
-.costume-btn.active {
-  border-color: var(--link);
-  cursor: default;
-}
-
-.costume-thumb {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 2px;
-  display: block;
-}
-
-.costume-btn-num {
-  display: none;
-}
-
-
-/* ==================== BACKLINKS ==================== */
-.backlink-items {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.backlink-item {
-  margin: 0;
-}
-
-/* Same skeleton as TOC items; there is no reason to style this differently. */
-.backlink-link {
-  display: block;
-  padding: 6px 8px;
-  color: var(--text-muted);
-  text-decoration: none !important;
-  border-left: 2px solid transparent;
-  transition: background 0.12s ease, border-left-color 0.12s ease, color 0.12s ease;
-}
-
+/* ==================== BACKLINKS ====================
+   backlink-items/-item/-link(base)/-title/-section are Tailwind utility
+   classes in the markup now. */
 .backlink-link:hover {
   background: var(--surface-subtle);
   border-left-color: var(--link);
   color: var(--link);
 }
 
-.backlink-title {
-  display: block;
-  font-size: 0.82rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Shows which section this backlink originates from, clearer than title alone. */
-.backlink-section {
-  display: block;
-  margin-top: 1px;
-  font-size: 0.68rem;
-  color: var(--text-muted);
-  opacity: 0.75;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* ==================== BOOK INDEX (WRITTEN TOC) ==================== */
+/* ==================== BOOK INDEX (WRITTEN TOC) ====================
+   Not converted to Tailwind: book-index-items/-item/-link/-title/-meta are
+   also built by 39-lookup-pane.js's search results (`searchEntryHtml`) via
+   plain string templates with only the bare class name attached, no
+   utility classes -- removing these rules would leave every search result
+   unstyled. book-index-bg (search-result thumbnails only) is JS-only
+   outright. This whole section is the same "also in a template isn't
+   sufficient" case as pane-toc/pane-placeholder-box above. */
 /* Top-level entries render as a stack of obi (帯) -- the printed band a book
    ships wrapped in, not the cover itself. A flat band reads clearly at this
    size and has natural room for a blurb or thumbnail later. Bands overlap
@@ -772,38 +608,15 @@
   padding: 0;
 }
 
-.lookup-controls {
-  padding: 10px 10px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  border-bottom: 1px solid var(--border-subtle);
-  box-shadow: 0 2px 3px -2px rgba(0, 0, 0, 0.12);
-  position: relative;
-}
-
-.lookup-filter-input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 6px 8px;
-  font-size: 0.8rem;
-  color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 0;
-}
+/* lookup-controls/-filter-input(base)/-tags(container) are Tailwind utility
+   classes in the markup now; lookup-tag-chip below is JS-generated
+   (39-lookup-pane.js populates .lookup-tags with them) and stays. */
 .lookup-filter-input:focus {
   outline: none;
   border-color: var(--link);
 }
 .lookup-filter-input::placeholder {
   color: var(--text-muted);
-}
-
-.lookup-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
 }
 
 .lookup-tag-chip {
@@ -829,10 +642,11 @@
   font-weight: 600;
 }
 
-.lookup-results {
-  padding: 10px 10px 26px;
-}
-
+/* .lookup-results's own padding is a Tailwind utility class in the markup
+   now (only the container div is static; JS fills it, see
+   39-lookup-pane.js). Everything below stays hand-written: it's scoped
+   overrides of .book-index-* / lookup-group-heading, which are JS-owned
+   the same way as the CATALOG SHELF section above. */
 .lookup-results .book-index-items {
   display: flex;
   flex-direction: column;

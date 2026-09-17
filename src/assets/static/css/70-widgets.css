@@ -1,43 +1,9 @@
-/* ==================== SEARCH BOX ==================== */
-.search-container {
-  position: relative;
-  display: inline-block;
-}
-.search-input-wrapper {
-  display: flex;
-  align-items: center;
-  position: relative;
-}
-
-.search-input-icon {
-  position: absolute;
-  left: 8px;
-  color: var(--text-muted);
-  pointer-events: none;
-  display: block;
-}
-
-kbd.search-shortcut-badge {
-  position: absolute;
-  right: 6px;
-  font-family: inherit;
-  font-size: 0.65rem;
-  font-weight: 500;
-  padding: 1px 5px;
-  background: var(--shell-border);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: var(--text-muted);
-  line-height: 1.2;
-  cursor: pointer;
-  user-select: none;
-  transition: color 0.15s ease, border-color 0.15s ease;
-}
-
-kbd.search-shortcut-badge:hover {
-  color: var(--link);
-  border-color: var(--link);
-}
-
+/* ==================== SEARCH BOX ====================
+   search-container/-input-wrapper/-input-icon and search-results' box model
+   are Tailwind utility classes in the markup now (base.html). The dead
+   `kbd.search-shortcut-badge` rule (leftover from before that badge became
+   <tmt-badge>, same story as .floating-collapse-btn in 10-shell.css) is
+   just gone -- no `<kbd>` with this class exists anymore. */
 tmt-badge.search-shortcut-badge {
   position: absolute;
   right: 5px;
@@ -67,20 +33,6 @@ tmt-badge.search-shortcut-badge {
 }
 #wiki-search-input::placeholder {
   color: var(--text-muted);
-}
-.search-results {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  margin-top: 4px;
-  width: 440px;
-  max-width: calc(100vw - 32px);
-  max-height: 420px;
-  overflow-y: auto;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 .search-results[hidden] {
   display: none !important;
@@ -161,128 +113,27 @@ tmt-badge.search-shortcut-badge {
   font-size: 0.85rem;
 }
 
-/* ==================== PAGE PREVIEW ==================== */
-.wiki-preview-card {
-  position: fixed;
-  width: 320px;
-  max-width: calc(100vw - 32px);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 12px 16px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  z-index: 10000;
-  pointer-events: auto;
-  box-sizing: border-box;
-}
-.preview-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 6px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid var(--border-subtle);
-}
-.preview-title {
-  font-size: 0.95rem;
-  font-weight: bold;
-  color: var(--link);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.preview-section {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-.preview-content {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-}
-.preview-body {
-  flex: 1;
-  min-width: 0;
-  font-size: 0.85rem;
-  color: var(--text);
-  line-height: 1.5;
-  max-height: 96px;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  word-break: break-word;
-}
-.preview-thumb {
-  width: 64px;
-  height: 64px;
-  object-fit: cover;
-  flex-shrink: 0;
-  border: 1px solid var(--border-subtle);
-  background: var(--surface-subtle);
-  display: block;
-}
+/* ==================== PAGE PREVIEW ====================
+   wiki-preview-card/preview-header/-title/-section/-content/-body/-thumb
+   are Tailwind utility classes in the markup now (base.html). preview-footer
+   and preview-peek-hint (72-center-peek.css) are too; that file's
+   .wiki-preview-card{cursor,transition} / :hover rules add properties
+   these utilities don't touch, so there's no overlap to worry about. */
 .preview-thumb[hidden] {
   display: none;
 }
 
 /* ==================== IMAGE LIGHTBOX ==================== */
-.lightbox-overlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.8);
-  z-index: 100000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
+/* lightbox-overlay/-dialog/-img-wrapper/-caption are Tailwind utility
+   classes in the markup now (base.html); lightbox-close was already
+   <tmt-btn> from an earlier pass this session. */
 .lightbox-overlay[hidden] {
   display: none;
-}
-.lightbox-dialog {
-  position: relative;
-  max-width: 92vw;
-  max-height: 92vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  padding: 12px;
-}
-/* Positioning only -- the skin is <tmt-btn> now (variant="outline" size="sm"
-   shape="square"), see base.html and macros.html's dsd_btn_shadow. */
-.lightbox-close {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 1;
-}
-.lightbox-img-wrapper {
-  max-width: 100%;
-  max-height: calc(92vh - 64px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
 }
 .lightbox-img-wrapper img {
   max-width: 100%;
   max-height: calc(92vh - 64px);
   object-fit: contain;
   display: block;
-}
-.lightbox-caption {
-  margin-top: 8px;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  text-align: center;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
