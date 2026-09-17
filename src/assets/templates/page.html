@@ -406,9 +406,9 @@
         {% else %}
         <header class="article-header" style="margin-bottom: 24px;">
           <div class="title-row" style="display: flex; align-items: baseline; gap: 10px;">
-            <h1 class="content-title" data-pagefind-meta="title" data-pagefind-weight="10">{{ page_title }}</h1>
+            <h1 class="content-title m-0 text-[1.85rem] font-bold leading-tight tracking-[-0.01em] text-text" data-pagefind-meta="title" data-pagefind-weight="10">{{ page_title }}</h1>
             {% if kind %}
-            <span class="kind-tag kind-{{ kind }}" data-pagefind-filter="kind">{{ kind }}</span>
+            <span class="kind-tag kind-{{ kind }} inline-block px-2 py-0.5 text-xs font-medium capitalize whitespace-nowrap" data-pagefind-filter="kind">{{ kind }}</span>
             {% endif %}
           </div>
           {% if hero_chips and hero_chips | length > 0 %}
@@ -467,25 +467,25 @@
 
   {% if banner_url %}
   <div
-    class="hero-section"
+    class="hero-section relative z-[1] mb-6 border border-border bg-surface"
     {% if primary_color %}style="border-bottom: 3px solid #{{ primary_color }};"{% endif %}
   >
 {{ ui.hero_banner(banner_url, banner_y, page_title, t, banner_original_url) }}
 
-    <div class="hero-content">
+    <div class="hero-content relative flex items-start gap-4 border-b-2 border-border px-5 pb-4">
       {% if icon %}
       <div
-        class="hero-avatar"
+        class="hero-avatar relative z-[3] flex items-center justify-center shrink-0 w-[56px] h-[56px] -mt-7 border-2 border-border bg-surface shadow-[0_4px_12px_rgba(0,0,0,0.15)]"
         {% if primary_color %}style="box-shadow: 0 4px 16px #{{ primary_color }}40; border-color: #{{ primary_color }};"{% endif %}
       >
-        <span class="avatar-icon">{{ icon | safe }}</span>
+        <span class="avatar-icon w-full h-full flex items-center justify-center text-[2rem] leading-none">{{ icon | safe }}</span>
       </div>
       {% endif %}
-      <div class="hero-title-area">
-        <div class="hero-title-row">
+      <div class="hero-title-area flex-1 min-w-0">
+        <div class="hero-title-row flex items-baseline gap-2.5 flex-wrap">
           <h1>{{ page_title }}</h1>
           {% if kind %}
-          <span class="kind-tag kind-{{ kind }}">{{ kind }}</span>
+          <span class="kind-tag kind-{{ kind }} inline-block px-2 py-0.5 text-xs font-medium capitalize whitespace-nowrap">{{ kind }}</span>
           {% endif %}
         </div>
         {% if hero_chips and hero_chips | length > 0 %}
@@ -507,7 +507,7 @@
         {{ page_title }}
       </h1>
       {% if kind %}
-      <span class="kind-tag kind-{{ kind }}">{{ kind }}</span>
+      <span class="kind-tag kind-{{ kind }} inline-block px-2 py-0.5 text-xs font-medium capitalize whitespace-nowrap">{{ kind }}</span>
       {% endif %}
     </div>
     {% if hero_chips and hero_chips | length > 0 %}
