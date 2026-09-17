@@ -15,6 +15,16 @@
     return document.documentElement.getAttribute('data-tabs') === 'right';
   }
 
+  /** Swap the level-N / is-active state on a *reused* element (the popover
+   *  and its tab clone persist across many different hover targets) without
+   *  a full `className =` replacement, which would also wipe out any class
+   *  not managed here. */
+  function setStickyLevelState(el, level, isActive) {
+    el.classList.remove('level-1', 'level-2', 'level-3', 'level-4', 'level-5', 'level-6');
+    el.classList.add(`level-${level}`);
+    el.classList.toggle('is-active', isActive);
+  }
+
   // Sticky Tabs Hover Popover Global State (persists across SPA navigations)
   let popoverHoverTimer = null;
   let popoverCloseTimer = null;
@@ -383,14 +393,14 @@
         popover.className = 'sticky-hover-popover';
         popover.hidden = true;
         popover.setAttribute('data-pagefind-ignore', '');
-        popover.innerHTML = `<div class="sticky-popover-tab" role="button"></div><div class="sticky-hover-popover-list"></div>`;
+        popover.innerHTML = `<div class="sticky-popover-tab sticky-tab-btn" role="button"></div><div class="sticky-hover-popover-list"></div>`;
         document.body.appendChild(popover);
       }
       let popoverTab = popover.querySelector('.sticky-popover-tab');
       let popoverList = popover.querySelector('.sticky-hover-popover-list');
       if (!popoverTab) {
         popoverTab = document.createElement('div');
-        popoverTab.className = 'sticky-popover-tab';
+        popoverTab.className = 'sticky-popover-tab sticky-tab-btn';
         popoverTab.setAttribute('role', 'button');
         if (popoverList) {
           popover.insertBefore(popoverTab, popoverList);
@@ -419,6 +429,7 @@
         }
 
         popoverList.innerHTML = '';
+        const itemTemplate = document.getElementById('sticky-hover-item-template');
         childNodes.forEach((child) => {
           const childId = child.getAttribute('data-id');
           const childLevel = child.getAttribute('data-level') || '2';
@@ -426,14 +437,19 @@
           const childText = childBtn?.querySelector('.sticky-tab-text')?.textContent || childId;
           const isActive = child.classList.contains('is-active');
 
-          const item = document.createElement('a');
+          const item = itemTemplate.content.firstElementChild.cloneNode(true);
           item.href = `#${childId}`;
-          item.className = `sticky-hover-item level-${childLevel}${isActive ? ' is-active' : ''}`;
+          item.classList.add(`level-${childLevel}`);
+          if (isActive) item.classList.add('is-active');
           item.setAttribute('data-target', childId);
-          item.innerHTML = `
-            <span class="sticky-level-badge level-${childLevel}">H${childLevel}</span>
-            <span class="item-text">${childText}</span>
-          `;
+          const badge = item.querySelector('.sticky-level-badge');
+          badge.classList.add(`level-${childLevel}`);
+          badge.textContent = `H${childLevel}`;
+          // .textContent, not innerHTML: childText is a heading's own text
+          // content, and re-parsing it as HTML here would both risk breaking
+          // on stray `<`/`&` and, if a heading ever contained real markup,
+          // execute it.
+          item.querySelector('.item-text').textContent = childText;
 
           item.addEventListener('click', (e) => {
             e.preventDefault();
@@ -462,11 +478,11 @@
         // provide the exact same color without transition interpolation mismatch.
         const parentLevel = node.getAttribute('data-level') || (btn.classList.contains('level-1') ? '1' : btn.classList.contains('level-2') ? '2' : btn.classList.contains('level-3') ? '3' : '4');
         const isParentActive = node.classList.contains('is-active') || node.classList.contains('is-active-branch');
-        popover.className = `sticky-hover-popover level-${parentLevel}${isParentActive ? ' is-active' : ''}`;
+        setStickyLevelState(popover, parentLevel, isParentActive);
 
         // Populate the dummy tab clone so the tab and flyout form one seamless L-shaped sheet of paper.
         if (popoverTab) {
-          popoverTab.className = `sticky-popover-tab sticky-tab-btn level-${parentLevel}${isParentActive ? ' is-active' : ''}`;
+          setStickyLevelState(popoverTab, parentLevel, isParentActive);
           popoverTab.innerHTML = btn.innerHTML;
           popoverTab.title = btn.title || '';
           popoverTab.onclick = (e) => {

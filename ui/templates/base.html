@@ -47,7 +47,7 @@
         if (shellContrast === 'high') {
           document.documentElement.setAttribute('data-shell-contrast', 'high');
         }
-        // Decide the panes' collapsed state before the first paint. book.js
+        // Decide the panes' collapsed state before the first paint. tmtbook.js
         // applies the real classes on DOMContentLoaded and clears these, but
         // by then the panes would already have been painted open.
         const narrow = window.innerWidth <= 900;
@@ -63,7 +63,7 @@
         }
       } catch {}
     </script>
-    <link rel="stylesheet" href="/book.css?v={{ css_version }}" />
+    <link rel="stylesheet" href="/tmtbook.css?v={{ css_version }}" />
     {% for css in custom_css %}
     <link rel="stylesheet" href="{{ css }}" />
     {% endfor %}
@@ -177,9 +177,21 @@
 
     <!-- Sticky Tabs Subheadings Hover Popover -->
     <div id="sticky-hover-popover" class="sticky-hover-popover" hidden data-pagefind-ignore>
-      <div class="sticky-popover-tab" role="button"></div>
+      <div class="sticky-popover-tab sticky-tab-btn" role="button"></div>
       <div class="sticky-hover-popover-list"></div>
     </div>
+
+    <!-- Template for each child-heading row in the popover above. 40-book-view.js
+         clones this rather than building the row from an HTML string, so the
+         shape lives in exactly one place (here) instead of being duplicated
+         as a parallel copy in JS -- see the 09-18 session notes on JS/Jinja
+         markup drift. -->
+    <template id="sticky-hover-item-template">
+      <a class="sticky-hover-item">
+        <span class="sticky-level-badge"></span>
+        <span class="item-text"></span>
+      </a>
+    </template>
 
     <!-- Image Lightbox Modal -->
     <div id="wiki-image-lightbox" class="lightbox-overlay fixed inset-0 bg-[rgba(0,0,0,0.8)] z-[100000] flex items-center justify-center p-5" hidden data-pagefind-ignore>
@@ -196,6 +208,6 @@
     </div>
 
     <script>window.tmtStrings = {{ t | tojson | safe }};</script>
-    <script src="/book.js?v={{ js_version }}"></script>
+    <script src="/tmtbook.js?v={{ js_version }}"></script>
   </body>
 </html>

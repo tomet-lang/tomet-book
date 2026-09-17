@@ -19,71 +19,40 @@ use crate::config::BookConfig;
 /// unconditional utility positioned after them would otherwise clobber at
 /// every viewport width, not just the ones the media query targets.
 pub const BOOK_CSS: &str = concat!(
-    include_str!("../assets/static/css/00-base.css"),
-    include_str!("../assets/static/css/10-shell.css"),
-    include_str!("../assets/static/css/20-panes.css"),
-    include_str!("../assets/static/css/30-sticky-tabs.css"),
-    include_str!("../assets/static/css/35-sticky-tabs-vertical.css"),
-    include_str!("../assets/static/css/40-hero.css"),
-    include_str!("../assets/static/css/50-nav-infobox.css"),
-    include_str!("../assets/static/css/60-content.css"),
-    include_str!("../assets/static/css/70-widgets.css"),
-    include_str!("../assets/static/css/72-center-peek.css"),
+    include_str!("../../ui/styles/00-base.css"),
+    include_str!("../../ui/styles/10-shell.css"),
+    include_str!("../../ui/styles/20-panes.css"),
+    include_str!("../../ui/styles/30-sticky-tabs.css"),
+    include_str!("../../ui/styles/35-sticky-tabs-vertical.css"),
+    include_str!("../../ui/styles/40-hero.css"),
+    include_str!("../../ui/styles/50-nav-infobox.css"),
+    include_str!("../../ui/styles/60-content.css"),
+    include_str!("../../ui/styles/70-widgets.css"),
+    include_str!("../../ui/styles/72-center-peek.css"),
     include_str!(concat!(env!("OUT_DIR"), "/tailwind.css")),
-    include_str!("../assets/static/css/90-responsive.css"),
-    include_str!("../assets/static/css/98-no-js.css"),
+    include_str!("../../ui/styles/90-responsive.css"),
+    include_str!("../../ui/styles/98-no-js.css"),
 );
-/// The script, assembled in load order. Each file is a self-contained IIFE
-/// that registers what others need on `window.TMT`, so the order only has to
-/// put the shared helpers and the strings helper first.
-pub const BOOK_JS: &str = concat!(
-    include_str!("../assets/static/js/00-utils.js"),
-    include_str!("../assets/static/js/00-strings.js"),
-    include_str!("../assets/static/js/05-tmt-btn.js"),
-    include_str!("../assets/static/js/06-tmt-badge.js"),
-    include_str!("../assets/static/js/07-tmt-icon.js"),
-    include_str!("../assets/static/js/08-tmt-swatch.js"),
-    include_str!("../assets/static/js/09-tmt-switch.js"),
-    include_str!("../assets/static/js/10-theme.js"),
-    include_str!("../assets/static/js/20-view-mode.js"),
-    include_str!("../assets/static/js/30-floating-controls.js"),
-    include_str!("../assets/static/js/31-page-progress.js"),
-    include_str!("../assets/static/js/36-nav-pane.js"),
-    include_str!("../assets/static/js/37-data-pane.js"),
-    include_str!("../assets/static/js/38-recent-notes.js"),
-    include_str!("../assets/static/js/39-lookup-pane.js"),
-    include_str!("../assets/static/js/40-book-view.js"),
-    include_str!("../assets/static/js/50-keyboard.js"),
-    include_str!("../assets/static/js/60-search.js"),
-    include_str!("../assets/static/js/70-preview.js"),
-    include_str!("../assets/static/js/72-center-peek.js"),
-    include_str!("../assets/static/js/75-lightbox.js"),
-    include_str!("../assets/static/js/78-costume.js"),
-    include_str!("../assets/static/js/80-router.js"),
-    include_str!("../assets/static/js/85-classic-view.js"),
-    include_str!("../assets/static/js/90-edit-menu.js"),
-    include_str!("../assets/static/js/92-code-copy.js"),
-    include_str!("../assets/static/js/95-init.js"),
-    include_str!("../assets/static/js/97-live-reload.js"),
-    include_str!("../assets/static/js/99-bootstrap.js"),
-);
+/// The compiled JavaScript runtime for tmtbook, bundled by esbuild from
+/// `ui/src/index.ts` during the cargo build script.
+pub const BOOK_JS: &str = include_str!(concat!(env!("OUT_DIR"), "/tmtbook.js"));
 
 /// Every Lucide icon, as one `<symbol id="name">` per icon -- vendored
 /// whole from `lucide-static` rather than one file per icon we might use,
 /// so `@doc.icon("<name>", pkg:"lucide")` can reference any of them by
 /// `<use href="/icons/lucide.svg#<name>">` without a code change to add one.
-pub const LUCIDE_SPRITE: &str = include_str!("../assets/static/icons/lucide/sprite.svg");
+pub const LUCIDE_SPRITE: &str = include_str!("../../ui/icons/lucide/sprite.svg");
 
 /// One stylesheet per Custom Element, kept out of `BOOK_CSS` on purpose: each
 /// is `<link>`-ed from inside that element's declarative shadow root (see
 /// `dsd_btn_shadow` and friends in macros.html) instead of being inlined
 /// per-instance, so the browser fetches and caches it once no matter how many
 /// `<tmt-btn>` etc. appear on a page.
-pub const TMT_BTN_CSS: &str = include_str!("../assets/static/css/components/tmt-btn.css");
-pub const TMT_BADGE_CSS: &str = include_str!("../assets/static/css/components/tmt-badge.css");
-pub const TMT_ICON_CSS: &str = include_str!("../assets/static/css/components/tmt-icon.css");
-pub const TMT_SWATCH_CSS: &str = include_str!("../assets/static/css/components/tmt-swatch.css");
-pub const TMT_SWITCH_CSS: &str = include_str!("../assets/static/css/components/tmt-switch.css");
+pub const TMT_BTN_CSS: &str = include_str!("../../ui/styles/components/tmt-btn.css");
+pub const TMT_BADGE_CSS: &str = include_str!("../../ui/styles/components/tmt-badge.css");
+pub const TMT_ICON_CSS: &str = include_str!("../../ui/styles/components/tmt-icon.css");
+pub const TMT_SWATCH_CSS: &str = include_str!("../../ui/styles/components/tmt-swatch.css");
+pub const TMT_SWITCH_CSS: &str = include_str!("../../ui/styles/components/tmt-switch.css");
 
 /// A short digest of an asset's contents, for `?v=` cache busting.
 ///
@@ -101,8 +70,7 @@ pub static JS_VERSION: LazyLock<String> = LazyLock::new(|| content_version(BOOK_
 pub static TMT_BTN_CSS_VERSION: LazyLock<String> = LazyLock::new(|| content_version(TMT_BTN_CSS));
 pub static TMT_BADGE_CSS_VERSION: LazyLock<String> =
     LazyLock::new(|| content_version(TMT_BADGE_CSS));
-pub static TMT_ICON_CSS_VERSION: LazyLock<String> =
-    LazyLock::new(|| content_version(TMT_ICON_CSS));
+pub static TMT_ICON_CSS_VERSION: LazyLock<String> = LazyLock::new(|| content_version(TMT_ICON_CSS));
 pub static TMT_SWATCH_CSS_VERSION: LazyLock<String> =
     LazyLock::new(|| content_version(TMT_SWATCH_CSS));
 pub static TMT_SWITCH_CSS_VERSION: LazyLock<String> =
@@ -111,13 +79,13 @@ pub static TMT_SWITCH_CSS_VERSION: LazyLock<String> =
 pub fn write_static_assets(out_dir: &Path, src_dir: &Path, config: &BookConfig) -> Result<()> {
     fs::create_dir_all(out_dir)?;
 
-    // 1. Write embedded book.css
-    super::write_if_changed(&out_dir.join("book.css"), BOOK_CSS)
-        .context("Failed to write book.css")?;
+    // 1. Write embedded tmtbook.css
+    super::write_if_changed(&out_dir.join("tmtbook.css"), BOOK_CSS)
+        .context("Failed to write tmtbook.css")?;
 
-    // 2. Write embedded book.js
-    super::write_if_changed(&out_dir.join("book.js"), BOOK_JS)
-        .context("Failed to write book.js")?;
+    // 2. Write embedded tmtbook.js
+    super::write_if_changed(&out_dir.join("tmtbook.js"), BOOK_JS)
+        .context("Failed to write tmtbook.js")?;
 
     // 3. Write embedded icons/lucide.svg
     super::write_if_changed(&out_dir.join("icons/lucide.svg"), LUCIDE_SPRITE)
@@ -349,15 +317,18 @@ mod tests {
     #[test]
     fn tmt_components_are_bundled_in_book_assets() {
         assert!(
-            super::BOOK_JS.contains("customElements.define('tmt-btn'"),
+            super::BOOK_JS.contains("customElements.define('tmt-btn'")
+                || super::BOOK_JS.contains("customElements.define(\"tmt-btn\""),
             "tmt-btn custom element is defined in BOOK_JS"
         );
         assert!(
-            super::BOOK_JS.contains("customElements.define('tmt-badge'"),
+            super::BOOK_JS.contains("customElements.define('tmt-badge'")
+                || super::BOOK_JS.contains("customElements.define(\"tmt-badge\""),
             "tmt-badge custom element is defined in BOOK_JS"
         );
         assert!(
-            super::BOOK_JS.contains("customElements.define('tmt-icon'"),
+            super::BOOK_JS.contains("customElements.define('tmt-icon'")
+                || super::BOOK_JS.contains("customElements.define(\"tmt-icon\""),
             "tmt-icon custom element is defined in BOOK_JS"
         );
         assert!(

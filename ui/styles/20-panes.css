@@ -35,7 +35,7 @@
               opacity 0.18s ease;
 }
 /* The [data-*-collapsed] forms come from the pre-paint script in base.html
-   and are dropped by book.js once it has set the real classes. */
+   and are dropped by tmtbook.js once it has set the real classes. */
 [data-nav-collapsed] .pane-nav,
 .pane-nav.is-collapsed {
   width: 0 !important;

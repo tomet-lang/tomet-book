@@ -451,7 +451,7 @@ pub fn build_book(
         scanned.media_files.len()
     );
 
-    // 2. Write static assets (book.css, book.js, custom.css)
+    // 2. Write static assets (tmtbook.css, tmtbook.js, custom.css)
     write_static_assets(out_dir, src_dir, config).context("Failed to write static assets")?;
 
     // 3. Copy/Link media into the asset directory

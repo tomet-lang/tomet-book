@@ -39,15 +39,15 @@ impl<'a> BookRenderer<'a> {
     pub fn new(config: &'a BookConfig, is_dev: bool) -> Result<Self> {
         let mut env = Environment::new();
 
-        env.add_template("base.html", include_str!("../assets/templates/base.html"))
+        env.add_template("base.html", include_str!("../../ui/templates/base.html"))
             .context("Failed to add base.html template")?;
-        env.add_template("page.html", include_str!("../assets/templates/page.html"))
+        env.add_template("page.html", include_str!("../../ui/templates/page.html"))
             .context("Failed to add page.html template")?;
-        env.add_template("index.html", include_str!("../assets/templates/index.html"))
+        env.add_template("index.html", include_str!("../../ui/templates/index.html"))
             .context("Failed to add index.html template")?;
         env.add_template(
             "macros.html",
-            include_str!("../assets/templates/macros.html"),
+            include_str!("../../ui/templates/macros.html"),
         )
         .context("Failed to add macros.html template")?;
 

@@ -20,6 +20,7 @@ tests/store/
 #[ Build file ]
 build/
 dist/
+ui/dist/
 package/
 result
 result-*

@@ -14,9 +14,9 @@
    avatar-text/avatar-grid/avatar-cell/avatar-initials and
    .tm-doc-icon-img below are NOT convertible: that markup comes from
    icon.rs (Rust-generated per-document HTML, inserted via `{{ icon | safe
-   }}`), which Tailwind's content scanner -- src/assets/templates/**/*.html
+   }}`), which Tailwind's content scanner -- ui/templates/**/*.html
    only -- never sees. Same reason .tmt-toast stays hand-written: it's
-   created by 90-edit-menu.js via `className = 'tmt-toast'`, not present in
+   created by 90-edit-menu.ts via `className = 'tmt-toast'`, not present in
    any template file either. */
 
 /* Positioning only -- the skin is <tmt-btn> now (variant="outline" size="xs"

@@ -23,11 +23,12 @@ mkShell rec {
     tmtbook
     tomet
     twrit
-    pagefind
 
     #[ Develop ]
-    tailwindcss
     just
+    ##[ UI ]
+    tailwindcss
+    esbuild
     ##[ Rust ]
     rust-toolchain
     cargo-edit
@@ -35,6 +36,7 @@ mkShell rec {
 
     #[ Runtime ]
     pkg-config
+    pagefind
   ];
 
   shellHook = ''
