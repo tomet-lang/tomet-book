@@ -1,12 +1,23 @@
 /* ==================== HERO CARD ====================
-   book-hero-section / hero-banner-wrapper / hero-banner-img / hero-content
-   are styled with Tailwind utility classes directly in the templates now
-   (tailwind.config.js maps its colors to these same --text/--link/--surface
-   etc. tokens, so theming still works). The class names stay in the markup
-   -- hero-banner-wrapper/-img are queried by 75-lightbox.js and friends,
+   book-hero-section / hero-banner-wrapper / hero-banner-img / hero-content /
+   hero-avatar / hero-title-area / hero-title-row / content-title / kind-tag
+   (base) / hero-meta-chips / hero-actions / edit-dropdown / edit-dropdown-item
+   (base) are styled with Tailwind utility classes directly in the templates
+   now (tailwind.config.js maps its colors to these same --text/--link/
+   --surface etc. tokens, so theming still works). The class names stay in
+   the markup -- hero-banner-wrapper/-img and hero-avatar/avatar-icon are
+   queried by JS (75-lightbox.js, 72-center-peek.js, 70-preview.js),
    book-hero-section/hero-content are still targeted by 90-responsive.css's
    mobile override, which must keep winning at its breakpoint -- see
-   BOOK_CSS's ordering comment in assets.rs. */
+   BOOK_CSS's ordering comment in assets.rs.
+
+   avatar-text/avatar-grid/avatar-cell/avatar-initials and
+   .tm-doc-icon-img below are NOT convertible: that markup comes from
+   icon.rs (Rust-generated per-document HTML, inserted via `{{ icon | safe
+   }}`), which Tailwind's content scanner -- src/assets/templates/**/*.html
+   only -- never sees. Same reason .tmt-toast stays hand-written: it's
+   created by 90-edit-menu.js via `className = 'tmt-toast'`, not present in
+   any template file either. */
 
 /* Positioning only -- the skin is <tmt-btn> now (variant="outline" size="xs"
    shape="rect"), see macros.html's hero_banner / dsd_btn_shadow. */
@@ -17,30 +28,6 @@
   z-index: 2;
 }
 
-.hero-avatar {
-  width: 68px;
-  height: 68px;
-  border: 2px solid var(--border);
-  background: var(--surface);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2.2rem;
-  flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  margin-top: -36px;
-  z-index: 2;
-  overflow: hidden;
-}
-
-.hero-avatar .avatar-icon {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .hero-avatar .avatar-icon .tm-doc-icon-img {
   width: 100%;
   height: 100%;
@@ -48,7 +35,8 @@
   display: block;
 }
 
-/* ==================== AVATAR TEXT & EMOJI LAYOUTS ==================== */
+/* ==================== AVATAR TEXT & EMOJI LAYOUTS ====================
+   Rust-generated (icon.rs) -- see file header comment. */
 .avatar-text {
   display: flex;
   align-items: center;
@@ -124,39 +112,9 @@
   grid-column: 1 / span 2;
 }
 
-.hero-title-area {
-  flex: 1;
-  min-width: 0;
-}
-
-.hero-title-row {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.content-title {
-  margin: 0;
-  font-size: 1.85rem;
-  font-weight: 700;
-  line-height: 1.25;
-  letter-spacing: -0.01em;
-  color: var(--text);
-}
-
-.kind-tag {
-  display: inline-block;
-  padding: 2px 8px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  border: 1px solid var(--border);
-  background: var(--surface-subtle);
-  color: var(--text-muted);
-  text-transform: capitalize;
-  white-space: nowrap;
-}
-
+/* kind-tag's per-kind colors: deliberately small and self-contained, not
+   worth threading through Jinja conditionals just to move 3 color pairs
+   into utility classes. */
 .kind-tag.kind-character {
   border-color: var(--link);
   color: var(--link);
@@ -173,49 +131,19 @@
   background: var(--surface);
 }
 
-.hero-meta-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
-}
-
-tmt-badge.hero-chip {
-  background: transparent;
-  border: none;
-  padding: 0;
-}
-span.hero-chip,
-a.hero-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.75rem;
-  background: var(--surface-subtle);
-  border: 1px solid var(--border-subtle);
-  padding: 2px 8px;
-  color: var(--text);
-}
+/* <tmt-badge class="hero-chip"> is a Shadow DOM component (see
+   macros.html's hero_chips): .chip-label/.chip-val are its slotted light-DOM
+   children, still reachable by descendant selectors, but everything else
+   about the *host* element's own skin (variant="subtle" shape="pill"
+   size="sm") lives inside its shadow root and can't be styled from here --
+   see 05-tmt-btn.js's siblings and the 09-18 session notes on Shadow DOM
+   encapsulation. */
 .hero-chip .chip-label {
   color: var(--text-muted);
 }
 .hero-chip .chip-val {
   font-weight: 500;
 }
-a.hero-chip,
-.hero-chip.hero-chip-link {
-  text-decoration: none;
-  cursor: pointer;
-  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
-}
-a.hero-chip:hover,
-.hero-chip.hero-chip-link:hover {
-  border-color: var(--link);
-  background-color: var(--surface);
-  text-decoration: none;
-}
-a.hero-chip:hover .chip-val,
-.hero-chip.hero-chip-link:hover .chip-val,
 tmt-badge.hero-chip[href]:hover .chip-val {
   color: var(--link);
   text-decoration: underline;
@@ -223,7 +151,8 @@ tmt-badge.hero-chip[href]:hover .chip-val {
 
 /* Unresolved links: kept at full body text color for maximum readability,
    with a faint dotted underline so it gently signals an uncreated concept
-   without reading as strong emphasis. */
+   without reading as strong emphasis. Rust-generated (tomet-html), not
+   template markup -- see file header comment. */
 .tm-unresolved,
 a.tm-unresolved,
 .tm-ref-unresolved,
@@ -244,36 +173,15 @@ a.tm-ref-unresolved:hover {
 }
 
 /* ==================== HERO ACTIONS & EDIT DROPDOWN ==================== */
-.hero-content,
 .article-header {
   position: relative;
 }
 
-.hero-actions {
-  position: absolute;
-  top: 14px;
-  right: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  z-index: 50;
-}
-
-.edit-dropdown {
-  position: relative;
-  display: inline-block;
-}
-
 /* Same tint as the application shell (--shell-*, defined in 00-base.css),
    plus a shadow so it reads as a raised control rather than sitting flush
-   with the page. */
+   with the page -- box-model is Tailwind utilities in the markup now, this
+   is only the grain texture / shadow skin that isn't a good utility fit. */
 .hero-action-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  padding: 0;
   color: var(--shell-text-muted);
   background-color: var(--shell-bg);
   background-image: var(--shell-grain);
@@ -283,11 +191,8 @@ a.tm-ref-unresolved:hover {
   background-repeat: var(--shell-grain-repeat, repeat);
   background-attachment: var(--shell-grain-attachment, scroll);
   border: 1px solid var(--shell-border);
-  border-radius: 50%;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
-  line-height: 1;
 }
 
 [data-theme="dark"] .hero-action-btn {
@@ -301,11 +206,9 @@ a.tm-ref-unresolved:hover {
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
+/* Same grain skin as .hero-action-btn above -- box-model is Tailwind
+   utilities in the markup now. */
 .edit-dropdown-menu {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  min-width: 135px;
   background-color: var(--shell-bg);
   background-image: var(--shell-grain);
   background-blend-mode: var(--shell-blend-mode, soft-light);
@@ -316,38 +219,22 @@ a.tm-ref-unresolved:hover {
   border: 1px solid var(--shell-border);
   box-shadow: 0 6px 22px rgba(0, 0, 0, 0.35),
               inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  border-radius: 0;
-  padding: 4px 0;
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
 }
 
+/* Author-level reinforcement: without this, the unconditional `display:
+   flex` a plain class rule would carry beats the UA stylesheet's `[hidden]
+   { display: none }` (author origin always wins over UA origin, regardless
+   of specificity), so the menu would render open before JS ever runs. */
 .edit-dropdown-menu[hidden] {
   display: none !important;
 }
 
 .edit-dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 12px;
-  font-size: 0.73rem;
-  color: var(--shell-text);
-  text-decoration: none !important;
-  background: transparent;
-  border: none;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-  box-sizing: border-box;
-  white-space: nowrap;
   transition: background-color 0.12s ease, color 0.12s ease;
 }
 
 .edit-dropdown-item:hover {
   background-color: color-mix(in srgb, var(--shell-border), transparent 30%);
-  color: var(--shell-text);
 }
 
 .edit-dropdown-item .item-svg {
@@ -361,7 +248,8 @@ a.tm-ref-unresolved:hover {
   line-height: 1;
 }
 
-/* Copy Toast */
+/* Copy Toast: created by 90-edit-menu.js (`className = 'tmt-toast'`), not
+   present in any template file -- see file header comment. */
 .tmt-toast {
   position: fixed;
   bottom: 24px;
@@ -383,4 +271,3 @@ a.tm-ref-unresolved:hover {
   opacity: 1;
   transform: translateY(0);
 }
-

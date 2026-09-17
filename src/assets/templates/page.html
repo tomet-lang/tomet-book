@@ -381,15 +381,15 @@
           {% endif %}
           <div class="hero-content relative flex items-end gap-4 border-b-2 border-border py-4 px-6" {% if primary_color %}style="border-bottom-color: #{{ primary_color }};"{% endif %}>
             {% if icon %}
-            <div class="hero-avatar" data-pagefind-ignore {% if primary_color %}style="border-color: #{{ primary_color }};"{% endif %}>
-              <span class="avatar-icon">{{ icon | safe }}</span>
+            <div class="hero-avatar flex items-center justify-center shrink-0 overflow-hidden w-[68px] h-[68px] border-2 border-border bg-surface text-[2.2rem] shadow-[0_4px_12px_rgba(0,0,0,0.12)] -mt-9 z-[2]" data-pagefind-ignore {% if primary_color %}style="border-color: #{{ primary_color }};"{% endif %}>
+              <span class="avatar-icon w-full h-full flex items-center justify-center">{{ icon | safe }}</span>
             </div>
             {% endif %}
-            <div class="hero-title-area">
-              <div class="hero-title-row">
-                <h1 class="content-title" data-pagefind-meta="title" data-pagefind-weight="10">{{ page_title }}</h1>
+            <div class="hero-title-area flex-1 min-w-0">
+              <div class="hero-title-row flex items-baseline gap-2.5 flex-wrap">
+                <h1 class="content-title m-0 text-[1.85rem] font-bold leading-tight tracking-[-0.01em] text-text" data-pagefind-meta="title" data-pagefind-weight="10">{{ page_title }}</h1>
                 {% if kind %}
-                <span class="kind-tag kind-{{ kind }}" data-pagefind-filter="kind">{{ kind }}</span>
+                <span class="kind-tag kind-{{ kind }} inline-block px-2 py-0.5 text-xs font-medium capitalize whitespace-nowrap" data-pagefind-filter="kind">{{ kind }}</span>
                 {% endif %}
               </div>
               {% if hero_chips and hero_chips | length > 0 %}
@@ -397,7 +397,7 @@
               {% endif %}
             </div>
             {% if source_path and is_dev %}
-            <div class="hero-actions" data-pagefind-ignore>
+            <div class="hero-actions absolute top-3.5 right-4 flex items-center gap-2 z-50" data-pagefind-ignore>
 {{ ui.edit_menu(source_path, t) }}
             </div>
             {% endif %}
@@ -415,7 +415,7 @@
 {{ ui.hero_chips(hero_chips, 'margin-top: 8px;') }}
           {% endif %}
           {% if source_path and is_dev %}
-          <div class="hero-actions" data-pagefind-ignore>
+          <div class="hero-actions absolute top-3.5 right-4 flex items-center gap-2 z-50" data-pagefind-ignore>
 {{ ui.edit_menu(source_path, t) }}
           </div>
           {% endif %}
@@ -493,7 +493,7 @@
         {% endif %}
       </div>
       {% if source_path and is_dev %}
-      <div class="hero-actions">
+      <div class="hero-actions absolute top-3.5 right-4 flex items-center gap-2 z-50">
 {{ ui.edit_menu(source_path, t) }}
       </div>
       {% endif %}
@@ -514,7 +514,7 @@
 {{ ui.hero_chips(hero_chips, 'margin-top: 8px;') }}
     {% endif %}
     {% if source_path and is_dev %}
-    <div class="hero-actions">
+    <div class="hero-actions absolute top-3.5 right-4 flex items-center gap-2 z-50">
 {{ ui.edit_menu(source_path, t) }}
     </div>
     {% endif %}

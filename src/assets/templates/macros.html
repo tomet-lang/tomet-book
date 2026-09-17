@@ -12,15 +12,15 @@
 #}
 
 {% macro edit_menu(source_path, t) %}
-<div class="edit-dropdown" data-pagefind-ignore>
-  <button type="button" class="hero-action-btn btn-edit-open" title="{{ t["edit.editor"] }}" aria-label="{{ t["edit.editor"] }}">
+<div class="edit-dropdown relative inline-block" data-pagefind-ignore>
+  <button type="button" class="hero-action-btn btn-edit-open inline-flex items-center justify-center box-border w-[30px] h-[30px] p-0 rounded-full cursor-pointer leading-none" title="{{ t["edit.editor"] }}" aria-label="{{ t["edit.editor"] }}">
     <svg class="icon-edit" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <path d="M12 20h9"></path>
       <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
     </svg>
   </button>
-  <div class="edit-dropdown-menu" hidden>
-    <a href="vscode://file{{ source_path }}" class="edit-dropdown-item" title="{{ t["edit.vscode"] }}">
+  <div class="edit-dropdown-menu absolute top-[calc(100%+4px)] right-0 min-w-[135px] rounded-none py-1 z-[9999] flex flex-col" hidden>
+    <a href="vscode://file{{ source_path }}" class="edit-dropdown-item flex items-center gap-[7px] box-border w-full px-3 py-1.5 text-[0.73rem] text-shell-text no-underline! whitespace-nowrap cursor-pointer" title="{{ t["edit.vscode"] }}">
       <svg class="item-svg" viewBox="0 0 24 24" width="13" height="13" stroke="#007acc" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
         <path d="m18 16 4-4-4-4"></path>
         <path d="m6 8-4 4 4 4"></path>
@@ -28,13 +28,13 @@
       </svg>
       <span>{{ t["edit.vscode"] }}</span>
     </a>
-    <a href="cursor://file{{ source_path }}" class="edit-dropdown-item" title="{{ t["edit.cursor"] }}">
+    <a href="cursor://file{{ source_path }}" class="edit-dropdown-item flex items-center gap-[7px] box-border w-full px-3 py-1.5 text-[0.73rem] text-shell-text no-underline! whitespace-nowrap cursor-pointer" title="{{ t["edit.cursor"] }}">
       <svg class="item-svg" viewBox="0 0 24 24" width="13" height="13" stroke="#e5a000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
         <path d="m4.037 4.688 15.376 6.15a.994.994 0 0 1 .09 1.834l-5.69 2.53-2.53 5.69a.994.994 0 0 1-1.834-.09l-6.15-15.376a.993.993 0 0 1 .738-.738z"></path>
       </svg>
       <span>{{ t["edit.cursor"] }}</span>
     </a>
-    <button type="button" class="edit-dropdown-item btn-copy-path" data-path="{{ source_path }}" title="{{ t["edit.copy_path_title"] }}">
+    <button type="button" class="edit-dropdown-item btn-copy-path flex items-center gap-[7px] box-border w-full px-3 py-1.5 text-[0.73rem] text-shell-text bg-transparent border-0 text-left whitespace-nowrap cursor-pointer" data-path="{{ source_path }}" title="{{ t["edit.copy_path_title"] }}">
       <svg class="item-svg" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
         <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
         <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
@@ -71,7 +71,7 @@
   this keeps the book view's version.
 #}
 {% macro hero_chips(hero_chips, extra_style) %}
-<div class="hero-meta-chips" data-pagefind-weight="6.0"{% if extra_style %} style="{{ extra_style }}"{% endif %}>
+<div class="hero-meta-chips flex flex-wrap gap-1.5 mt-2" data-pagefind-weight="6.0"{% if extra_style %} style="{{ extra_style }}"{% endif %}>
   {% for chip in hero_chips %}
   <tmt-badge
     class="hero-chip{% if chip.href %} hero-chip-link{% endif %}"
