@@ -7,6 +7,7 @@ use serde_json::{Map, Value};
 use std::collections::HashSet;
 use std::path::Path;
 use std::sync::LazyLock;
+use unicode_segmentation::UnicodeSegmentation;
 
 use super::html::{color_chip_html, external_link_html, is_external_url, sanitize_color_hex};
 use super::links::{
@@ -277,10 +278,70 @@ fn is_image_target(s: &str) -> bool {
 
 /// Extracts page icon and optional image URL for optimization.
 ///
+/// Formats a plain text or emoji icon string according to avatar display rules:
+/// - 1 char: single large glyph (`avatar-text-1`)
+/// - 2 chars: horizontally auto-scaled without wrapping (`avatar-text-2`)
+/// - 3 chars: 2x2 grid with 3rd item centered on bottom row (`avatar-grid avatar-grid-3`)
+/// - 4 chars: 2x2 grid (`avatar-grid avatar-grid-4`)
+/// - 5+ chars: initials (first 2 graphemes rendered with `avatar-text-2 avatar-initials`)
+pub fn format_text_icon(s: &str) -> String {
+    let graphemes: Vec<&str> = s.graphemes(true).collect();
+    match graphemes.len() {
+        0 => String::new(),
+        1 => {
+            format!(
+                r#"<span class="avatar-text avatar-text-1">{}</span>"#,
+                super::html::escape_html(graphemes[0])
+            )
+        }
+        2 => {
+            let text = graphemes.join("");
+            format!(
+                r#"<span class="avatar-text avatar-text-2">{}</span>"#,
+                super::html::escape_html(&text)
+            )
+        }
+        3 => {
+            let cells = graphemes
+                .iter()
+                .map(|g| {
+                    format!(
+                        r#"<span class="avatar-cell">{}</span>"#,
+                        super::html::escape_html(g)
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join("");
+            format!(r#"<span class="avatar-text avatar-grid avatar-grid-3">{cells}</span>"#)
+        }
+        4 => {
+            let cells = graphemes
+                .iter()
+                .map(|g| {
+                    format!(
+                        r#"<span class="avatar-cell">{}</span>"#,
+                        super::html::escape_html(g)
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join("");
+            format!(r#"<span class="avatar-text avatar-grid avatar-grid-4">{cells}</span>"#)
+        }
+        _ => {
+            let initials = graphemes[..2].join("");
+            format!(
+                r#"<span class="avatar-text avatar-text-2 avatar-initials" title="{}">{}</span>"#,
+                super::html::escape_html(s),
+                super::html::escape_html(&initials)
+            )
+        }
+    }
+}
+
 /// Supports:
 /// - `@embed("avatar.png")` / `@link(...)` elements -> `<img ...>`
 /// - Image file paths or URLs (`"avatar.png"`, `"https://..."`) -> `<img ...>`
-/// - Plain string / emoji (`"🎂"`, `"cat"`) -> raw string
+/// - Plain string / emoji (`"🎂"`, `"cat"`) -> formatted avatar icon
 /// - `@doc.icon(...)` falls through to None here and is handled by `icon::meta_icon_element`.
 fn extract_icon(cx: &MetaCtx, map: &Map<String, Value>) -> (Option<String>, Option<String>) {
     let Some(val) = map.get("icon") else {
@@ -297,7 +358,7 @@ fn extract_icon(cx: &MetaCtx, map: &Map<String, Value>) -> (Option<String>, Opti
                 );
                 (Some(html), Some(resolved))
             } else {
-                (Some(s.clone()), None)
+                (Some(format_text_icon(s)), None)
             }
         }
         Value::Object(obj) => {
@@ -835,7 +896,34 @@ mod tests {
         );
 
         let props_emoji = extract_from(r#"{"icon": "🎂"}"#, None);
-        assert_eq!(props_emoji.icon.as_deref(), Some("🎂"));
+        assert_eq!(
+            props_emoji.icon.as_deref(),
+            Some(r#"<span class="avatar-text avatar-text-1">🎂</span>"#)
+        );
         assert_eq!(props_emoji.icon_image_url, None);
+    }
+
+    #[test]
+    fn format_text_icon_handles_different_lengths() {
+        assert_eq!(
+            format_text_icon("🎂"),
+            r#"<span class="avatar-text avatar-text-1">🎂</span>"#
+        );
+        assert_eq!(
+            format_text_icon("🐾🩵"),
+            r#"<span class="avatar-text avatar-text-2">🐾🩵</span>"#
+        );
+        assert_eq!(
+            format_text_icon("🐾🩵🔥"),
+            r#"<span class="avatar-text avatar-grid avatar-grid-3"><span class="avatar-cell">🐾</span><span class="avatar-cell">🩵</span><span class="avatar-cell">🔥</span></span>"#
+        );
+        assert_eq!(
+            format_text_icon("🐾🩵🦀🔥"),
+            r#"<span class="avatar-text avatar-grid avatar-grid-4"><span class="avatar-cell">🐾</span><span class="avatar-cell">🩵</span><span class="avatar-cell">🦀</span><span class="avatar-cell">🔥</span></span>"#
+        );
+        assert_eq!(
+            format_text_icon("Design"),
+            r#"<span class="avatar-text avatar-text-2 avatar-initials" title="Design">De</span>"#
+        );
     }
 }

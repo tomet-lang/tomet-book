@@ -248,7 +248,10 @@ mod kind_tests {
         )
         .unwrap();
 
-        assert_eq!(out.icon.as_deref(), Some("\u{1F382}"));
+        assert_eq!(
+            out.icon.as_deref(),
+            Some("<span class=\"avatar-text avatar-text-1\">\u{1F382}</span>")
+        );
     }
 
     #[test]

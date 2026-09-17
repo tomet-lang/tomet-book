@@ -46,6 +46,7 @@ image = { version = "0.25", default-features = false, features = [
   "jpeg",
   "webp",
 ] }
+unicode-segmentation = "1.12"
 
 [features]
 # Bundle Pagefind's indexer into the tmtbook binary instead of shelling out to

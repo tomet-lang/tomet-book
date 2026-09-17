@@ -258,6 +258,19 @@
   line-height: 1;
   flex-shrink: 0;
 }
+.infobox-title .infobox-icon .avatar-text-1 {
+  font-size: 1.25em;
+}
+.infobox-title .infobox-icon .avatar-text-2 {
+  font-size: 0.95em;
+}
+.infobox-title .infobox-icon .avatar-grid {
+  width: 1.35em;
+  height: 1.35em;
+  padding: 0;
+  gap: 0;
+  font-size: 0.58em;
+}
 .infobox-title .tm-doc-icon-img {
   width: 1.25em;
   height: 1.25em;

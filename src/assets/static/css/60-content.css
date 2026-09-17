@@ -68,6 +68,9 @@
   font-size: 2rem;
   line-height: 1;
 }
+.hero-section .avatar-text-1 { font-size: 1.85rem; }
+.hero-section .avatar-text-2 { font-size: 1.25rem; }
+.hero-section .avatar-grid { font-size: 0.95rem; padding: 4px; }
 
 .article-header {
   margin: 0 0 16px 0;
