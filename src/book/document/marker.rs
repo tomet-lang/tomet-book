@@ -10,7 +10,13 @@ use super::icon::is_lucide_icon;
 use crate::config::MarkersConfig;
 
 static LI_MARKER_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?s)<li([^>]*)>(\s*)<span class="tm-list-marker"([^>]*)>(.*?)</span>"#)
+    // The trailing ` ?` swallows the one space `tomet-html` always emits
+    // after `</span>` to separate the marker from the text that follows
+    // it -- needed there as the plain-text default, but redundant once
+    // the marker becomes an icon or badge here: both `.tm-list-marker-icon`
+    // and `.tm-list-marker-badge` already carry their own `margin-right`
+    // (`60-content.css`), so keeping the literal space too doubles the gap.
+    Regex::new(r#"(?s)<li([^>]*)>(\s*)<span class="tm-list-marker"([^>]*)>(.*?)</span> ?"#)
         .expect("valid regex for list item marker")
 });
 
@@ -432,5 +438,35 @@ mod tests {
 
         assert!(out.contains("<use href=\"/icons/lucide.svg#flame\"></use>"));
         assert!(out.contains("style=\"--marker-color: #f97316;\""));
+    }
+
+    /// `tomet-html` always emits one literal space after `</span>` to
+    /// separate the marker from the text that follows -- needed there as
+    /// the plain-text default, but redundant once the marker becomes an
+    /// icon or badge here, since both already carry their own
+    /// `margin-right` in `60-content.css`. Keeping the space too would
+    /// double the visual gap.
+    #[test]
+    fn icon_marker_drops_the_redundant_trailing_space() {
+        let mut custom = HashMap::new();
+        custom.insert(
+            "idea".to_string(),
+            MarkerEntryConfig::Detailed {
+                icon: "lightbulb".to_string(),
+                color: Some("#ffee00".to_string()),
+                pkg: None,
+            },
+        );
+        let config = MarkersConfig {
+            enable: true,
+            strikethrough: true,
+            custom,
+        };
+        let html = "<ul>\n<li><span class=\"tm-list-marker\" data-marker=\"idea\">[idea]</span> content</li>\n</ul>";
+        let out = enhance_list_markers(html, &config);
+        assert!(
+            out.contains("</span>content"),
+            "expected no literal space between marker span and content, got: {out}"
+        );
     }
 }
