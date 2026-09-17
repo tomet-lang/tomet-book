@@ -84,6 +84,8 @@ pub struct UiConfig {
     /// anything left out keeps its default.
     #[serde(default)]
     pub strings: HashMap<String, String>,
+    #[serde(default)]
+    pub markers: MarkersConfig,
 }
 
 impl UiConfig {
@@ -122,6 +124,63 @@ impl Default for UiConfig {
             hero_chips: Vec::new(),
             infobox: InfoboxConfig::default(),
             strings: HashMap::new(),
+            markers: MarkersConfig::default(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct MarkersConfig {
+    #[serde(default)]
+    pub enable: bool,
+    #[serde(default = "default_true")]
+    pub strikethrough: bool,
+    #[serde(default)]
+    pub custom: HashMap<String, MarkerEntryConfig>,
+}
+
+impl Default for MarkersConfig {
+    fn default() -> Self {
+        Self {
+            enable: false,
+            strikethrough: default_true(),
+            custom: HashMap::new(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(untagged)]
+pub enum MarkerEntryConfig {
+    Simple(String),
+    Detailed {
+        icon: String,
+        #[serde(default)]
+        color: Option<String>,
+        #[serde(default)]
+        pkg: Option<String>,
+    },
+}
+
+impl MarkerEntryConfig {
+    pub fn icon(&self) -> &str {
+        match self {
+            Self::Simple(name) => name,
+            Self::Detailed { icon, .. } => icon,
+        }
+    }
+
+    pub fn color(&self) -> Option<&str> {
+        match self {
+            Self::Simple(_) => None,
+            Self::Detailed { color, .. } => color.as_deref(),
+        }
+    }
+
+    pub fn pkg(&self) -> &str {
+        match self {
+            Self::Simple(_) => "lucide",
+            Self::Detailed { pkg, .. } => pkg.as_deref().unwrap_or("lucide"),
         }
     }
 }
@@ -435,4 +494,38 @@ mod string_tests {
         );
         assert_eq!(cfg.ui.strings.len(), crate::i18n::en::ui_strings().len());
     }
+
+    #[test]
+    fn markers_config_defaults_to_disabled() {
+        let cfg = load("");
+        assert!(!cfg.ui.markers.enable);
+        assert!(cfg.ui.markers.strikethrough);
+        assert!(cfg.ui.markers.custom.is_empty());
+    }
+
+    #[test]
+    fn markers_config_can_be_enabled_with_custom_entries() {
+        let toml_str = r##"
+[ui.markers]
+enable = true
+strikethrough = false
+
+[ui.markers.custom]
+star = "star"
+fire = { icon = "flame", color = "#f97316" }
+"##;
+        let cfg = load(toml_str);
+        assert!(cfg.ui.markers.enable);
+        assert!(!cfg.ui.markers.strikethrough);
+        assert_eq!(cfg.ui.markers.custom.len(), 2);
+        assert_eq!(
+            cfg.ui.markers.custom.get("star"),
+            Some(&MarkerEntryConfig::Simple("star".to_string()))
+        );
+        let fire = cfg.ui.markers.custom.get("fire").unwrap();
+        assert_eq!(fire.icon(), "flame");
+        assert_eq!(fire.color(), Some("#f97316"));
+        assert_eq!(fire.pkg(), "lucide");
+    }
 }
+

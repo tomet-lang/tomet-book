@@ -34,6 +34,10 @@ static LUCIDE_ICON_NAMES: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
         .collect()
 });
 
+pub(crate) fn is_lucide_icon(name: &str) -> bool {
+    LUCIDE_ICON_NAMES.contains(name)
+}
+
 fn arg_str<'a>(args: Option<&'a Value>, key: &str) -> Option<&'a str> {
     let Value::Map(entries) = args? else {
         return None;

@@ -5,3 +5,10 @@ dest = "dist"
 
 [build]
 kinds = ["*", "!config", "!index"]
+
+[ui.markers]
+enable = true
+strikethrough = true
+
+[ui.markers.custom]
+fire = { icon = "flame", color = "#f97316" }

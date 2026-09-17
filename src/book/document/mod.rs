@@ -3,6 +3,7 @@
 mod html;
 mod icon;
 mod links;
+mod marker;
 mod meta;
 mod toc;
 
@@ -250,6 +251,49 @@ mod kind_tests {
     }
 
     #[test]
+    fn list_markers_render_as_badges_by_default_without_icons() {
+        let config = BookConfig::default();
+        let vault = tomet_links::VaultLinkIndex::from_paths(&["page.tmt".to_string()]);
+
+        let out = process_tomet_document(
+            "#[ Page ]\n\n- (x) task\n- (\"12:01\") breakfast\n",
+            "page.tmt",
+            None,
+            &config,
+            &vault,
+            None,
+            &HashSet::new(),
+        )
+        .unwrap();
+
+        assert!(!out.body_html.contains("<svg class=\"tm-doc-icon\""), "no svg icons when disabled");
+        assert!(out.body_html.contains("<span class=\"tm-list-marker tm-list-marker-badge\" data-marker=\"x\">x</span>"));
+        assert!(out.body_html.contains("<span class=\"tm-list-marker tm-list-marker-badge\" data-marker=\"12:01\">12:01</span>"));
+    }
+
+    #[test]
+    fn list_markers_render_as_icons_when_enabled() {
+        let mut config = BookConfig::default();
+        config.ui.markers.enable = true;
+        let vault = tomet_links::VaultLinkIndex::from_paths(&["page.tmt".to_string()]);
+
+        let out = process_tomet_document(
+            "#[ Page ]\n\n- (x) done task\n- (\"12:01\") breakfast\n",
+            "page.tmt",
+            None,
+            &config,
+            &vault,
+            None,
+            &HashSet::new(),
+        )
+        .unwrap();
+
+        assert!(out.body_html.contains("class=\"tm-task-item tm-task-done tm-strikethrough\""));
+        assert!(out.body_html.contains("<use href=\"/icons/lucide.svg#square-check\"></use>"));
+        assert!(out.body_html.contains("<span class=\"tm-list-marker tm-list-marker-badge\" data-marker=\"12:01\">12:01</span>"));
+    }
+
+    #[test]
     fn a_meta_banner_and_images_written_as_link_elements_resolve() {
         let config = BookConfig::default();
         let vault = tomet_links::VaultLinkIndex::from_paths(&[
@@ -481,7 +525,8 @@ pub fn process_parsed_document_with_blocks(
         lang: Some(config.book.lang.clone()),
         custom_element: Some(tomet_html::CustomElementRenderer::new(icon::render)),
     };
-    let (body_html, outline) = tomet_html::render_body_with_outline(&doc, &render_opts);
+    let (raw_body_html, outline) = tomet_html::render_body_with_outline(&doc, &render_opts);
+    let body_html = marker::enhance_list_markers(&raw_body_html, &config.ui.markers);
 
     // 6. Table of contents, title, and the sticky-tab tree
     let (first_h1, mut toc) = toc_from_outline(&outline);

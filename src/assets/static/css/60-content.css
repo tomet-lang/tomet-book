@@ -302,6 +302,63 @@ article ul > li::marker {
 article ol > li::marker {
   color: var(--bullet-color);
 }
+
+/* ==================== LIST ITEM MARKERS (ICONS & BADGES) ==================== */
+
+/* Remove standard bullet ONLY for task checkbox items (icons replace the bullet) */
+article li.tm-task-item {
+  list-style: none;
+  margin-inline-start: -1.25em;
+}
+
+/* Icon list marker (checkbox, task icons) */
+.tm-list-marker-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: -0.18em;
+  margin-right: 0.4em;
+  color: var(--marker-color, currentColor);
+  line-height: 1;
+}
+
+.tm-list-marker-icon .tm-doc-icon {
+  width: 1.15em;
+  height: 1.15em;
+}
+
+/* Done task item styling */
+article li.tm-task-done {
+  color: var(--text-muted);
+}
+
+article li.tm-strikethrough {
+  text-decoration: line-through;
+}
+
+/* Exclude the checkbox icon itself from strikethrough */
+article li.tm-strikethrough > .tm-list-marker {
+  text-decoration: none;
+  display: inline-flex;
+}
+
+/* Pill badge list marker (timestamps, tags, unmapped markers) */
+.tm-list-marker-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75em;
+  font-weight: 600;
+  line-height: 1.2;
+  padding: 1.5px 7px;
+  border-radius: 9999px;
+  background: var(--surface-sunken, rgba(125, 125, 125, 0.12));
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+  margin-right: 0.45em;
+  vertical-align: 0.12em;
+  letter-spacing: 0.02em;
+}
+
 article img { max-width: 100%; height: auto; display: block; margin: 16px auto; cursor: zoom-in; }
 article pre {
   background: var(--surface);
