@@ -319,7 +319,9 @@
   align-self: flex-start;
   width: 26px;
   height: 24px;
-  border-radius: 0 4px 4px 0;
+  /* See 30-sticky-tabs.css's classic-view override for why this is
+     --tmt-btn-radius and not border-radius. */
+  --tmt-btn-radius: 0 4px 4px 0;
   box-shadow: 2px 0 3px rgba(0, 0, 0, 0.13);
 }
 [data-theme="dark"][data-tabs="right"] .sticky-edge-btn {

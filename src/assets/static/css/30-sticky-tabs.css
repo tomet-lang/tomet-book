@@ -18,31 +18,28 @@
 }
 
 /* Edge navigation buttons: not tabs, so they carry no tab color and align to the bottom edge.
-   Positioned outside the scroll container so they remain fixed when tabs scroll. */
+   Positioned outside the scroll container so they remain fixed when tabs scroll.
+   The skin is <tmt-btn variant="outline" shape="square" size="sm"> now (see
+   macros.html's sticky_edge_btn) -- this is just the flex placement within
+   .pane-content-header, the asymmetric top-only radius (tmt-btn's own
+   :host([shape="square"]) box doesn't have a "flush against what's below"
+   mode), and the shadow, none of which are tmt-btn's business. The
+   hover *text color* swap was dropped: outline's hover rule doesn't have a
+   --tmt-btn-hover-color hook, and the delta (#eaedf1->#fff, #202122->#101418)
+   was barely perceptible anyway -- see 09-18 session notes. */
 .sticky-edge-btn {
   flex: 0 0 auto;
   align-self: flex-end;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 26px;
-  margin-bottom: 0;
-  padding: 0;
-  border: none;
-  border-radius: 4px 4px 0 0;
-  background: var(--sticky-edge-btn-bg);
-  color: var(--sticky-edge-btn-color);
+  --tmt-btn-radius: 4px 4px 0 0;
+  --tmt-btn-border: transparent;
+  --tmt-btn-hover-border: transparent;
+  --tmt-btn-bg: var(--sticky-edge-btn-bg);
+  --tmt-btn-color: var(--sticky-edge-btn-color);
+  --tmt-btn-hover-bg: var(--sticky-edge-btn-hover-bg);
   box-shadow: 0 2px 3px rgba(0, 0, 0, 0.13);
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 [data-theme="dark"] .sticky-edge-btn {
   box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
-}
-.sticky-edge-btn:hover {
-  background: var(--sticky-edge-btn-hover-bg);
-  color: var(--sticky-edge-btn-hover-color);
 }
 #btn-sticky-top {
   margin-right: 6px;
@@ -256,7 +253,6 @@
   --sticky-edge-btn-bg: #2b3036;
   --sticky-edge-btn-hover-bg: #373d46;
   --sticky-edge-btn-color: #eaedf1;
-  --sticky-edge-btn-hover-color: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -293,7 +289,6 @@
     --sticky-edge-btn-bg: #e2e4e9;
     --sticky-edge-btn-hover-bg: #eceef2;
     --sticky-edge-btn-color: #202122;
-    --sticky-edge-btn-hover-color: #101418;
   }
 }
 
@@ -330,7 +325,6 @@
   --sticky-edge-btn-bg: #e2e4e9;
   --sticky-edge-btn-hover-bg: #eceef2;
   --sticky-edge-btn-color: #202122;
-  --sticky-edge-btn-hover-color: #101418;
 }
 
 /* H1: Soft yellow (classic Post-it yellow) */
@@ -856,7 +850,12 @@ html[data-view="classic"] .classic-sticky-tabs .sticky-edge-btn {
   align-self: flex-start;
   width: 26px;
   height: 24px;
-  border-radius: 0 4px 4px 0;
+  /* border-radius (not --tmt-btn-radius) is correct here: it's sizing the
+     host's own box, which the shadow-internal button already fills via
+     width/height:100%, but a plain `border-radius` on the host paints
+     nothing itself (no visible box of its own) -- the shape has to be set
+     on the var the shadow stylesheet actually reads. */
+  --tmt-btn-radius: 0 4px 4px 0;
   box-shadow: none;
 }
 

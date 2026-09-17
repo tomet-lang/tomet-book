@@ -185,7 +185,8 @@
 </div>
 {% endmacro %}
 {% macro sticky_edge_btn(direction, t, id_attr="") %}
-<button type="button" class="sticky-edge-btn sticky-edge-{{ direction }}"{% if id_attr %} id="{{ id_attr }}"{% endif %} data-direction="{{ direction }}" title="{{ t["sticky.to_" ~ direction] }}" aria-label="{{ t["sticky.to_" ~ direction] }}" data-pagefind-ignore>
+<tmt-btn variant="outline" shape="square" size="sm" class="sticky-edge-btn sticky-edge-{{ direction }}"{% if id_attr %} id="{{ id_attr }}"{% endif %} data-direction="{{ direction }}" title="{{ t["sticky.to_" ~ direction] }}" aria-label="{{ t["sticky.to_" ~ direction] }}" data-pagefind-ignore>
+  {{ dsd_btn_shadow(title=t["sticky.to_" ~ direction], aria_label=t["sticky.to_" ~ direction]) }}
   <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     {% if direction == "top" %}
     <path d="M5 5h14"></path>
@@ -197,7 +198,7 @@
     <path d="M5 19h14"></path>
     {% endif %}
   </svg>
-</button>
+</tmt-btn>
 {% endmacro %}
 
 {#
