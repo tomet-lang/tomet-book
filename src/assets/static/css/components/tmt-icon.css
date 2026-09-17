@@ -1,0 +1,8 @@
+:host{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;line-height:1;box-sizing:border-box;flex-shrink:0;width:var(--tmt-icon-size,14px);height:var(--tmt-icon-size,14px)}
+:host([hidden]){display:none!important}
+:host([size="xs"]){--tmt-icon-size:12px;width:12px;height:12px}
+:host([size="sm"]){--tmt-icon-size:14px;width:14px;height:14px}
+:host([size="md"]){--tmt-icon-size:16px;width:16px;height:16px}
+:host([size="lg"]){--tmt-icon-size:20px;width:20px;height:20px}
+:host([size="xl"]){--tmt-icon-size:24px;width:24px;height:24px}
+svg{display:block;width:100%;height:100%;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;fill:none;pointer-events:none}

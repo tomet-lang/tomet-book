@@ -23,19 +23,24 @@
     }
 
     _handleClick(e) {
-      if (this.hasAttribute('disabled') || this._isActive()) {
+      if (this.hasAttribute('disabled')) {
         e.preventDefault();
         e.stopImmediatePropagation();
         return;
       }
+      // `active` only means "already selected" -- it must not swallow the
+      // click. Some callers (e.g. a tab that collapses its panel when
+      // clicked again) rely on their own listener still seeing it; only
+      // href-navigation is skipped, since re-navigating to the current page
+      // is never useful.
       const href = this.getAttribute('href');
-      if (href && !e.defaultPrevented) {
+      if (href && !this._isActive() && !e.defaultPrevented) {
         window.location.href = href;
       }
     }
 
     _handleKeyDown(e) {
-      if (this.hasAttribute('disabled') || this._isActive()) return;
+      if (this.hasAttribute('disabled')) return;
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         this.click();

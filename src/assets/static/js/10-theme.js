@@ -135,22 +135,20 @@
     const currentPattern = getShellPattern();
     const isHighContrast = getShellContrast() === 'high';
 
+    // tmt-swatch/tmt-switch own their aria-checked + tabindex sync off the
+    // `checked` attribute (see 08-tmt-swatch.js / 09-tmt-switch.js) -- this
+    // just decides which one in each group is checked.
     document.querySelectorAll('.color-btn[data-shell-color]').forEach((btn) => {
-      const isSelected = btn.dataset.shellColor === currentColor;
-      btn.classList.toggle('is-active', isSelected);
-      btn.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+      btn.toggleAttribute('checked', btn.dataset.shellColor === currentColor);
     });
 
     document.querySelectorAll('.pattern-btn[data-shell-pattern]').forEach((btn) => {
-      const isSelected = btn.dataset.shellPattern === currentPattern;
-      btn.classList.toggle('is-active', isSelected);
-      btn.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+      btn.toggleAttribute('checked', btn.dataset.shellPattern === currentPattern);
     });
 
     const contrastBtn = document.getElementById('shell-contrast-toggle');
     if (contrastBtn) {
-      contrastBtn.setAttribute('aria-checked', isHighContrast ? 'true' : 'false');
-      contrastBtn.classList.toggle('is-active', isHighContrast);
+      contrastBtn.toggleAttribute('checked', isHighContrast);
     }
   }
 

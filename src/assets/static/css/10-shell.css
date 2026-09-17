@@ -376,8 +376,27 @@ html[data-view="classic"] .classic-view {
   box-sizing: border-box;
 }
 
-/* Rail Navigation Tabs (Uniform buttons for Home & TOC) */
-.rail-tab {
+/* Rail Navigation Tabs. rail-tab-nav/-theme/-palette are <tmt-btn
+   variant="ghost" shape="column"> now (see page.html) -- their own skin
+   comes from tmt-btn.css; --text/--text-muted are already rail-scoped above,
+   so only hover/active need retinting to the rail's own tokens instead of
+   the page's --surface-subtle/--link defaults. rail-tab-title stays a plain
+   <a> (it's a real navigation link, not a button), so it keeps its own
+   rules. */
+.rail-tab-nav,
+.rail-tab-theme,
+.rail-tab-palette {
+  --tmt-btn-hover-bg: var(--shell-border);
+  --tmt-btn-hover-color: var(--shell-text);
+  --tmt-btn-active-bg: var(--shell-border);
+  --tmt-btn-active-color: var(--shell-text);
+  --tmt-btn-active-border: var(--link);
+}
+.rail-tab-palette {
+  --tmt-btn-column-padding: 12px 0;
+}
+
+.rail-tab-title {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -386,37 +405,16 @@ html[data-view="classic"] .classic-view {
   padding: 14px 0;
   background: transparent;
   border: none;
-  border-radius: 0;
-  color: var(--shell-text-muted);
-  text-decoration: none !important;
-  cursor: pointer;
   box-sizing: border-box;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.rail-tab:hover {
-  background: var(--shell-border);
-  color: var(--shell-text);
-}
-
-.rail-tab-title {
   color: var(--shell-text);
   font-weight: 700;
+  text-decoration: none !important;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 .rail-tab-title:hover {
-  color: var(--shell-text) !important;
-}
-
-.rail-tab-toc,
-.rail-tab-nav {
-  color: var(--shell-text-muted);
-}
-.rail-tab-toc.is-active,
-.rail-tab-nav.is-active {
   background: var(--shell-border);
-  color: var(--shell-text);
-  font-weight: 600;
-  border-left: 2px solid var(--link);
+  color: var(--shell-text) !important;
 }
 
 .rail-letters {
@@ -454,39 +452,13 @@ html[data-view="classic"] .classic-view {
   box-sizing: border-box;
 }
 
-.rail-tab-theme {
-  padding: 14px 0;
-  width: 100%;
-  border: none;
-  background: transparent;
-  color: var(--shell-text-muted);
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-.rail-tab-theme:hover {
-  background: var(--shell-border);
-  color: var(--shell-text);
-}
-
-.rail-tab-palette {
-  padding: 12px 0;
-  width: 100%;
-  border: none;
-  background: transparent;
-  color: var(--shell-text-muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-.rail-tab-palette:hover,
-.rail-tab-palette[aria-expanded="true"] {
-  background: var(--shell-border);
-  color: var(--shell-text);
-}
+/* rail-tab-theme/-palette skin is <tmt-btn> now (see the --tmt-btn-* block
+   above). tmt-btn's `active` state means "already selected, clicks no-op"
+   (see tmt-btn.css / 05-tmt-btn.js), which is wrong for a disclosure
+   trigger that must still respond to a second click to close -- so the
+   palette button only gets the ordinary hover tint while its popover is
+   open, not the persistent active skin. Only the icon spin stays here,
+   since it targets a light-DOM child the shadow boundary can't reach. */
 .rail-tab-palette svg {
   display: inline-block;
   transition: transform 0.2s ease;
@@ -555,39 +527,9 @@ html[data-view="classic"] .classic-view {
   gap: 3px;
 }
 
-.swatch-btn {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  width: 100%;
-  padding: 4px 5px;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 0;
-  color: var(--text);
-  font-size: 0.73rem;
-  cursor: pointer;
-  text-align: left;
-  transition: background 0.12s ease, border-color 0.12s ease;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
-.swatch-btn:hover {
-  background: var(--surface-subtle);
-}
-
-.swatch-btn.is-active {
-  background: var(--surface-subtle);
-  border-color: var(--link);
-  font-weight: 600;
-}
-
-.swatch-name {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+/* .color-btn/.pattern-btn's own row skin is <tmt-swatch> now (tmt-swatch.css)
+   -- only the preview content (dot/pattern swatch, genuinely per-instance
+   data, not component skin) stays here. */
 
 .swatch-dot {
   width: 12px;
@@ -664,68 +606,6 @@ html[data-view="classic"] .classic-view {
   transform: rotate(-45deg);
 }
 
-/* Contrast Toggle Switch */
-.contrast-toggle-btn {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 4px 6px;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 0;
-  color: var(--text);
-  font-size: 0.76rem;
-  cursor: pointer;
-  text-align: left;
-  transition: background 0.12s ease, border-color 0.12s ease;
-  box-sizing: border-box;
-}
-
-.contrast-toggle-btn:hover {
-  background: var(--surface-subtle);
-}
-
-.contrast-toggle-btn.is-active,
-.contrast-toggle-btn[aria-checked="true"] {
-  border-color: var(--link);
-  background: var(--surface-subtle);
-  font-weight: 600;
-}
-
-.contrast-toggle-label {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.contrast-switch {
-  width: 28px;
-  height: 16px;
-  background: var(--border);
-  border-radius: 8px;
-  position: relative;
-  transition: background 0.15s ease;
-  flex-shrink: 0;
-}
-
-.contrast-switch-knob {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  transition: transform 0.15s ease;
-}
-
-.contrast-toggle-btn[aria-checked="true"] .contrast-switch {
-  background: var(--link);
-}
-
-.contrast-toggle-btn[aria-checked="true"] .contrast-switch-knob {
-  transform: translateX(12px);
-}
+/* Contrast Toggle Switch: <tmt-switch> now (tmt-switch.css) -- the label,
+   track and knob all live in its shadow root, so nothing is left here. */
 

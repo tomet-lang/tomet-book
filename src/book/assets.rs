@@ -34,6 +34,8 @@ pub const BOOK_JS: &str = concat!(
     include_str!("../assets/static/js/05-tmt-btn.js"),
     include_str!("../assets/static/js/06-tmt-badge.js"),
     include_str!("../assets/static/js/07-tmt-icon.js"),
+    include_str!("../assets/static/js/08-tmt-swatch.js"),
+    include_str!("../assets/static/js/09-tmt-switch.js"),
     include_str!("../assets/static/js/10-theme.js"),
     include_str!("../assets/static/js/20-view-mode.js"),
     include_str!("../assets/static/js/30-floating-controls.js"),
@@ -64,9 +66,20 @@ pub const BOOK_JS: &str = concat!(
 /// `<use href="/icons/lucide.svg#<name>">` without a code change to add one.
 pub const LUCIDE_SPRITE: &str = include_str!("../assets/static/icons/lucide/sprite.svg");
 
+/// One stylesheet per Custom Element, kept out of `BOOK_CSS` on purpose: each
+/// is `<link>`-ed from inside that element's declarative shadow root (see
+/// `dsd_btn_shadow` and friends in macros.html) instead of being inlined
+/// per-instance, so the browser fetches and caches it once no matter how many
+/// `<tmt-btn>` etc. appear on a page.
+pub const TMT_BTN_CSS: &str = include_str!("../assets/static/css/components/tmt-btn.css");
+pub const TMT_BADGE_CSS: &str = include_str!("../assets/static/css/components/tmt-badge.css");
+pub const TMT_ICON_CSS: &str = include_str!("../assets/static/css/components/tmt-icon.css");
+pub const TMT_SWATCH_CSS: &str = include_str!("../assets/static/css/components/tmt-swatch.css");
+pub const TMT_SWITCH_CSS: &str = include_str!("../assets/static/css/components/tmt-switch.css");
+
 /// A short digest of an asset's contents, for `?v=` cache busting.
 ///
-/// Both files are served from fixed paths, so without this a reader who has
+/// These files are served from fixed paths, so without this a reader who has
 /// visited before keeps the stylesheet and script their browser cached, no
 /// matter how many times the book is rebuilt.
 fn content_version(content: &str) -> String {
@@ -77,6 +90,15 @@ fn content_version(content: &str) -> String {
 
 pub static CSS_VERSION: LazyLock<String> = LazyLock::new(|| content_version(BOOK_CSS));
 pub static JS_VERSION: LazyLock<String> = LazyLock::new(|| content_version(BOOK_JS));
+pub static TMT_BTN_CSS_VERSION: LazyLock<String> = LazyLock::new(|| content_version(TMT_BTN_CSS));
+pub static TMT_BADGE_CSS_VERSION: LazyLock<String> =
+    LazyLock::new(|| content_version(TMT_BADGE_CSS));
+pub static TMT_ICON_CSS_VERSION: LazyLock<String> =
+    LazyLock::new(|| content_version(TMT_ICON_CSS));
+pub static TMT_SWATCH_CSS_VERSION: LazyLock<String> =
+    LazyLock::new(|| content_version(TMT_SWATCH_CSS));
+pub static TMT_SWITCH_CSS_VERSION: LazyLock<String> =
+    LazyLock::new(|| content_version(TMT_SWITCH_CSS));
 
 pub fn write_static_assets(out_dir: &Path, src_dir: &Path, config: &BookConfig) -> Result<()> {
     fs::create_dir_all(out_dir)?;
@@ -93,7 +115,20 @@ pub fn write_static_assets(out_dir: &Path, src_dir: &Path, config: &BookConfig) 
     super::write_if_changed(&out_dir.join("icons/lucide.svg"), LUCIDE_SPRITE)
         .context("Failed to write icons/lucide.svg")?;
 
-    // 4. Copy user's custom CSS if specified and exists
+    // 4. Write embedded per-component stylesheets (linked from inside each
+    // Custom Element's declarative shadow root -- see TMT_BTN_CSS above).
+    super::write_if_changed(&out_dir.join("components/tmt-btn.css"), TMT_BTN_CSS)
+        .context("Failed to write components/tmt-btn.css")?;
+    super::write_if_changed(&out_dir.join("components/tmt-badge.css"), TMT_BADGE_CSS)
+        .context("Failed to write components/tmt-badge.css")?;
+    super::write_if_changed(&out_dir.join("components/tmt-icon.css"), TMT_ICON_CSS)
+        .context("Failed to write components/tmt-icon.css")?;
+    super::write_if_changed(&out_dir.join("components/tmt-swatch.css"), TMT_SWATCH_CSS)
+        .context("Failed to write components/tmt-swatch.css")?;
+    super::write_if_changed(&out_dir.join("components/tmt-switch.css"), TMT_SWITCH_CSS)
+        .context("Failed to write components/tmt-switch.css")?;
+
+    // 5. Copy user's custom CSS if specified and exists
     for css_rel in &config.ui.custom_css {
         let clean_rel = css_rel.trim_start_matches('/');
         let src_file = src_dir.join(clean_rel);

@@ -78,6 +78,26 @@ impl<'a> BookRenderer<'a> {
             "js_version",
             Value::from(super::assets::JS_VERSION.as_str()),
         );
+        env.add_global(
+            "tmt_btn_css_version",
+            Value::from(super::assets::TMT_BTN_CSS_VERSION.as_str()),
+        );
+        env.add_global(
+            "tmt_badge_css_version",
+            Value::from(super::assets::TMT_BADGE_CSS_VERSION.as_str()),
+        );
+        env.add_global(
+            "tmt_icon_css_version",
+            Value::from(super::assets::TMT_ICON_CSS_VERSION.as_str()),
+        );
+        env.add_global(
+            "tmt_swatch_css_version",
+            Value::from(super::assets::TMT_SWATCH_CSS_VERSION.as_str()),
+        );
+        env.add_global(
+            "tmt_switch_css_version",
+            Value::from(super::assets::TMT_SWITCH_CSS_VERSION.as_str()),
+        );
         env.add_global("is_dev", Value::from(is_dev));
         env.add_global("rail_letters", Value::from_serialize(&rail_letters));
 

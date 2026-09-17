@@ -57,7 +57,10 @@
     decoding="async"
     fetchpriority="high"
   />
-  <button type="button" class="hero-zoom-btn" title="{{ t["image.zoom_banner"] }}" data-pagefind-ignore>{{ t["image.zoom"] }}</button>
+  <tmt-btn variant="outline" size="xs" shape="rect" class="hero-zoom-btn" title="{{ t["image.zoom_banner"] }}" data-pagefind-ignore>
+    {{ dsd_btn_shadow(title=t["image.zoom_banner"]) }}
+    {{ t["image.zoom"] }}
+  </tmt-btn>
 </div>
 {% endmacro %}
 
@@ -205,31 +208,7 @@
 #}
 {% macro dsd_btn_shadow(title="", aria_label="", disabled=false, type="button") %}
   <template shadowrootmode="open">
-    <style>
-:host{display:inline-flex;vertical-align:middle;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-:host([hidden]){display:none!important}
-.tmt-btn-inner{appearance:none;-webkit-appearance:none;box-sizing:border-box;margin:0;padding:0;border:2px solid transparent;border-radius:var(--tmt-btn-radius,4px);background:transparent;color:var(--tmt-btn-color,var(--text,currentColor));font-family:inherit;font-size:13px;font-weight:500;line-height:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;user-select:none;white-space:nowrap;text-decoration:none;width:100%;height:100%;transition:background-color .15s ease,border-color .15s ease,color .15s ease,opacity .15s ease}
-:host([size="xs"]) .tmt-btn-inner{height:22px;padding:0 6px;font-size:11px}
-:host([size="sm"]) .tmt-btn-inner{height:28px;padding:0 8px;font-size:12px}
-:host([size="md"]) .tmt-btn-inner,:host(:not([size])) .tmt-btn-inner{height:34px;padding:0 12px;font-size:13px}
-:host([shape="square"]) .tmt-btn-inner{padding:0;width:34px}
-:host([shape="square"][size="xs"]) .tmt-btn-inner{padding:0;width:22px}
-:host([shape="square"][size="sm"]) .tmt-btn-inner{padding:0;width:28px}
-:host([shape="circle"]) .tmt-btn-inner{padding:0;width:34px;border-radius:50%}
-:host([shape="circle"][size="xs"]) .tmt-btn-inner{padding:0;width:22px;border-radius:50%}
-:host([shape="circle"][size="sm"]) .tmt-btn-inner{padding:0;width:28px;border-radius:50%}
-:host([variant="outline"]) .tmt-btn-inner,:host(:not([variant])) .tmt-btn-inner{border-color:var(--tmt-btn-border,var(--border-subtle,#c8ccd1));background:var(--tmt-btn-bg,var(--surface,#fff));color:var(--tmt-btn-color,var(--text,#202122))}
-:host([variant="outline"]:not([active]):not(.active):not(.is-active):not([disabled]):not([aria-disabled="true"])) .tmt-btn-inner:hover{border-color:var(--tmt-btn-hover-border,var(--link,#3366cc));background:var(--tmt-btn-hover-bg,var(--surface-subtle,#eaecf0))}
-:host([variant="ghost"]) .tmt-btn-inner{border-color:transparent;background:transparent;color:var(--tmt-btn-color,var(--text-muted,inherit))}
-:host([variant="ghost"]:not([active]):not(.active):not(.is-active):not([disabled]):not([aria-disabled="true"])) .tmt-btn-inner:hover{background:var(--tmt-btn-hover-bg,var(--surface-subtle,rgba(0,0,0,.06)));color:var(--tmt-btn-hover-color,var(--text,currentColor))}
-:host([variant="solid"]) .tmt-btn-inner{border-color:var(--tmt-btn-border,var(--link,#3366cc));background:var(--tmt-btn-bg,var(--link,#3366cc));color:var(--tmt-btn-color,#fff)}
-:host([variant="solid"]:not([active]):not(.active):not(.is-active):not([disabled]):not([aria-disabled="true"])) .tmt-btn-inner:hover{opacity:.9}
-:host([active]) .tmt-btn-inner,:host(.active) .tmt-btn-inner,:host(.is-active) .tmt-btn-inner,:host([aria-pressed="true"]) .tmt-btn-inner{border-color:var(--tmt-btn-active-border,var(--link,#3366cc));background:var(--tmt-btn-active-bg,var(--surface-subtle,#eaecf0));color:var(--tmt-btn-active-color,var(--link,#3366cc));cursor:default;font-weight:600}
-:host([disabled]) .tmt-btn-inner,:host([aria-disabled="true"]) .tmt-btn-inner{opacity:.45;cursor:not-allowed;pointer-events:none}
-.tmt-btn-inner:focus-visible{outline:2px solid var(--link,#3366cc);outline-offset:1px}
-::slotted(svg),::slotted(tmt-icon){display:block;flex-shrink:0;pointer-events:none}
-::slotted(img){display:block;pointer-events:none;object-fit:cover}
-    </style>
+    <link rel="stylesheet" href="/components/tmt-btn.css?v={{ tmt_btn_css_version }}">
     <button type="{{ type }}" class="tmt-btn-inner" part="button"{% if title %} title="{{ title }}"{% endif %}{% if aria_label %} aria-label="{{ aria_label }}"{% endif %}{% if disabled %} disabled{% endif %}>
       <slot></slot>
     </button>
@@ -263,24 +242,7 @@
 #}
 {% macro dsd_badge_shadow(href="") %}
   <template shadowrootmode="open">
-    <style>
-:host{display:inline-flex;vertical-align:middle;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-:host([hidden]){display:none!important}
-.tmt-badge-inner{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:4px;margin:0;padding:0 7px;height:22px;font-family:inherit;font-size:11px;font-weight:500;line-height:1;white-space:nowrap;user-select:none;border-radius:var(--tmt-badge-radius,4px);border:1px solid var(--border-subtle,#c8ccd1);background:var(--surface-subtle,#eaecf0);color:var(--text,#202122);text-decoration:none;transition:background-color .15s ease,border-color .15s ease,color .15s ease}
-:host([size="xs"]) .tmt-badge-inner{height:18px;padding:0 5px;font-size:10px}
-:host([size="sm"]) .tmt-badge-inner{height:22px;padding:0 7px;font-size:11px}
-:host([size="md"]) .tmt-badge-inner{height:26px;padding:0 9px;font-size:12px}
-:host([shape="pill"]) .tmt-badge-inner{border-radius:9999px}
-:host([shape="rect"]) .tmt-badge-inner{border-radius:var(--tmt-badge-radius,4px)}
-:host([variant="subtle"]) .tmt-badge-inner,:host(:not([variant])) .tmt-badge-inner{border-color:var(--border-subtle,#c8ccd1);background:var(--surface-subtle,#eaecf0);color:var(--text,#202122)}
-:host([variant="outline"]) .tmt-badge-inner{border-color:var(--border,#a2a9b1);background:transparent;color:var(--text,#202122)}
-:host([variant="solid"]) .tmt-badge-inner{border-color:var(--link,#3366cc);background:var(--link,#3366cc);color:#fff}
-:host([variant="kbd"]) .tmt-badge-inner{border-color:var(--border,#a2a9b1);background:var(--surface,#f8f9fa);color:var(--text-muted,#54595d);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;box-shadow:0 1px 0 var(--border,#a2a9b1)}
-:host(:not([href]):not([role="button"]):not([clickable])) .tmt-badge-inner{cursor:default}
-:host([href]) .tmt-badge-inner,:host([role="button"]) .tmt-badge-inner,:host([clickable]) .tmt-badge-inner{cursor:pointer}
-:host([href]:hover) .tmt-badge-inner,:host([role="button"]:hover) .tmt-badge-inner,:host([clickable]:hover) .tmt-badge-inner{border-color:var(--link,#3366cc);background:var(--surface,#fff);color:var(--link,#3366cc)}
-::slotted(svg),::slotted(tmt-icon){display:block;flex-shrink:0;pointer-events:none}
-    </style>
+    <link rel="stylesheet" href="/components/tmt-badge.css?v={{ tmt_badge_css_version }}">
     {% if href %}
     <a href="{{ href }}" class="tmt-badge-inner" part="badge">
       <slot></slot>
@@ -318,16 +280,7 @@
 #}
 {% macro dsd_icon_shadow(name="", size="sm", pkg="lucide") %}
   <template shadowrootmode="open">
-    <style>
-:host{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;line-height:1;box-sizing:border-box;flex-shrink:0;width:var(--tmt-icon-size,14px);height:var(--tmt-icon-size,14px)}
-:host([hidden]){display:none!important}
-:host([size="xs"]){--tmt-icon-size:12px;width:12px;height:12px}
-:host([size="sm"]){--tmt-icon-size:14px;width:14px;height:14px}
-:host([size="md"]){--tmt-icon-size:16px;width:16px;height:16px}
-:host([size="lg"]){--tmt-icon-size:20px;width:20px;height:20px}
-:host([size="xl"]){--tmt-icon-size:24px;width:24px;height:24px}
-svg{display:block;width:100%;height:100%;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;fill:none;pointer-events:none}
-    </style>
+    <link rel="stylesheet" href="/components/tmt-icon.css?v={{ tmt_icon_css_version }}">
     {% if name %}
     <svg aria-hidden="true">
       <use href="/icons/{{ pkg }}.svg#{{ name }}"></use>
@@ -351,6 +304,34 @@ svg{display:block;width:100%;height:100%;stroke:currentColor;stroke-width:2;stro
 </tmt-icon>
 {% endmacro %}
 
+{#
+  Primitive atom: <tmt-swatch>
+  A row-shaped, single-select radio item (role="radio", parent marked
+  role="radiogroup") for preview + label controls like the shell color/pattern
+  pickers. Unlike <tmt-btn>'s centered fixed-size chip, this is a full-width
+  left-aligned row -- see the "フルwidth行" design discussion.
+#}
+{% macro dsd_swatch_shadow() %}
+  <template shadowrootmode="open">
+    <link rel="stylesheet" href="/components/tmt-swatch.css?v={{ tmt_swatch_css_version }}">
+    <slot name="preview"></slot>
+    <slot></slot>
+  </template>
+{% endmacro %}
 
+{#
+  Primitive atom: <tmt-switch>
+  A row-shaped boolean toggle (role="switch"), standalone (not part of a
+  group) -- see the shell high-contrast toggle.
+#}
+{% macro dsd_switch_shadow() %}
+  <template shadowrootmode="open">
+    <link rel="stylesheet" href="/components/tmt-switch.css?v={{ tmt_switch_css_version }}">
+    <slot></slot>
+    <span class="tmt-switch-track" part="track">
+      <span class="tmt-switch-knob" part="knob"></span>
+    </span>
+  </template>
+{% endmacro %}
 
 

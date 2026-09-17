@@ -84,41 +84,8 @@
   flex-shrink: 0;
 }
 
-.peek-action-btn {
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.1s, color 0.1s, border-color 0.1s;
-}
-
-.peek-action-btn:hover {
-  background: var(--surface-subtle);
-  color: var(--text);
-  border-color: var(--border-subtle);
-}
-
-.peek-action-btn:active {
-  background: var(--border-subtle);
-}
-
-.peek-action-btn svg {
-  width: 15px;
-  height: 15px;
-  stroke: currentColor;
-}
-
-.peek-btn-close {
-  font-size: 1rem;
-  line-height: 1;
-}
+/* peek-action-btn's own skin is <tmt-btn> now (variant="ghost" size="sm"
+   shape="square") -- see base.html and macros.html's dsd_btn_shadow. */
 
 .peek-scroll-body {
   flex: 1;

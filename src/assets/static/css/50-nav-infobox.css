@@ -335,25 +335,17 @@
   color: var(--link);
   background: var(--surface);
 }
+/* Positioning and reveal-on-hover only -- the skin is <tmt-btn> now
+   (variant="ghost" size="xs" shape="square"), see page.html and
+   macros.html's dsd_btn_shadow. */
 .infobox-copy-btn {
   position: absolute;
   right: 6px;
   top: 50%;
   transform: translateY(-50%);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  border: 1px solid transparent;
-  border-radius: 3px;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+  transition: opacity 0.15s ease;
 }
 .infobox-data:hover .infobox-copy-btn,
 .infobox-data:focus-within .infobox-copy-btn {
@@ -362,13 +354,12 @@
 }
 .infobox-copy-btn:hover {
   opacity: 1 !important;
-  color: var(--link);
-  background: var(--surface);
-  border-color: var(--border-subtle);
 }
 .infobox-copy-btn.is-copied {
   opacity: 1 !important;
-  color: #10b981;
+  /* tmt-btn's own color override hook, not a plain `color` -- the visible
+     button lives inside its shadow root. */
+  --tmt-btn-color: #10b981;
 }
 
 .infobox-header-cell {

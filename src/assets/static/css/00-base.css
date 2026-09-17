@@ -747,26 +747,11 @@ html[data-view="classic"] .floating-controls .view-btn-classic,
   font-weight: 500;
 }
 
-.theme-toggle-btn {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-  padding: 4px 6px;
-  border-radius: 0;
-  cursor: pointer;
-  display: inline-grid;
-  place-items: center;
-  line-height: 1;
-  position: relative;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-.theme-toggle-btn:hover {
-  color: var(--link);
-  border-color: var(--link);
-  background: var(--surface-subtle);
-}
-
-/* Theme SVG Icon Display & Hover Animation (matches shell palette button) */
+/* Theme SVG Icon Display & Hover Animation (matches shell palette button).
+   The button's own skin (background/border/hover) comes from <tmt-btn> now
+   -- see macros.html's dsd_btn_shadow -- these rules only handle the
+   slotted sun/moon crossfade, which lives in light DOM and is unaffected
+   by the shadow boundary. */
 .theme-toggle-btn .icon-theme {
   grid-area: 1 / 1;
   width: 18px;
@@ -872,9 +857,10 @@ textarea,
 [role="button"],
 tmt-btn,
 tmt-badge,
+tmt-swatch,
+tmt-switch,
 .rail-tab,
 .sticky-tab-btn,
-.swatch-btn,
 .view-btn {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
@@ -885,6 +871,12 @@ tmt-badge,
 tmt-icon {
   display: inline-flex;
   vertical-align: middle;
+}
+
+tmt-swatch,
+tmt-switch {
+  display: flex;
+  width: 100%;
 }
 
 tmt-btn[hidden],
