@@ -1,6 +1,6 @@
 (() => {
-  const T = (window.TMT ??= {});
-  const t = (key, fallback) => T.t(key, fallback);
+  const T = (window.TMT ??= {} as any);
+  const t = (key: string, fallback = "") => T.t(key, fallback);
 
   // ==================== PAGE PREVIEW ====================
   const previewCache = new Map();
@@ -21,7 +21,7 @@
     window.addEventListener('scroll', hidePreviewCard, { capture: true, passive: true });
     document.addEventListener('click', (e) => {
       const card = document.getElementById('wiki-page-preview');
-      if (card && !card.contains(e.target)) {
+      if (card && !card.contains(e.target as Node | null)) {
         hidePreviewCard();
       }
     });

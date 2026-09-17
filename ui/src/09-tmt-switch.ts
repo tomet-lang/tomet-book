@@ -54,6 +54,6 @@
     customElements.define('tmt-switch', TmtSwitch);
   }
 
-  window.TMT ??= {};
+  window.TMT ??= {} as any;
   window.TMT.TmtSwitch = TmtSwitch;
 })();

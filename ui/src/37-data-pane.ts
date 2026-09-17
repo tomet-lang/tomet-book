@@ -1,5 +1,5 @@
 (() => {
-  const T = (window.TMT ??= {});
+  const T = (window.TMT ??= {} as any);
 
   // ==================== DATA PANE (INFOBOX / METADATA) EXPAND-COLLAPSE ====================
   function bindDataPaneToggle() {

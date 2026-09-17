@@ -22,6 +22,6 @@
     customElements.define('tmt-icon', TmtIcon);
   }
 
-  window.TMT ??= {};
+  window.TMT ??= {} as any;
   window.TMT.TmtIcon = TmtIcon;
 })();

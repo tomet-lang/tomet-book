@@ -1,7 +1,7 @@
 (() => {
-  const T = (window.TMT ??= {});
+  const T = (window.TMT ??= {} as any);
   const syncHeadingHash = (...a) => T.syncHeadingHash(...a);
-  const t = (key, fallback) => T.t(key, fallback);
+  const t = (key: string, fallback = "") => T.t(key, fallback);
 
   // ==================== CLASSIC VIEW INTERACTIONS ====================
   function setupClassicViewInteraction() {

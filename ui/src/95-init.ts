@@ -1,5 +1,5 @@
 (() => {
-  const T = (window.TMT ??= {});
+  const T = (window.TMT ??= {} as any);
   const syncViewMode = (...a) => T.syncViewMode(...a);
   const setupThemeToggle = (...a) => T.setupThemeToggle(...a);
   const setupDraggableFloatingControls = (...a) => T.setupDraggableFloatingControls(...a);
@@ -16,7 +16,7 @@
   const setupCostumeSwitchers = (...a) => T.setupCostumeSwitchers(...a);
   const setupEditDropdown = (...a) => T.setupEditDropdown(...a);
   const setupClientRouter = (...a) => T.setupClientRouter?.(...a);
-  const t = (key, fallback) => T.t(key, fallback);
+  const t = (key: string, fallback = "") => T.t(key, fallback);
 
   // ==================== INITIALIZE ====================
   function initPage() {

@@ -1,5 +1,5 @@
 (() => {
-  const t = (key, fallback) =>
+  const t = (key: string, fallback = "") =>
     window.TMT?.t ? window.TMT.t(key, fallback) : (window.tmtStrings?.[key] ?? fallback ?? key);
 
   document.addEventListener('click', async (e) => {

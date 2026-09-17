@@ -58,6 +58,6 @@
     customElements.define('tmt-badge', TmtBadge);
   }
 
-  window.TMT ??= {};
+  window.TMT ??= {} as any;
   window.TMT.TmtBadge = TmtBadge;
 })();

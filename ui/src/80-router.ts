@@ -1,5 +1,5 @@
 (() => {
-  const T = (window.TMT ??= {});
+  const T = (window.TMT ??= {} as any);
 
   let isNavigating = false;
   let currentPath = normalizePath(window.location.href);
@@ -33,10 +33,10 @@
     // 1. Title & URL
     document.title = newDoc.title;
     const scriptEl = Array.from(newDoc.querySelectorAll('script')).find((s) =>
-      s.textContent.includes('window.tmtPageUrl')
-    );
+      ((s as HTMLScriptElement).textContent || '').includes('window.tmtPageUrl')
+    ) as HTMLScriptElement | undefined;
     if (scriptEl) {
-      const m = scriptEl.textContent.match(/window\.tmtPageUrl\s*=\s*(".*?"|'.*?');/);
+      const m = (scriptEl.textContent || '').match(/window\.tmtPageUrl\s*=\s*(".*?"|'.*?');/);
       if (m) {
         try {
           window.tmtPageUrl = JSON.parse(m[1]);

@@ -11,7 +11,7 @@ fn main() {
     let status = Command::new("tailwindcss")
         .args([
             "-c",
-            "ui/tailwind.config.js",
+            "ui/tailwind.config.ts",
             "-i",
             "ui/styles/tailwind-input.css",
             "-o",

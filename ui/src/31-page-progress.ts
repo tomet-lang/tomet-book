@@ -1,5 +1,5 @@
 (() => {
-  const T = (window.TMT ??= {});
+  const T = (window.TMT ??= {} as any);
 
   // ==================== PAGE LOAD PROGRESS BAR ====================
   function startPageProgress() {

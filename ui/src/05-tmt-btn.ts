@@ -87,6 +87,6 @@
     customElements.define('tmt-btn', TmtBtn);
   }
 
-  window.TMT ??= {};
+  window.TMT ??= {} as any;
   window.TMT.TmtBtn = TmtBtn;
 })();

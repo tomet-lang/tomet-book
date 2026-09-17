@@ -27,8 +27,12 @@ package:
 test:
     cargo test
 
+# Type-check TypeScript without producing output
+check-ui:
+    tsc --project ui/tsconfig.json --noEmit
+
 # Type-check without producing a binary
-check:
+check: check-ui
     cargo check --all-targets
 
 # Lint. The tree is warning-free; keep it that way.

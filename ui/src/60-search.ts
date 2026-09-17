@@ -1,6 +1,6 @@
 (() => {
-  const T = (window.TMT ??= {});
-  const t = (key, fallback) => T.t(key, fallback);
+  const T = (window.TMT ??= {} as any);
+  const t = (key: string, fallback = "") => T.t(key, fallback);
 
   // ==================== SEARCH (PAGEFIND) ====================
   let pagefindInstance = null;
@@ -159,7 +159,8 @@
     });
 
     document.addEventListener('click', (e) => {
-      if (!input.contains(e.target) && !resultsContainer.contains(e.target)) {
+      const targetNode = e.target as Node | null;
+      if (!input.contains(targetNode) && !resultsContainer.contains(targetNode)) {
         resultsContainer.hidden = true;
       }
     });

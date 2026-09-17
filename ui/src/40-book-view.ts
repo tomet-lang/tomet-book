@@ -1,6 +1,6 @@
 (() => {
-  const T = (window.TMT ??= {});
-  const t = (key, fallback) => T.t(key, fallback);
+  const T = (window.TMT ??= {} as any);
+  const t = (key: string, fallback = "") => T.t(key, fallback);
 
   // ==================== BOOK VIEW INTERACTIONS ====================
 
@@ -53,7 +53,7 @@
 
     const hasTabs = !!document.getElementById('sticky-tabs-bar');
     if (scrollContainer && (tocLinks.length > 0 || hasTabs)) {
-      let headingTargets = Array.from(tocLinks)
+      let headingTargets: any[] = Array.from(tocLinks)
         .map((link) => {
           const id = link.getAttribute('data-target');
           const el = id ? document.getElementById(id) : null;
@@ -396,8 +396,8 @@
         popover.innerHTML = `<div class="sticky-popover-tab sticky-tab-btn" role="button"></div><div class="sticky-hover-popover-list"></div>`;
         document.body.appendChild(popover);
       }
-      let popoverTab = popover.querySelector('.sticky-popover-tab');
-      let popoverList = popover.querySelector('.sticky-hover-popover-list');
+      let popoverTab = popover.querySelector<HTMLElement>('.sticky-popover-tab');
+      let popoverList = popover.querySelector<HTMLElement>('.sticky-hover-popover-list');
       if (!popoverTab) {
         popoverTab = document.createElement('div');
         popoverTab.className = 'sticky-popover-tab sticky-tab-btn';
@@ -429,15 +429,18 @@
         }
 
         popoverList.innerHTML = '';
-        const itemTemplate = document.getElementById('sticky-hover-item-template');
-        childNodes.forEach((child) => {
+        const itemTemplate = document.getElementById('sticky-hover-item-template') as HTMLTemplateElement | null;
+        if (!itemTemplate) return;
+        childNodes.forEach((childNode) => {
+          const child = childNode as HTMLElement;
           const childId = child.getAttribute('data-id');
           const childLevel = child.getAttribute('data-level') || '2';
           const childBtn = child.querySelector(':scope > .sticky-tab-btn');
           const childText = childBtn?.querySelector('.sticky-tab-text')?.textContent || childId;
           const isActive = child.classList.contains('is-active');
 
-          const item = itemTemplate.content.firstElementChild.cloneNode(true);
+          const item = itemTemplate.content.firstElementChild?.cloneNode(true) as any;
+          if (!item) return;
           item.href = `#${childId}`;
           item.classList.add(`level-${childLevel}`);
           if (isActive) item.classList.add('is-active');

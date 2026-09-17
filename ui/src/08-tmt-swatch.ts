@@ -88,6 +88,6 @@
     customElements.define('tmt-swatch', TmtSwatch);
   }
 
-  window.TMT ??= {};
+  window.TMT ??= {} as any;
   window.TMT.TmtSwatch = TmtSwatch;
 })();

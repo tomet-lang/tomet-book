@@ -1,7 +1,7 @@
 (() => {
-  const T = (window.TMT ??= {});
+  const T = (window.TMT ??= {} as any);
   const initPage = (...a) => T.initPage(...a);
-  const t = (key, fallback) => T.t(key, fallback);
+  const t = (key: string, fallback = "") => T.t(key, fallback);
 
   // ==================== SMART HOT RELOAD (DEV SERVER) ====================
   function setupDevServerLiveReload() {
@@ -10,9 +10,10 @@
     function reloadCss() {
       const links = document.querySelectorAll('link[rel="stylesheet"]');
       const timestamp = Date.now();
-      links.forEach((link) => {
+      links.forEach((el) => {
+        const link = el as HTMLLinkElement;
         const url = new URL(link.href, window.location.href);
-        url.searchParams.set('_tmt_ts', timestamp);
+        url.searchParams.set('_tmt_ts', String(timestamp));
         link.href = url.toString();
       });
       console.log('[tmtbook] 🎨 CSS hot reloaded');

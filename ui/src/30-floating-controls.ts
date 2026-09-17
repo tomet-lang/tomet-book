@@ -1,6 +1,6 @@
 (() => {
-  const T = (window.TMT ??= {});
-  const t = (key, fallback) => T.t(key, fallback);
+  const T = (window.TMT ??= {} as any);
+  const t = (key: string, fallback = "") => T.t(key, fallback);
 
   // ==================== DRAGGABLE FLOATING CONTROLS ====================
   function setupDraggableFloatingControls() {
