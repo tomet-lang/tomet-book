@@ -134,6 +134,26 @@
   line-height: 1;
 }
 
+/* 2 chars: diagonal layout (top-left & bottom-right) */
+.avatar-grid-2 {
+  font-size: 1.35rem;
+  padding: 5px;
+}
+
+.avatar-grid-2 .avatar-cell:nth-child(1) {
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: start;
+  align-self: start;
+}
+
+.avatar-grid-2 .avatar-cell:nth-child(2) {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: end;
+  align-self: end;
+}
+
 /* 3 chars: 3rd cell centered spanning bottom row */
 .avatar-grid-3 .avatar-cell:nth-child(3) {
   grid-column: 1 / span 2;

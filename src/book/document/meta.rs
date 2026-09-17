@@ -295,11 +295,17 @@ pub fn format_text_icon(s: &str) -> String {
             )
         }
         2 => {
-            let text = graphemes.join("");
-            format!(
-                r#"<span class="avatar-text avatar-text-2">{}</span>"#,
-                super::html::escape_html(&text)
-            )
+            let cells = graphemes
+                .iter()
+                .map(|g| {
+                    format!(
+                        r#"<span class="avatar-cell">{}</span>"#,
+                        super::html::escape_html(g)
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join("");
+            format!(r#"<span class="avatar-text avatar-grid avatar-grid-2">{cells}</span>"#)
         }
         3 => {
             let cells = graphemes
@@ -911,7 +917,7 @@ mod tests {
         );
         assert_eq!(
             format_text_icon("🐾🩵"),
-            r#"<span class="avatar-text avatar-text-2">🐾🩵</span>"#
+            r#"<span class="avatar-text avatar-grid avatar-grid-2"><span class="avatar-cell">🐾</span><span class="avatar-cell">🩵</span></span>"#
         );
         assert_eq!(
             format_text_icon("🐾🩵🔥"),
