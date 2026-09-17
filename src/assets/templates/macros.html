@@ -70,17 +70,17 @@
 {% macro hero_chips(hero_chips, extra_style) %}
 <div class="hero-meta-chips" data-pagefind-weight="6.0"{% if extra_style %} style="{{ extra_style }}"{% endif %}>
   {% for chip in hero_chips %}
-  {% if chip.href %}
-  <a href="{{ chip.href }}" class="hero-chip hero-chip-link">
+  <tmt-badge
+    class="hero-chip{% if chip.href %} hero-chip-link{% endif %}"
+    variant="subtle"
+    shape="pill"
+    size="sm"
+    {% if chip.href %}href="{{ chip.href }}"{% endif %}
+  >
+    {{ dsd_badge_shadow(href=chip.href) }}
     {% if chip.label %}<span class="chip-label">{{ chip.label }}:</span>{% endif %}
     <span class="chip-val">{{ chip.value }}</span>
-  </a>
-  {% else %}
-  <span class="hero-chip">
-    {% if chip.label %}<span class="chip-label">{{ chip.label }}:</span>{% endif %}
-    <span class="chip-val">{{ chip.value }}</span>
-  </span>
-  {% endif %}
+  </tmt-badge>
   {% endfor %}
 </div>
 {% endmacro %}
@@ -97,19 +97,36 @@
       loading="lazy"
       decoding="async"
     />
+    {% if images | length > 1 %}
+    <tmt-btn class="costume-arrow prev" shape="circle" size="sm" variant="ghost" aria-label="{{ t["costume.prev"] }}" title="{{ t["costume.prev"] }}" data-pagefind-ignore>
+      {{ dsd_btn_shadow(title=t["costume.prev"], aria_label=t["costume.prev"]) }}
+      {{ tmt_icon(name="chevron-left", size="sm") }}
+    </tmt-btn>
+    <tmt-btn class="costume-arrow next" shape="circle" size="sm" variant="ghost" aria-label="{{ t["costume.next"] }}" title="{{ t["costume.next"] }}" data-pagefind-ignore>
+      {{ dsd_btn_shadow(title=t["costume.next"], aria_label=t["costume.next"]) }}
+      {{ tmt_icon(name="chevron-right", size="sm") }}
+    </tmt-btn>
+    {% endif %}
   </div>
   {% if images | length > 1 %}
   <div class="infobox-costume-switcher" role="tablist" data-pagefind-ignore>
     <span class="switcher-label">{{ t["costume.label"] }}</span>
     <div class="switcher-buttons">
       {% for img in images %}
-      <button
-        type="button"
+      <tmt-btn
         class="costume-btn{% if loop.first %} active{% endif %}"
+        variant="outline"
+        size="sm"
+        shape="square"
+        {% if loop.first %}active{% endif %}
         data-img-src="{{ img }}"
         {% if original_images and original_images[loop.index0] %}data-original="{{ original_images[loop.index0] }}"{% endif %}
         title="{{ t["costume.item"] }} {{ loop.index }}"
-      >{{ loop.index }}</button>
+      >
+        {{ dsd_btn_shadow(title=t["costume.item"] ~ " " ~ loop.index) }}
+        <img class="costume-thumb" src="{{ img }}" alt="" loading="lazy" />
+        <span class="costume-btn-num">{{ loop.index }}</span>
+      </tmt-btn>
       {% endfor %}
     </div>
   </div>
@@ -179,3 +196,161 @@
   </svg>
 </button>
 {% endmacro %}
+
+{#
+  Primitive atom: <tmt-btn>
+  Encapsulated button component using Web Components & Declarative Shadow DOM.
+  Provides strict style isolation (no scale/translate animations, no double borders,
+  hover state only when clickable) with zero client-JS dependency for rendering.
+#}
+{% macro dsd_btn_shadow(title="", aria_label="", disabled=false, type="button") %}
+  <template shadowrootmode="open">
+    <style>
+:host{display:inline-flex;vertical-align:middle;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:host([hidden]){display:none!important}
+.tmt-btn-inner{appearance:none;-webkit-appearance:none;box-sizing:border-box;margin:0;padding:0;border:2px solid transparent;border-radius:var(--tmt-btn-radius,4px);background:transparent;color:var(--tmt-btn-color,var(--text,currentColor));font-family:inherit;font-size:13px;font-weight:500;line-height:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;user-select:none;white-space:nowrap;text-decoration:none;width:100%;height:100%;transition:background-color .15s ease,border-color .15s ease,color .15s ease,opacity .15s ease}
+:host([size="xs"]) .tmt-btn-inner{height:22px;padding:0 6px;font-size:11px}
+:host([size="sm"]) .tmt-btn-inner{height:28px;padding:0 8px;font-size:12px}
+:host([size="md"]) .tmt-btn-inner,:host(:not([size])) .tmt-btn-inner{height:34px;padding:0 12px;font-size:13px}
+:host([shape="square"]) .tmt-btn-inner{padding:0;width:34px}
+:host([shape="square"][size="xs"]) .tmt-btn-inner{padding:0;width:22px}
+:host([shape="square"][size="sm"]) .tmt-btn-inner{padding:0;width:28px}
+:host([shape="circle"]) .tmt-btn-inner{padding:0;width:34px;border-radius:50%}
+:host([shape="circle"][size="xs"]) .tmt-btn-inner{padding:0;width:22px;border-radius:50%}
+:host([shape="circle"][size="sm"]) .tmt-btn-inner{padding:0;width:28px;border-radius:50%}
+:host([variant="outline"]) .tmt-btn-inner,:host(:not([variant])) .tmt-btn-inner{border-color:var(--tmt-btn-border,var(--border-subtle,#c8ccd1));background:var(--tmt-btn-bg,var(--surface,#fff));color:var(--tmt-btn-color,var(--text,#202122))}
+:host([variant="outline"]:not([active]):not(.active):not(.is-active):not([disabled]):not([aria-disabled="true"])) .tmt-btn-inner:hover{border-color:var(--tmt-btn-hover-border,var(--link,#3366cc));background:var(--tmt-btn-hover-bg,var(--surface-subtle,#eaecf0))}
+:host([variant="ghost"]) .tmt-btn-inner{border-color:transparent;background:transparent;color:var(--tmt-btn-color,var(--text-muted,inherit))}
+:host([variant="ghost"]:not([active]):not(.active):not(.is-active):not([disabled]):not([aria-disabled="true"])) .tmt-btn-inner:hover{background:var(--tmt-btn-hover-bg,var(--surface-subtle,rgba(0,0,0,.06)));color:var(--tmt-btn-hover-color,var(--text,currentColor))}
+:host([variant="solid"]) .tmt-btn-inner{border-color:var(--tmt-btn-border,var(--link,#3366cc));background:var(--tmt-btn-bg,var(--link,#3366cc));color:var(--tmt-btn-color,#fff)}
+:host([variant="solid"]:not([active]):not(.active):not(.is-active):not([disabled]):not([aria-disabled="true"])) .tmt-btn-inner:hover{opacity:.9}
+:host([active]) .tmt-btn-inner,:host(.active) .tmt-btn-inner,:host(.is-active) .tmt-btn-inner,:host([aria-pressed="true"]) .tmt-btn-inner{border-color:var(--tmt-btn-active-border,var(--link,#3366cc));background:var(--tmt-btn-active-bg,var(--surface-subtle,#eaecf0));color:var(--tmt-btn-active-color,var(--link,#3366cc));cursor:default;font-weight:600}
+:host([disabled]) .tmt-btn-inner,:host([aria-disabled="true"]) .tmt-btn-inner{opacity:.45;cursor:not-allowed;pointer-events:none}
+.tmt-btn-inner:focus-visible{outline:2px solid var(--link,#3366cc);outline-offset:1px}
+::slotted(svg),::slotted(tmt-icon){display:block;flex-shrink:0;pointer-events:none}
+::slotted(img){display:block;pointer-events:none;object-fit:cover}
+    </style>
+    <button type="{{ type }}" class="tmt-btn-inner" part="button"{% if title %} title="{{ title }}"{% endif %}{% if aria_label %} aria-label="{{ aria_label }}"{% endif %}{% if disabled %} disabled{% endif %}>
+      <slot></slot>
+    </button>
+  </template>
+{% endmacro %}
+
+{% macro tmt_btn(content="", variant="outline", size="md", shape="rect", active=false, disabled=false, id="", class="", title="", aria_label="", type="button", href="", data_attrs="") %}
+<tmt-btn
+  {% if id %}id="{{ id }}"{% endif %}
+  {% if class %}class="{{ class }}"{% endif %}
+  variant="{{ variant }}"
+  size="{{ size }}"
+  shape="{{ shape }}"
+  {% if active %}active{% endif %}
+  {% if disabled %}disabled{% endif %}
+  {% if title %}title="{{ title }}"{% endif %}
+  {% if aria_label %}aria-label="{{ aria_label }}"{% endif %}
+  {% if href %}href="{{ href }}"{% endif %}
+  {{ data_attrs | safe }}
+>
+  {{ dsd_btn_shadow(title=title, aria_label=aria_label, disabled=disabled, type=type) }}
+  {{ content | safe }}
+</tmt-btn>
+{% endmacro %}
+
+{#
+  Primitive atom: <tmt-badge>
+  Encapsulated badge/chip component using Web Components & Declarative Shadow DOM.
+  Provides strict style isolation (no scale/translate animations, hover state only when clickable)
+  with zero client-JS dependency for rendering.
+#}
+{% macro dsd_badge_shadow(href="") %}
+  <template shadowrootmode="open">
+    <style>
+:host{display:inline-flex;vertical-align:middle;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:host([hidden]){display:none!important}
+.tmt-badge-inner{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:4px;margin:0;padding:0 7px;height:22px;font-family:inherit;font-size:11px;font-weight:500;line-height:1;white-space:nowrap;user-select:none;border-radius:var(--tmt-badge-radius,4px);border:1px solid var(--border-subtle,#c8ccd1);background:var(--surface-subtle,#eaecf0);color:var(--text,#202122);text-decoration:none;transition:background-color .15s ease,border-color .15s ease,color .15s ease}
+:host([size="xs"]) .tmt-badge-inner{height:18px;padding:0 5px;font-size:10px}
+:host([size="sm"]) .tmt-badge-inner{height:22px;padding:0 7px;font-size:11px}
+:host([size="md"]) .tmt-badge-inner{height:26px;padding:0 9px;font-size:12px}
+:host([shape="pill"]) .tmt-badge-inner{border-radius:9999px}
+:host([shape="rect"]) .tmt-badge-inner{border-radius:var(--tmt-badge-radius,4px)}
+:host([variant="subtle"]) .tmt-badge-inner,:host(:not([variant])) .tmt-badge-inner{border-color:var(--border-subtle,#c8ccd1);background:var(--surface-subtle,#eaecf0);color:var(--text,#202122)}
+:host([variant="outline"]) .tmt-badge-inner{border-color:var(--border,#a2a9b1);background:transparent;color:var(--text,#202122)}
+:host([variant="solid"]) .tmt-badge-inner{border-color:var(--link,#3366cc);background:var(--link,#3366cc);color:#fff}
+:host([variant="kbd"]) .tmt-badge-inner{border-color:var(--border,#a2a9b1);background:var(--surface,#f8f9fa);color:var(--text-muted,#54595d);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;box-shadow:0 1px 0 var(--border,#a2a9b1)}
+:host(:not([href]):not([role="button"]):not([clickable])) .tmt-badge-inner{cursor:default}
+:host([href]) .tmt-badge-inner,:host([role="button"]) .tmt-badge-inner,:host([clickable]) .tmt-badge-inner{cursor:pointer}
+:host([href]:hover) .tmt-badge-inner,:host([role="button"]:hover) .tmt-badge-inner,:host([clickable]:hover) .tmt-badge-inner{border-color:var(--link,#3366cc);background:var(--surface,#fff);color:var(--link,#3366cc)}
+::slotted(svg),::slotted(tmt-icon){display:block;flex-shrink:0;pointer-events:none}
+    </style>
+    {% if href %}
+    <a href="{{ href }}" class="tmt-badge-inner" part="badge">
+      <slot></slot>
+    </a>
+    {% else %}
+    <div class="tmt-badge-inner" part="badge">
+      <slot></slot>
+    </div>
+    {% endif %}
+  </template>
+{% endmacro %}
+
+{% macro tmt_badge(content="", variant="subtle", size="sm", shape="pill", href="", id="", class="", title="", aria_label="", clickable=false, role="") %}
+<tmt-badge
+  {% if id %}id="{{ id }}"{% endif %}
+  {% if class %}class="{{ class }}"{% endif %}
+  variant="{{ variant }}"
+  size="{{ size }}"
+  shape="{{ shape }}"
+  {% if href %}href="{{ href }}"{% endif %}
+  {% if title %}title="{{ title }}"{% endif %}
+  {% if aria_label %}aria-label="{{ aria_label }}"{% endif %}
+  {% if clickable %}clickable{% endif %}
+  {% if role %}role="{{ role }}"{% endif %}
+>
+  {{ dsd_badge_shadow(href=href) }}
+  {{ content | safe }}
+</tmt-badge>
+{% endmacro %}
+
+{#
+  Primitive atom: <tmt-icon>
+  Encapsulated icon component using Web Components & Declarative Shadow DOM.
+  Guarantees proper alignment, flex-shrink, sizing, and sprite rendering.
+#}
+{% macro dsd_icon_shadow(name="", size="sm", pkg="lucide") %}
+  <template shadowrootmode="open">
+    <style>
+:host{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;line-height:1;box-sizing:border-box;flex-shrink:0;width:var(--tmt-icon-size,14px);height:var(--tmt-icon-size,14px)}
+:host([hidden]){display:none!important}
+:host([size="xs"]){--tmt-icon-size:12px;width:12px;height:12px}
+:host([size="sm"]){--tmt-icon-size:14px;width:14px;height:14px}
+:host([size="md"]){--tmt-icon-size:16px;width:16px;height:16px}
+:host([size="lg"]){--tmt-icon-size:20px;width:20px;height:20px}
+:host([size="xl"]){--tmt-icon-size:24px;width:24px;height:24px}
+svg{display:block;width:100%;height:100%;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;fill:none;pointer-events:none}
+    </style>
+    {% if name %}
+    <svg aria-hidden="true">
+      <use href="/icons/{{ pkg }}.svg#{{ name }}"></use>
+    </svg>
+    {% else %}
+    <slot></slot>
+    {% endif %}
+  </template>
+{% endmacro %}
+
+{% macro tmt_icon(name="", size="sm", pkg="lucide", class="", title="", aria_label="") %}
+<tmt-icon
+  {% if name %}name="{{ name }}"{% endif %}
+  size="{{ size }}"
+  pkg="{{ pkg }}"
+  {% if class %}class="{{ class }}"{% endif %}
+  {% if title %}title="{{ title }}"{% endif %}
+  {% if aria_label %}aria-label="{{ aria_label }}"{% endif %}
+>
+  {{ dsd_icon_shadow(name=name, size=size, pkg=pkg) }}
+</tmt-icon>
+{% endmacro %}
+
+
+
+

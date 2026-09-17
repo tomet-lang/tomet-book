@@ -6,20 +6,59 @@
 .search-input-wrapper {
   display: flex;
   align-items: center;
+  position: relative;
 }
+
+.search-input-icon {
+  position: absolute;
+  left: 8px;
+  color: var(--text-muted);
+  pointer-events: none;
+  display: block;
+}
+
+kbd.search-shortcut-badge {
+  position: absolute;
+  right: 6px;
+  font-family: inherit;
+  font-size: 0.65rem;
+  font-weight: 500;
+  padding: 1px 5px;
+  background: var(--shell-border);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  line-height: 1.2;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+kbd.search-shortcut-badge:hover {
+  color: var(--link);
+  border-color: var(--link);
+}
+
+tmt-badge.search-shortcut-badge {
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  --tmt-badge-radius: 3px;
+}
+
 /* Sits inside .floating-controls, which wears the application shell's own tint
    (--shell-*) instead of the page's own surface color -- this field gets
    a background one step off the bar's own, so it still reads as a
    distinct field rather than just more bar. */
 #wiki-search-input {
-  width: 240px;
-  height: 32px;
-  padding: 0 10px;
+  width: 180px;
+  height: 28px;
+  padding: 0 38px 0 26px;
   background: var(--bg);
   border: 1px solid var(--shell-border);
   color: var(--text);
-  font-size: 0.875rem;
+  font-size: 0.82rem;
   box-sizing: border-box;
+  transition: border-color 0.15s ease;
 }
 #wiki-search-input:focus {
   outline: none;

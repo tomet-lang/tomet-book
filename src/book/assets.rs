@@ -31,6 +31,9 @@ pub const BOOK_CSS: &str = concat!(
 pub const BOOK_JS: &str = concat!(
     include_str!("../assets/static/js/00-utils.js"),
     include_str!("../assets/static/js/00-strings.js"),
+    include_str!("../assets/static/js/05-tmt-btn.js"),
+    include_str!("../assets/static/js/06-tmt-badge.js"),
+    include_str!("../assets/static/js/07-tmt-icon.js"),
     include_str!("../assets/static/js/10-theme.js"),
     include_str!("../assets/static/js/20-view-mode.js"),
     include_str!("../assets/static/js/30-floating-controls.js"),
@@ -298,5 +301,25 @@ mod tests {
 
         assert!(!is_same_media(&src, &dest));
         let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn tmt_components_are_bundled_in_book_assets() {
+        assert!(
+            super::BOOK_JS.contains("customElements.define('tmt-btn'"),
+            "tmt-btn custom element is defined in BOOK_JS"
+        );
+        assert!(
+            super::BOOK_JS.contains("customElements.define('tmt-badge'"),
+            "tmt-badge custom element is defined in BOOK_JS"
+        );
+        assert!(
+            super::BOOK_JS.contains("customElements.define('tmt-icon'"),
+            "tmt-icon custom element is defined in BOOK_JS"
+        );
+        assert!(
+            super::BOOK_CSS.contains("tmt-btn"),
+            "tmt-btn light DOM base rules are in BOOK_CSS"
+        );
     }
 }

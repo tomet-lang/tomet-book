@@ -739,7 +739,9 @@ html[data-view="classic"] .view-btn-classic {
 }
 
 html[data-view="book"] .floating-controls .view-btn-book,
-html[data-view="classic"] .floating-controls .view-btn-classic {
+html[data-view="classic"] .floating-controls .view-btn-classic,
+.view-btn.is-active,
+.floating-controls .view-btn.is-active {
   background: var(--shell-border);
   color: var(--text);
   font-weight: 500;
@@ -868,11 +870,26 @@ input,
 select,
 textarea,
 [role="button"],
+tmt-btn,
+tmt-badge,
 .rail-tab,
 .sticky-tab-btn,
 .swatch-btn,
 .view-btn {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+}
+
+tmt-btn,
+tmt-badge,
+tmt-icon {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+tmt-btn[hidden],
+tmt-badge[hidden],
+tmt-icon[hidden] {
+  display: none !important;
 }
 

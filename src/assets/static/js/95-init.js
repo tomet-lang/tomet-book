@@ -5,6 +5,7 @@
   const setupDraggableFloatingControls = (...a) => T.setupDraggableFloatingControls(...a);
   const setupViewSwitcher = (...a) => T.setupViewSwitcher(...a);
   const setupTabsSideSwitcher = (...a) => T.setupTabsSideSwitcher(...a);
+  const setupFloatingCollapse = (...a) => T.setupFloatingCollapse?.(...a);
   const setupBookViewInteraction = (...a) => T.setupBookViewInteraction(...a);
   const setupClassicViewInteraction = (...a) => T.setupClassicViewInteraction(...a);
   const initKeyboardNavigation = (...a) => T.initKeyboardNavigation(...a);
@@ -22,6 +23,7 @@
     syncViewMode();
     setupThemeToggle();
     setupDraggableFloatingControls();
+    setupFloatingCollapse();
     setupViewSwitcher();
     setupTabsSideSwitcher();
     setupBookViewInteraction();

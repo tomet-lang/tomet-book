@@ -193,7 +193,8 @@
     padding: 6px 10px max(6px, env(safe-area-inset-bottom, 0px)) 10px;
     justify-content: space-between;
   }
-  .floating-drag-handle {
+  .floating-drag-handle,
+  .floating-collapse-btn {
     display: none;
   }
   .search-container {

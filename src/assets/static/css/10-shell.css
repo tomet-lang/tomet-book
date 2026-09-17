@@ -129,6 +129,12 @@ html[data-view="classic"] .classic-view {
   color: var(--shell-text);
   --text: var(--shell-text);
   --text-muted: var(--shell-text-muted);
+  --tmt-btn-radius: 0;
+  --tmt-btn-color: var(--shell-text-muted);
+  --tmt-btn-hover-color: var(--shell-text);
+  --tmt-btn-hover-bg: var(--shell-border);
+  --tmt-btn-active-color: var(--shell-text);
+  --tmt-btn-active-bg: var(--shell-border);
   border: 1px solid var(--shell-border);
   border-radius: 0;
   padding: 4px 6px;
@@ -140,7 +146,8 @@ html[data-view="classic"] .classic-view {
 
 .floating-controls input,
 .floating-controls .view-switcher,
-.floating-controls .view-btn {
+.floating-controls .view-btn,
+.floating-controls tmt-btn {
   border-radius: 0 !important;
 }
 
@@ -166,6 +173,59 @@ html[data-view="classic"] .classic-view {
 .floating-controls.is-dragging,
 .floating-controls.is-dragging .floating-drag-handle {
   cursor: grabbing !important;
+}
+
+.floating-collapse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  border-radius: 0;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.floating-collapse-btn:hover {
+  color: var(--text);
+  background: var(--shell-border);
+}
+
+.floating-controls.is-collapsed {
+  padding: 4px 6px;
+  gap: 4px;
+}
+
+.floating-controls.is-collapsed .search-container,
+.floating-controls.is-collapsed .view-switcher {
+  display: none !important;
+}
+
+.floating-controls.is-collapsed .collapse-icon-minimize {
+  display: none;
+}
+
+.floating-controls:not(.is-collapsed) .collapse-icon-maximize {
+  display: none;
+}
+
+.floating-controls .view-btn-icon {
+  width: 24px;
+  height: 24px;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.floating-controls .view-btn-icon svg {
+  pointer-events: none;
 }
 
 /* ==================== BOOK VIEW LAYOUT ==================== */

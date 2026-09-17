@@ -215,7 +215,13 @@
   margin-top: 8px;
 }
 
-.hero-chip {
+tmt-badge.hero-chip {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+span.hero-chip,
+a.hero-chip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -244,7 +250,8 @@ a.hero-chip:hover,
   text-decoration: none;
 }
 a.hero-chip:hover .chip-val,
-.hero-chip.hero-chip-link:hover .chip-val {
+.hero-chip.hero-chip-link:hover .chip-val,
+tmt-badge.hero-chip[href]:hover .chip-val {
   color: var(--link);
   text-decoration: underline;
 }

@@ -190,5 +190,62 @@
     sync();
   }
 
-  Object.assign(T, { setupDraggableFloatingControls, setupViewSwitcher, setupTabsSideSwitcher });
+  // ==================== FLOATING COLLAPSE / MINIMIZE ====================
+  function setupFloatingCollapse() {
+    const floating = document.getElementById('floating-controls');
+    const collapseBtn = document.getElementById('btn-floating-collapse');
+    if (!floating || !collapseBtn) return;
+
+    const syncCollapsed = (collapsed) => {
+      floating.classList.toggle('is-collapsed', collapsed);
+      collapseBtn.setAttribute(
+        'title',
+        collapsed ? t('floating.expand', 'バーを展開') : t('floating.collapse', 'バーを最小化')
+      );
+      collapseBtn.setAttribute(
+        'aria-label',
+        collapsed ? t('floating.expand', 'バーを展開') : t('floating.collapse', 'バーを最小化')
+      );
+      T.storage.set('wiki-floating-controls-collapsed', collapsed ? 'true' : 'false');
+    };
+
+    const isInitiallyCollapsed = T.storage.get('wiki-floating-controls-collapsed') === 'true';
+    if (isInitiallyCollapsed) {
+      syncCollapsed(true);
+    }
+
+    if (!collapseBtn.__collapseBound) {
+      collapseBtn.__collapseBound = true;
+      collapseBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isNowCollapsed = !floating.classList.contains('is-collapsed');
+        syncCollapsed(isNowCollapsed);
+      });
+
+      floating.addEventListener('click', (e) => {
+        if (floating.classList.contains('is-collapsed') && !e.target.closest('.floating-drag-handle')) {
+          syncCollapsed(false);
+          const input = document.getElementById('wiki-search-input');
+          input?.focus();
+        }
+      });
+
+      window.addEventListener('keydown', (e) => {
+        const isEditing = e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable);
+        if (((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') || (e.key === '/' && !isEditing)) {
+          if (floating.classList.contains('is-collapsed')) {
+            syncCollapsed(false);
+          }
+        }
+      });
+
+      const badge = floating.querySelector('.search-shortcut-badge');
+      badge?.addEventListener('click', () => {
+        const input = document.getElementById('wiki-search-input');
+        input?.focus();
+      });
+    }
+  }
+
+  Object.assign(T, { setupDraggableFloatingControls, setupViewSwitcher, setupTabsSideSwitcher, setupFloatingCollapse });
 })();
