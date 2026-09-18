@@ -31,7 +31,7 @@ enum ResolvedMarker {
         is_done: bool,
     },
     Badge {
-        text: String,
+        html: String,
     },
 }
 
@@ -65,13 +65,13 @@ pub(crate) fn normalize_lucide_name(name: &str) -> &str {
 fn resolve_marker(raw_val: &str, content: &str, config: &MarkersConfig) -> ResolvedMarker {
     // When the feature is disabled, render everything as a clean pill badge.
     if !config.enable {
-        let text = if !raw_val.is_empty() {
-            raw_val
-        } else {
+        let badge_content = if !content.trim().is_empty() {
             strip_brackets(content)
+        } else {
+            raw_val
         };
         return ResolvedMarker::Badge {
-            text: text.to_string(),
+            html: badge_content.to_string(),
         };
     }
 
@@ -200,14 +200,14 @@ fn resolve_marker(raw_val: &str, content: &str, config: &MarkersConfig) -> Resol
         };
     }
 
-    // 6. Fallback: clean pill badge for timestamps, tags, or numbers
-    let text = if !trimmed.is_empty() {
-        trimmed
-    } else {
+    // 6. Fallback: clean pill badge for timestamps, tags, numbers, or inline elements
+    let badge_content = if !content.trim().is_empty() {
         strip_brackets(content)
+    } else {
+        trimmed
     };
     ResolvedMarker::Badge {
-        text: text.to_string(),
+        html: badge_content.to_string(),
     }
 }
 
@@ -272,9 +272,8 @@ pub fn enhance_list_markers(body_html: &str, config: &MarkersConfig) -> String {
                         "<li{new_li_attrs}>{ws}<span class=\"tm-list-marker tm-list-marker-icon{done_marker_class}\"{safe_marker_attr}{style_attr}><svg class=\"tm-doc-icon\" aria-hidden=\"true\"><use href=\"/icons/{safe_pkg}.svg#{safe_icon}\"></use></svg></span>"
                     )
                 }
-                ResolvedMarker::Badge { text } => {
+                ResolvedMarker::Badge { html } => {
                     let new_li_attrs = add_class_to_attrs(li_attrs, "tm-list-item-with-badge");
-                    let safe_text = escape_html(&text);
                     let safe_marker_attr = if !raw_val.is_empty() {
                         format!(" data-marker=\"{}\"", escape_html(raw_val))
                     } else {
@@ -282,7 +281,7 @@ pub fn enhance_list_markers(body_html: &str, config: &MarkersConfig) -> String {
                     };
 
                     format!(
-                        "<li{new_li_attrs}>{ws}<span class=\"tm-list-marker tm-list-marker-badge\"{safe_marker_attr}>{safe_text}</span>"
+                        "<li{new_li_attrs}>{ws}<span class=\"tm-list-marker tm-list-marker-badge\"{safe_marker_attr}>{html}</span>"
                     )
                 }
             }
@@ -468,5 +467,37 @@ mod tests {
             out.contains("</span>content"),
             "expected no literal space between marker span and content, got: {out}"
         );
+    }
+
+    #[test]
+    fn renders_badge_with_inline_elements() {
+        let config = MarkersConfig::default();
+        let html = "<ul>\n<li><span class=\"tm-list-marker\"><em>Important</em></span> content</li>\n<li><span class=\"tm-list-marker\"><a class=\"tm-url\" href=\"https://example.com\">Wiki</a></span> docs</li>\n</ul>";
+        let out = enhance_list_markers(html, &config);
+
+        assert!(out.contains(
+            "<li class=\"tm-list-item-with-badge\"><span class=\"tm-list-marker tm-list-marker-badge\"><em>Important</em></span>content</li>"
+        ));
+        assert!(out.contains(
+            "<li class=\"tm-list-item-with-badge\"><span class=\"tm-list-marker tm-list-marker-badge\"><a class=\"tm-url\" href=\"https://example.com\">Wiki</a></span>docs</li>"
+        ));
+    }
+
+    #[test]
+    fn enabled_renders_badge_with_inline_elements() {
+        let config = MarkersConfig {
+            enable: true,
+            strikethrough: true,
+            custom: HashMap::new(),
+        };
+        let html = "<ul>\n<li><span class=\"tm-list-marker\"><em>Important</em></span> content</li>\n<li><span class=\"tm-list-marker\"><a class=\"tm-url\" href=\"https://example.com\">Wiki</a></span> docs</li>\n</ul>";
+        let out = enhance_list_markers(html, &config);
+
+        assert!(out.contains(
+            "<li class=\"tm-list-item-with-badge\"><span class=\"tm-list-marker tm-list-marker-badge\"><em>Important</em></span>content</li>"
+        ));
+        assert!(out.contains(
+            "<li class=\"tm-list-item-with-badge\"><span class=\"tm-list-marker tm-list-marker-badge\"><a class=\"tm-url\" href=\"https://example.com\">Wiki</a></span>docs</li>"
+        ));
     }
 }

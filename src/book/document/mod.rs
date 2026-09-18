@@ -325,7 +325,7 @@ mod kind_tests {
         let out = process_tomet_document(
             r#"@meta{
     banner: @link(ref:+771a262c8eeb5a2459a01a44a2404eaa2999bc54.svg),
-    images: [@link(ref: "a.png"), @link(ref: "b.png")]
+    images: list(@link(ref: "a.png"), @link(ref: "b.png"))
 }
 
 #[ Page ]
@@ -430,6 +430,76 @@ body
                 .contains(r#"href="/wiki/30-39 Knowledge/rust""#)
         );
     }
+
+    #[test]
+    fn macro_and_variable_interpolations_resolve_in_body() {
+        let config = BookConfig::default();
+        let vault = tomet_links::VaultLinkIndex::from_paths(&["notes/page.tmt".to_string()]);
+
+        let out = process_tomet_document(
+            r#"@config{
+    macros: {
+        gh: "https://github.com/${1}"
+    }
+}
+
+#[ Page ]
+
+Here is issue $gh("tomet-lang/tomet") and path is ${self.path}.
+"#,
+            "notes/page.tmt",
+            None,
+            &config,
+            &vault,
+            None,
+            &HashSet::new(),
+        )
+        .unwrap();
+
+        assert!(
+            out.body_html.contains(
+                "Here is issue https://github.com/tomet-lang/tomet and path is notes/page.tmt."
+            ),
+            "actual body_html: {}",
+            out.body_html
+        );
+    }
+
+    #[test]
+    fn list_marker_with_inline_elements_render_as_badges() {
+        let config = BookConfig::default();
+        let vault = tomet_links::VaultLinkIndex::from_paths(&["notes/page.tmt".to_string()]);
+
+        let out = process_tomet_document(
+            r#"#[ Page ]
+
+- (@em[Important]) content
+- (@link(https://example.com)[Guide]) docs
+"#,
+            "notes/page.tmt",
+            None,
+            &config,
+            &vault,
+            None,
+            &HashSet::new(),
+        )
+        .unwrap();
+
+        assert!(
+            out.body_html.contains(
+                "<li class=\"tm-list-item-with-badge\"><span class=\"tm-list-marker tm-list-marker-badge\"><em>Important</em></span>content</li>"
+            ),
+            "actual body_html: {}",
+            out.body_html
+        );
+        assert!(
+            out.body_html.contains(
+                "<li class=\"tm-list-item-with-badge\"><span class=\"tm-list-marker tm-list-marker-badge\"><a class=\"tm-url\" href=\"https://example.com\">Guide</a></span>docs</li>"
+            ),
+            "actual body_html: {}",
+            out.body_html
+        );
+    }
 }
 
 /// Read a document far enough to know what it is.
@@ -505,9 +575,37 @@ pub fn process_parsed_document_with_blocks(
     // 1. Bring in the vault-wide config (e.g. default.config.tmt)
     inject_workspace_config_blocks(&mut doc, workspace_cfg_blocks);
 
-    // 2. Expand macros
+    // 2. Expand macros and interpolations
     let doc_cfg = tomet_semantics::document_config(&doc);
     tomet_transform::expand_document_macros(&mut doc, &doc_cfg);
+
+    let eval_vars = tomet_compute::EvaluationContext::new().with_var(
+        "self",
+        tomet_ast::Value::Map(vec![
+            (
+                "path".to_string(),
+                tomet_ast::Value::String(rel_path.to_string()),
+            ),
+            (
+                "filename".to_string(),
+                tomet_ast::Value::String(
+                    Path::new(rel_path)
+                        .file_name()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or("")
+                        .to_string(),
+                ),
+            ),
+        ]),
+    );
+    let unresolved = tomet_transform::resolve_interpolations(&mut doc, &doc_cfg, &eval_vars);
+    for u in &unresolved {
+        tracing::debug!(
+            "{rel_path}: unresolved interpolation: ${{{}}} ({})",
+            u.source,
+            u.reason
+        );
+    }
 
     // 3. Collect outgoing links, then resolve them
     let from_path = Path::new(rel_path);
