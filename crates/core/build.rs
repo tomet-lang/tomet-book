@@ -3,12 +3,19 @@ use std::path::Path;
 use std::process::Command;
 
 fn main() {
-    println!("cargo:rerun-if-changed=ui");
+    let manifest_dir = env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR not set");
+    let root = Path::new(&manifest_dir)
+        .parent()
+        .and_then(|p| p.parent())
+        .expect("Failed to get workspace root");
+
+    println!("cargo:rerun-if-changed={}", root.join("ui").display());
 
     let out_dir = env::var("OUT_DIR").expect("OUT_DIR not set by cargo");
     let output_path = Path::new(&out_dir).join("tailwind.css");
 
     let status = Command::new("tailwindcss")
+        .current_dir(root)
         .args([
             "-c",
             "ui/tailwind.config.ts",
@@ -31,6 +38,7 @@ fn main() {
 
     let js_output_path = Path::new(&out_dir).join("tmtbook.js");
     let esbuild_status = Command::new("esbuild")
+        .current_dir(root)
         .args([
             "ui/src/index.ts",
             "--bundle",

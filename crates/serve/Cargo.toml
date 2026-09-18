@@ -1,0 +1,19 @@
+[package]
+name = "tmtbook-serve"
+version = "0.1.0"
+edition = "2024"
+description = "Lightweight development server with live reload"
+
+[lib]
+name = "tmtbook_serve"
+path = "src/lib.rs"
+
+[dependencies]
+anyhow = "1.0.95"
+axum = { version = "0.7.9", features = ["ws"] }
+notify = "6.1.1"
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = "1.0.134"
+tokio = { version = "1.42.0", features = ["full"] }
+tower-http = { version = "0.5.2", features = ["fs", "cors", "trace"] }
+tracing = "0.1.41"

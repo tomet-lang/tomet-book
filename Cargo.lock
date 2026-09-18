@@ -3388,12 +3388,22 @@ name = "tmtbook"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "axum",
  "clap",
- "futures",
+ "notify",
+ "tmtbook-core",
+ "tmtbook-serve",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "tmtbook-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
  "image",
  "minijinja",
- "notify",
  "pagefind",
  "rayon",
  "regex",
@@ -3409,11 +3419,23 @@ dependencies = [
  "tomet-transform",
  "tomet-tree",
  "toml 0.8.23",
- "tower-http 0.5.2",
  "tracing",
- "tracing-subscriber",
  "unicode-segmentation",
  "walkdir",
+]
+
+[[package]]
+name = "tmtbook-serve"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "notify",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tower-http 0.5.2",
+ "tracing",
 ]
 
 [[package]]

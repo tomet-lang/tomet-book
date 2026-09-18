@@ -4,56 +4,25 @@ version = "0.1.0"
 edition = "2024"
 description = "A standalone book & wiki generator for Tomet"
 
-[lib]
-name = "tmtbook"
-path = "src/lib.rs"
-
 [[bin]]
 name = "tmtbook"
 path = "src/main.rs"
 
 [dependencies]
-#[ Tomet Ecosystem ]
-tomet-ast = { git = "https://github.com/tomet-lang/tomet.git" }
-tomet-parser = { git = "https://github.com/tomet-lang/tomet.git" }
-tomet-tree = { git = "https://github.com/tomet-lang/tomet.git" }
-tomet-semantics = { git = "https://github.com/tomet-lang/tomet.git" }
-tomet-transform = { git = "https://github.com/tomet-lang/tomet.git" }
-tomet-indexer = { git = "https://github.com/tomet-lang/tomet.git" }
-tomet-links = { git = "https://github.com/tomet-lang/tomet.git" }
-tomet-html = { git = "https://github.com/tomet-lang/tomet.git" }
+tmtbook-core = { path = "crates/core" }
+tmtbook-serve = { path = "crates/serve" }
 
 #[ Crates.io ]
 anyhow = "1.0.95"
 clap = { version = "4.5.23", features = ["derive"] }
-serde = { version = "1.0.217", features = ["derive"] }
-serde_json = { version = "1.0.134", features = ["preserve_order"] }
-toml = "0.8.19"
-minijinja = { version = "2.7.0", features = ["loader", "json"] }
-walkdir = "2.5.0"
-regex = "1.11.1"
-tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
 notify = "6.1.1"
 tokio = { version = "1.42.0", features = ["full"] }
-axum = { version = "0.7.9", features = ["ws"] }
-tower-http = { version = "0.5.2", features = ["fs", "cors", "trace"] }
-futures = "0.3.31"
-rayon = "1.10"
-pagefind = { version = "1.5.2", default-features = false, optional = true }
-image = { version = "0.25", default-features = false, features = [
-  "png",
-  "jpeg",
-  "webp",
-] }
-unicode-segmentation = "1.12"
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
 
 [features]
-# Bundle Pagefind's indexer into the tmtbook binary instead of shelling out to
-# a `pagefind` executable on PATH. Off by default: it adds real compile time
-# and binary size for a capability most dev builds never exercise.
-embedded-search = ["dep:pagefind"]
-# CJK word segmentation (charabia) for the embedded indexer. Costs more build
-# time/size again; compare index quality against plain embedded-search before
-# deciding whether it earns that cost.
-embedded-search-extended = ["embedded-search", "pagefind/extended"]
+embedded-search = ["tmtbook-core/embedded-search"]
+embedded-search-extended = ["tmtbook-core/embedded-search-extended"]
+
+[workspace]
+members = ["crates/core", "crates/serve"]

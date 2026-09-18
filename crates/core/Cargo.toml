@@ -1,0 +1,46 @@
+[package]
+name = "tmtbook-core"
+version = "0.1.0"
+edition = "2024"
+description = "Core book & wiki generator for Tomet"
+
+[lib]
+name = "tmtbook_core"
+path = "src/lib.rs"
+
+[dependencies]
+#[ Tomet Ecosystem ]
+tomet-ast = { git = "https://github.com/tomet-lang/tomet.git" }
+tomet-parser = { git = "https://github.com/tomet-lang/tomet.git" }
+tomet-tree = { git = "https://github.com/tomet-lang/tomet.git" }
+tomet-semantics = { git = "https://github.com/tomet-lang/tomet.git" }
+tomet-transform = { git = "https://github.com/tomet-lang/tomet.git" }
+tomet-indexer = { git = "https://github.com/tomet-lang/tomet.git" }
+tomet-links = { git = "https://github.com/tomet-lang/tomet.git" }
+tomet-html = { git = "https://github.com/tomet-lang/tomet.git" }
+
+#[ Crates.io ]
+anyhow = "1.0.95"
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = { version = "1.0.134", features = ["preserve_order"] }
+toml = "0.8.19"
+minijinja = { version = "2.7.0", features = ["loader", "json"] }
+walkdir = "2.5.0"
+regex = "1.11.1"
+tracing = "0.1.41"
+rayon = "1.10"
+pagefind = { version = "1.5.2", default-features = false, optional = true }
+image = { version = "0.25", default-features = false, features = [
+  "png",
+  "jpeg",
+  "webp",
+] }
+unicode-segmentation = "1.12"
+tokio = { version = "1.42.0", features = [
+  "rt",
+  "rt-multi-thread",
+], optional = true }
+
+[features]
+embedded-search = ["dep:pagefind", "dep:tokio"]
+embedded-search-extended = ["embedded-search", "pagefind/extended"]
