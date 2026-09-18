@@ -452,6 +452,41 @@ article pre code {
   padding: 0;
   background: transparent;
 }
+
+/* Inline text highlight: ==xxx== -- deathau's "realistic-highlight.css"
+   Obsidian community snippet (https://github.com/deathau/obsidian-snippets),
+   the CSS underneath the raw-file link in
+   https://forum.obsidian.md/t/css-snippets-for-realistic-highlight-not-rendering-in-live-preview-editing-view/66363.
+   An 8-stop gradient tapers the stroke's density in from each end instead of
+   a flat fill, and the asymmetric border-radius keeps the block from reading
+   as a mechanical pill. `text-shadow` (using the page background color) halos
+   the glyphs so text stays legible over the uneven density. Painted straight
+   on `mark` (no pseudo-element) so box-decoration-break: clone keeps working
+   when a highlighted phrase wraps across lines. Dropped from the original:
+   the Obsidian-editor-only selectors (.markdown-preview-view, .cm-s-obsidian)
+   and the mark.yellow/.purple/etc. color-variant classes, neither of which
+   apply here -- tomet-html only ever emits a single, classless `<mark>`. */
+article mark {
+  color: inherit;
+  margin-inline: -0.4em;
+  padding: 0.1em 0.4em;
+  border-radius: 0.8em 0.3em;
+  background: transparent;
+  background-image: linear-gradient(
+    105deg,
+    transparent 0,
+    transparent 0.3em,
+    rgba(var(--mark-rgb, 255, 219, 88), 0.7) 0.5em,
+    rgba(var(--mark-rgb, 255, 219, 88), 0.4) 1.6em,
+    rgba(var(--mark-rgb, 255, 219, 88), 0.4) calc(100% - 1.4em),
+    rgba(var(--mark-rgb, 255, 219, 88), 0.7) calc(100% - 0.5em),
+    transparent calc(100% - 0.3em),
+    transparent 100%
+  );
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  text-shadow: 0 0 0.75em var(--bg);
+}
 article blockquote {
   margin: 16px 0;
   padding: 8px 16px;

@@ -10,6 +10,7 @@
   --link: #3366cc;
   --link-visited: #6b4ba1;
   --unresolved: #ba0000;
+  --mark-rgb: 255, 219, 88;
   /* Book-spine accents: cycled across index entries so a list of notes reads
      as differently-bound volumes rather than one repeated card. Muted,
      cloth-cover hues -- not saturated enough to compete with --link. */
@@ -239,6 +240,7 @@
     --link: #6da8e8;
     --link-visited: #b388ff;
     --unresolved: #ff6e6e;
+    --mark-rgb: 202, 150, 12;
     --spine-1: #b98a63;
     --spine-2: #5fb08c;
     --spine-3: #c17a8a;
@@ -360,6 +362,7 @@
   --link: #6da8e8;
   --link-visited: #b388ff;
   --unresolved: #ff6e6e;
+  --mark-rgb: 202, 150, 12;
   --spine-1: #b98a63;
   --spine-2: #5fb08c;
   --spine-3: #c17a8a;
@@ -478,6 +481,7 @@
   --link: #3366cc;
   --link-visited: #6b4ba1;
   --unresolved: #ba0000;
+  --mark-rgb: 255, 219, 88;
   --spine-1: #6b4c35;
   --spine-2: #2f6b52;
   --spine-3: #6b2f3f;
