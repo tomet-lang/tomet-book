@@ -8,3 +8,5 @@
   - 最小限に抑える。
   - (現在の依存)
     - Lucide Icons
+    - Typescript
+    - Tailwind

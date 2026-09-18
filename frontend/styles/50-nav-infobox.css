@@ -297,13 +297,13 @@
   border-bottom: 1px solid var(--border-subtle);
   background: var(--surface);
   display: flex;
-  flex-direction: column;
   align-items: center;
 }
 
 .infobox-image-wrapper {
   position: relative;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -366,13 +366,18 @@
 }
 
 .infobox-costume-switcher {
+  order: -1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  margin-top: 8px;
-  padding: 4px 0 0 0;
-  width: 100%;
+  flex-shrink: 0;
+}
+
+.infobox-costume-switcher .switcher-buttons {
+  flex-direction: column;
+  align-items: center;
 }
 
 /* switcher-label/-buttons/costume-thumb/-btn-num box models are Tailwind
