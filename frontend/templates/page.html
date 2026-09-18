@@ -279,6 +279,26 @@
             <div class="lookup-tags flex flex-wrap gap-[5px]" id="lookup-tags" hidden></div>
           </div>
           <div class="lookup-results pt-[10px] px-[10px] pb-[26px]" id="lookup-results"></div>
+
+          <!-- Template for each result row above. 39-lookup-pane.js clones
+               this rather than building the row from an HTML string, so the
+               shape lives in exactly one place instead of a parallel copy in
+               JS. -->
+          <template id="book-index-item-template">
+            <li class="book-index-item">
+              <a class="book-index-link">
+                <div class="book-index-bg" hidden><img alt="" loading="lazy" /></div>
+                <div class="book-index-header">
+                  <span class="book-index-title"></span>
+                </div>
+                <div class="book-index-body" hidden>
+                  <span class="book-index-meta" hidden></span>
+                  <span class="search-result-aliases" hidden><span class="alias-label"></span> <span class="alias-text"></span></span>
+                  <span class="search-result-excerpt" hidden></span>
+                </div>
+              </a>
+            </li>
+          </template>
         </div>
       </div>
 
@@ -304,6 +324,17 @@
     <div class="pane-recent shrink-0 p-0 border-t border-border-subtle shadow-[0_2px_3px_-2px_rgba(0,0,0,0.12)] relative" id="pane-recent-section" hidden>
       <div class="toc-heading text-xs font-bold text-text-muted uppercase tracking-[0.08em] mb-2">{{ t["recent.heading"] }}<span class="recent-heading-dir" aria-hidden="true">← ・</span></div>
       <ul class="recent-items" id="pane-recent-list"></ul>
+
+      <!-- Template for each row above. 38-recent-notes.js clones this rather
+           than building the row from an HTML string, so the shape lives in
+           exactly one place instead of a parallel copy in JS. -->
+      <template id="recent-note-item-template">
+        <li>
+          <a class="recent-link">
+            <span class="recent-title"></span>
+          </a>
+        </li>
+      </template>
     </div>
   </aside>
 

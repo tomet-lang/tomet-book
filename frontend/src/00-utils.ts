@@ -85,17 +85,6 @@ export function syncHeadingHash(id: string): void {
   } catch {}
 }
 
-/** Escape unsafe characters for safe insertion into HTML template strings. */
-export function escapeHtml(str: unknown): string {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
 /** Shared document cache and fetcher across hover preview and center peek. */
 const docCache = new Map<string, Document>();
 
@@ -231,6 +220,5 @@ Object.assign(T, {
   readHash,
   syncHeadingHash,
   createScrollSpy,
-  escapeHtml,
   fetchDocument,
 });

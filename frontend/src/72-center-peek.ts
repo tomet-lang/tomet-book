@@ -14,6 +14,14 @@
     activePeekUrl = null;
   }
 
+  function setBodyMessage(bodyEl, message, isError = false) {
+    const div = document.createElement('div');
+    div.className = 'peek-loading';
+    if (isError) div.style.color = 'var(--unresolved)';
+    div.textContent = message;
+    bodyEl.replaceChildren(div);
+  }
+
   async function openCenterPeek(url) {
     const overlay = document.getElementById('wiki-center-peek');
     const crumbsEl = document.getElementById('peek-crumbs');
@@ -25,13 +33,16 @@
     document.body.style.overflow = 'hidden';
 
     // Temporary loading state
-    crumbsEl.innerHTML = `<span class="crumb-title">${t('search.loading', '読み込み中...')}</span>`;
-    bodyEl.innerHTML = `<div class="peek-loading">${t('search.loading', '読み込み中...')}</div>`;
+    const loadingSpan = document.createElement('span');
+    loadingSpan.className = 'crumb-title';
+    loadingSpan.textContent = t('search.loading', '読み込み中...');
+    crumbsEl.replaceChildren(loadingSpan);
+    setBodyMessage(bodyEl, t('search.loading', '読み込み中...'));
 
     const doc = await T.fetchDocument(url);
     if (!doc) {
       if (activePeekUrl !== url) return;
-      bodyEl.innerHTML = `<div class="peek-loading" style="color: var(--unresolved);">${t('peek.error', 'ページの読み込みに失敗しました')}</div>`;
+      setBodyMessage(bodyEl, t('peek.error', 'ページの読み込みに失敗しました'), true);
       return;
     }
 
@@ -41,36 +52,46 @@
     const title = doc.querySelector('.content-title')?.textContent?.trim() || doc.querySelector('h1')?.textContent?.trim() || '';
     const section = doc.querySelector('.crumb-val')?.textContent?.trim() || doc.querySelector('.breadcrumb-section')?.textContent?.trim() || '';
     const iconEl = doc.querySelector('.hero-avatar .avatar-icon, .infobox-title span:first-child');
-    let iconHtml = '';
+    let iconNode: HTMLElement | null = null;
     if (iconEl) {
+      const span = document.createElement('span');
+      span.className = 'crumb-icon';
       if (iconEl.querySelector('svg, img')) {
-        iconHtml = iconEl.innerHTML.trim();
+        // A real icon/avatar (markup copied from the fetched page), not
+        // text -- carries over as-is.
+        span.innerHTML = iconEl.innerHTML.trim();
       } else {
-        iconHtml = iconEl.textContent.trim();
+        span.textContent = iconEl.textContent.trim();
       }
+      iconNode = span;
     }
 
     // Build header crumbs
-    let crumbHtml = '';
-    if (iconHtml) {
-      crumbHtml += `<span class="crumb-icon">${iconHtml}</span>`;
-    }
+    const crumbNodes: Node[] = [];
+    if (iconNode) crumbNodes.push(iconNode);
     if (section) {
-      crumbHtml += `<span>${section}</span><span style="opacity:0.4;">/</span>`;
+      const sectionSpan = document.createElement('span');
+      sectionSpan.textContent = section;
+      const sep = document.createElement('span');
+      sep.style.opacity = '0.4';
+      sep.textContent = '/';
+      crumbNodes.push(sectionSpan, sep);
     }
-    crumbHtml += `<span class="crumb-title">${title || url}</span>`;
-    crumbsEl.innerHTML = crumbHtml;
+    const titleSpan = document.createElement('span');
+    titleSpan.className = 'crumb-title';
+    titleSpan.textContent = title || url;
+    crumbNodes.push(titleSpan);
+    crumbsEl.replaceChildren(...crumbNodes);
 
     // 2. Extract article container
     const articleContainer = doc.querySelector('.pane-article-container');
     if (articleContainer) {
-      const cloned = articleContainer.cloneNode(true);
+      const cloned = articleContainer.cloneNode(true) as HTMLElement;
 
       // Remove in-article edit menus if dev actions shouldn't pollute the modal
       cloned.querySelectorAll('.hero-actions').forEach(el => el.remove());
 
-      bodyEl.innerHTML = '';
-      bodyEl.appendChild(cloned);
+      bodyEl.replaceChildren(cloned);
       bodyEl.scrollTop = 0;
 
       // Handle internal links within Center Peek:
@@ -118,7 +139,7 @@
         });
       });
     } else {
-      bodyEl.innerHTML = `<div class="peek-loading">${t('peek.not_found', '本文が見つかりませんでした')}</div>`;
+      setBodyMessage(bodyEl, t('peek.not_found', '本文が見つかりませんでした'));
     }
   }
 

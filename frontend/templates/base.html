@@ -95,6 +95,26 @@
             <tmt-badge variant="kbd" size="xs" shape="rect" clickable class="search-shortcut-badge" title="Ctrl+K / /" aria-label="Ctrl+K / /">{{ ui.dsd_badge_shadow() }}⌘K</tmt-badge>
           </div>
           <div id="wiki-search-results" class="search-results absolute top-full left-0 mt-1 w-[440px] max-w-[calc(100vw-32px)] max-h-[420px] overflow-y-auto bg-surface border border-border z-[1000] shadow-[0_4px_12px_rgba(0,0,0,0.12)]" hidden></div>
+
+          <!-- Template for each result row above. 60-search.js clones this
+               rather than building the row from an HTML string, so the shape
+               lives in exactly one place instead of a parallel copy in JS. -->
+          <template id="search-result-item-template">
+            <a class="search-result-item">
+              <div class="search-result-row">
+                <img class="search-result-thumb" alt="" loading="lazy" hidden />
+                <div class="search-result-main">
+                  <div class="search-result-title">
+                    <span class="result-title-text"></span>
+                    <span class="search-result-kind" hidden></span>
+                    <span class="search-result-section" hidden></span>
+                  </div>
+                  <div class="search-result-aliases" hidden><span class="alias-label"></span> <span class="alias-text"></span></div>
+                  <div class="search-result-excerpt" hidden></div>
+                </div>
+              </div>
+            </a>
+          </template>
         </div>
         <div class="view-switcher tabs-side-switcher" role="group" aria-label="{{ t["tabs.side"] }}">
           <tmt-btn variant="ghost" size="sm" shape="square" class="view-btn view-btn-icon" id="btn-tabs-top" title="{{ t["tabs.top_title"] }}" aria-label="{{ t["tabs.top_title"] }}">

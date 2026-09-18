@@ -50,6 +50,77 @@
       if (!resultsContainer.hidden) adjustPosition();
     });
 
+    function showStatus(message) {
+      const status = document.createElement('div');
+      status.className = 'search-status';
+      status.textContent = message;
+      resultsContainer.replaceChildren(status);
+    }
+
+    function renderResults(results) {
+      const itemTemplate = document.getElementById('search-result-item-template') as HTMLTemplateElement | null;
+      if (!itemTemplate) return;
+
+      const items = results.map((res, idx) => {
+        const item = itemTemplate.content.firstElementChild?.cloneNode(true) as HTMLAnchorElement;
+        item.href = res.url;
+        item.dataset.index = String(idx);
+
+        const thumb = item.querySelector<HTMLImageElement>('.search-result-thumb');
+        if (res.meta?.image && thumb) {
+          thumb.src = res.meta.image;
+          thumb.hidden = false;
+          thumb.addEventListener('error', () => thumb.remove(), { once: true });
+        } else {
+          thumb?.remove();
+        }
+
+        const titleText = item.querySelector('.result-title-text');
+        if (titleText) titleText.textContent = res.meta?.title || 'No title';
+
+        const kind = item.querySelector<HTMLElement>('.search-result-kind');
+        if (res.filters?.kind && kind) {
+          kind.textContent = res.filters.kind;
+          kind.hidden = false;
+        } else {
+          kind?.remove();
+        }
+
+        const section = item.querySelector<HTMLElement>('.search-result-section');
+        if (res.filters?.section && section) {
+          section.textContent = res.filters.section;
+          section.hidden = false;
+        } else {
+          section?.remove();
+        }
+
+        const aliases = item.querySelector<HTMLElement>('.search-result-aliases');
+        if (res.meta?.aliases && aliases) {
+          const label = aliases.querySelector('.alias-label');
+          const text = aliases.querySelector('.alias-text');
+          if (label) label.textContent = t('search.aliases', '別名:');
+          if (text) text.textContent = res.meta.aliases;
+          aliases.hidden = false;
+        } else {
+          aliases?.remove();
+        }
+
+        const excerpt = item.querySelector<HTMLElement>('.search-result-excerpt');
+        if (res.excerpt && excerpt) {
+          // Pagefind's excerpt carries its own <mark> highlighting, so it
+          // has to stay real markup here, not escaped text.
+          excerpt.innerHTML = res.excerpt;
+          excerpt.hidden = false;
+        } else {
+          excerpt?.remove();
+        }
+
+        return item;
+      });
+
+      resultsContainer.replaceChildren(...items);
+    }
+
     input.addEventListener('focus', () => {
       getPagefind();
       if (input.value.trim().length > 0) {
@@ -63,7 +134,7 @@
       clearTimeout(searchDebounceTimer);
       const query = input.value.trim();
       if (!query) {
-        resultsContainer.innerHTML = '';
+        resultsContainer.replaceChildren();
         resultsContainer.hidden = true;
         selectedIndex = -1;
         return;
@@ -72,14 +143,14 @@
       searchDebounceTimer = setTimeout(async () => {
         const pf = await getPagefind();
         if (!pf) {
-          resultsContainer.innerHTML = `<div class="search-status">${t('search.loading')}</div>`;
+          showStatus(t('search.loading'));
           showResults();
           return;
         }
 
         const search = await pf.search(query);
         if (!search || search.results.length === 0) {
-          resultsContainer.innerHTML = `<div class="search-status">${t('search.empty')}</div>`;
+          showStatus(t('search.empty'));
           showResults();
           selectedIndex = -1;
           return;
@@ -88,26 +159,7 @@
         const topResults = await Promise.all(search.results.slice(0, 10).map((r) => r.data()));
         selectedIndex = -1;
 
-        resultsContainer.innerHTML = topResults
-          .map(
-            (res, idx) => `
-          <a href="${res.url}" class="search-result-item" data-index="${idx}">
-            <div class="search-result-row">
-              ${res.meta?.image ? `<img src="${res.meta.image}" class="search-result-thumb" alt="" loading="lazy" onerror="this.remove()" />` : ''}
-              <div class="search-result-main">
-                <div class="search-result-title">
-                  <span>${res.meta?.title || 'No title'}</span>
-                  ${res.filters?.kind ? `<span class="search-result-kind">${res.filters.kind}</span>` : ''}
-                  ${res.filters?.section ? `<span class="search-result-section">${res.filters.section}</span>` : ''}
-                </div>
-                ${res.meta?.aliases ? `<div class="search-result-aliases"><span class="alias-label">${t('search.aliases', '別名:')}</span> ${res.meta.aliases}</div>` : ''}
-                ${res.excerpt ? `<div class="search-result-excerpt">${res.excerpt}</div>` : ''}
-              </div>
-            </div>
-          </a>
-        `
-          )
-          .join('');
+        renderResults(topResults);
         showResults();
       }, 120);
     });

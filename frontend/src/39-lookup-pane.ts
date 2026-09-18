@@ -51,29 +51,71 @@
   }
 
   // Search results come from Pagefind's hydrated result data.
-  function searchEntryHtml(data, hereUrl) {
-    const isHere = hereUrl && data.url === hereUrl;
+  function buildBookIndexItem(data, hereUrl) {
+    const itemTemplate = document.getElementById('book-index-item-template') as HTMLTemplateElement | null;
+    if (!itemTemplate) return null;
+    const li = itemTemplate.content.firstElementChild?.cloneNode(true) as HTMLElement;
+    const link = li.querySelector<HTMLAnchorElement>('.book-index-link');
+    if (!link) return li;
+
+    const isHere = Boolean(hereUrl && data.url === hereUrl);
     const isVisited = T.isVisited ? T.isVisited(data.url) : false;
-    const bgHtml = data.meta?.image
-      ? `<div class="book-index-bg"><img src="${data.meta.image}" alt="" loading="lazy" onerror="this.parentElement.remove()" /></div>`
-      : '';
+    link.href = data.url;
+    link.classList.toggle('is-here', isHere);
+    link.classList.toggle('is-visited', Boolean(isVisited));
+    if (isHere) link.setAttribute('aria-current', 'page');
+
+    const bg = li.querySelector<HTMLElement>('.book-index-bg');
+    const bgImg = bg?.querySelector('img');
+    if (data.meta?.image && bg && bgImg) {
+      bgImg.src = data.meta.image;
+      bgImg.addEventListener('error', () => bg.remove(), { once: true });
+      bg.hidden = false;
+    } else {
+      bg?.remove();
+    }
+
+    const title = li.querySelector('.book-index-title');
+    if (title) title.textContent = data.meta?.title || data.url;
+
+    const body = li.querySelector<HTMLElement>('.book-index-body');
     const hasBody = Boolean(data.filters?.section || data.meta?.aliases || data.excerpt);
-    return `
-      <li class="book-index-item">
-        <a href="${data.url}" class="book-index-link${isHere ? ' is-here' : ''}${isVisited ? ' is-visited' : ''}"${isHere ? ' aria-current="page"' : ''}>
-          ${bgHtml}
-          <div class="book-index-header">
-            <span class="book-index-title">${data.meta?.title || data.url}</span>
-          </div>
-          ${hasBody ? `
-          <div class="book-index-body">
-            ${data.filters?.section ? `<span class="book-index-meta">${data.filters.section}</span>` : ''}
-            ${data.meta?.aliases ? `<span class="search-result-aliases"><span class="alias-label">${t('search.aliases', '別名:')}</span> ${data.meta.aliases}</span>` : ''}
-            ${data.excerpt ? `<span class="search-result-excerpt">${data.excerpt}</span>` : ''}
-          </div>` : ''}
-        </a>
-      </li>
-    `;
+    if (!hasBody || !body) {
+      body?.remove();
+      return li;
+    }
+    body.hidden = false;
+
+    const meta = body.querySelector<HTMLElement>('.book-index-meta');
+    if (data.filters?.section && meta) {
+      meta.textContent = data.filters.section;
+      meta.hidden = false;
+    } else {
+      meta?.remove();
+    }
+
+    const aliases = body.querySelector<HTMLElement>('.search-result-aliases');
+    if (data.meta?.aliases && aliases) {
+      const label = aliases.querySelector('.alias-label');
+      const text = aliases.querySelector('.alias-text');
+      if (label) label.textContent = t('search.aliases', '別名:');
+      if (text) text.textContent = data.meta.aliases;
+      aliases.hidden = false;
+    } else {
+      aliases?.remove();
+    }
+
+    const excerpt = body.querySelector<HTMLElement>('.search-result-excerpt');
+    if (data.excerpt && excerpt) {
+      // Pagefind's excerpt carries its own <mark> highlighting, so it has
+      // to stay real markup here, not escaped text.
+      excerpt.innerHTML = data.excerpt;
+      excerpt.hidden = false;
+    } else {
+      excerpt?.remove();
+    }
+
+    return li;
   }
 
   const SEARCH_PAGE_SIZE = 20;
@@ -141,12 +183,22 @@
       }
     });
 
+    function showPlaceholder(message) {
+      const box = document.createElement('div');
+      box.className = 'pane-placeholder-box';
+      const span = document.createElement('span');
+      span.className = 'placeholder-text';
+      span.textContent = message;
+      box.appendChild(span);
+      results.replaceChildren(box);
+    }
+
     async function renderSearchPage(query) {
       const myToken = ++searchToken;
       const pf = await T.getPagefind?.();
       if (myToken !== searchToken) return; // a newer keystroke/tag click superseded this one
       if (!pf) {
-        results.innerHTML = `<div class="pane-placeholder-box"><span class="placeholder-text">${t('search.loading')}</span></div>`;
+        showPlaceholder(t('search.loading'));
         return;
       }
 
@@ -159,7 +211,7 @@
       searchResultRefs = search?.results || [];
 
       if (searchResultRefs.length === 0) {
-        results.innerHTML = `<div class="pane-placeholder-box"><span class="placeholder-text">${t('search.empty')}</span></div>`;
+        showPlaceholder(t('search.empty'));
         return;
       }
 
@@ -172,20 +224,42 @@
       const pageData = await Promise.all(pageRefs.map((r) => r.data()));
       if (myToken !== searchToken) return;
 
-      const list = `<ul class="book-index-items">${pageData.map((d) => searchEntryHtml(d, hereUrl)).join('')}</ul>`;
-      const pagination =
-        totalPages > 1
-          ? `
-        <div class="lookup-pagination">
-          <button type="button" class="lookup-page-btn" data-dir="-1" ${searchPage === 0 ? 'disabled' : ''}>${t('search.prev', '◀ 前へ')}</button>
-          <span class="lookup-page-status">${searchPage + 1} / ${totalPages}</span>
-          <button type="button" class="lookup-page-btn" data-dir="1" ${searchPage === totalPages - 1 ? 'disabled' : ''}>${t('search.next', '次へ ▶')}</button>
-        </div>
-      `
-          : '';
-      results.innerHTML = list + pagination;
+      const list = document.createElement('ul');
+      list.className = 'book-index-items';
+      pageData.forEach((d) => {
+        const item = buildBookIndexItem(d, hereUrl);
+        if (item) list.appendChild(item);
+      });
 
-      results.querySelectorAll('.lookup-page-btn').forEach((btn) => {
+      let pagination: HTMLDivElement | null = null;
+      if (totalPages > 1) {
+        pagination = document.createElement('div');
+        pagination.className = 'lookup-pagination';
+
+        const prevBtn = document.createElement('button');
+        prevBtn.type = 'button';
+        prevBtn.className = 'lookup-page-btn';
+        prevBtn.dataset.dir = '-1';
+        prevBtn.disabled = searchPage === 0;
+        prevBtn.textContent = t('search.prev', '◀ 前へ');
+
+        const status = document.createElement('span');
+        status.className = 'lookup-page-status';
+        status.textContent = `${searchPage + 1} / ${totalPages}`;
+
+        const nextBtn = document.createElement('button');
+        nextBtn.type = 'button';
+        nextBtn.className = 'lookup-page-btn';
+        nextBtn.dataset.dir = '1';
+        nextBtn.disabled = searchPage === totalPages - 1;
+        nextBtn.textContent = t('search.next', '次へ ▶');
+
+        pagination.append(prevBtn, status, nextBtn);
+      }
+
+      results.replaceChildren(list, ...(pagination ? [pagination] : []));
+
+      results.querySelectorAll<HTMLButtonElement>('.lookup-page-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
           searchPage += Number(btn.dataset.dir);
           saveLookupState();
@@ -241,12 +315,15 @@
         const sections = manifest.sections || [];
         if (sections.length > 0) {
           tagsBox.hidden = false;
-          tagsBox.innerHTML = sections
-            .map((s) => {
-              const isActive = activeTags.has(s.name);
-              return `<button type="button" class="lookup-tag-chip${isActive ? ' is-active' : ''}" data-tag="${s.name}">${s.name}</button>`;
-            })
-            .join('');
+          const chips = sections.map((s) => {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = activeTags.has(s.name) ? 'lookup-tag-chip is-active' : 'lookup-tag-chip';
+            chip.dataset.tag = s.name;
+            chip.textContent = s.name;
+            return chip;
+          });
+          tagsBox.replaceChildren(...chips);
           tagsBox.addEventListener('click', (e) => {
             const chip = e.target.closest('.lookup-tag-chip');
             if (!chip) return;

@@ -109,28 +109,32 @@
 
     const recentSection = document.getElementById('pane-recent-section');
     const recentList = document.getElementById('pane-recent-list');
-    if (recentSection && recentList && recents.length > 0) {
-      recentList.innerHTML = recents
-        .map((r) => {
-          const isCurrent = r.path === currentPath;
-          // The current page keeps its own tinted card (.is-current in CSS)
-          // and stands taller than its title length alone would give it --
-          // on a real shelf, the book you're actually reading is the one
-          // you'd spot first, not just a differently-colored spine.
-          const CURRENT_HEIGHT_BONUS = 20;
-          const height = spineHeightFor(r.title) + (isCurrent ? CURRENT_HEIGHT_BONUS : 0);
-          const spineStyle = ` style="height: ${height}px"`;
-          const safePath = T.escapeHtml ? T.escapeHtml(r.path) : r.path;
-          const safeTitle = T.escapeHtml ? T.escapeHtml(r.title) : r.title;
-          return `
-        <li>
-          <a href="${safePath}" class="recent-link ${isCurrent ? 'is-current' : ''}"${spineStyle}>
-            <span class="recent-title">${safeTitle}</span>
-          </a>
-        </li>
-      `;
-        })
-        .join('');
+    const itemTemplate = document.getElementById('recent-note-item-template') as HTMLTemplateElement | null;
+    if (recentSection && recentList && itemTemplate && recents.length > 0) {
+      const items = recents.map((r) => {
+        const isCurrent = r.path === currentPath;
+        // The current page keeps its own tinted card (.is-current in CSS)
+        // and stands taller than its title length alone would give it --
+        // on a real shelf, the book you're actually reading is the one
+        // you'd spot first, not just a differently-colored spine.
+        const CURRENT_HEIGHT_BONUS = 20;
+        const height = spineHeightFor(r.title) + (isCurrent ? CURRENT_HEIGHT_BONUS : 0);
+
+        const li = itemTemplate.content.firstElementChild?.cloneNode(true) as HTMLElement;
+        const link = li.querySelector<HTMLAnchorElement>('.recent-link');
+        // `.href`/`.style`/`.textContent` are DOM property assignments, not
+        // markup parsing, so r.path/r.title never need escaping here the
+        // way the old innerHTML-string version did.
+        if (link) {
+          link.href = r.path;
+          link.classList.toggle('is-current', isCurrent);
+          link.style.height = `${height}px`;
+          const title = link.querySelector('.recent-title');
+          if (title) title.textContent = r.title;
+        }
+        return li;
+      });
+      recentList.replaceChildren(...items);
       recentSection.hidden = false;
     }
   }

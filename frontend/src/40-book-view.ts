@@ -385,34 +385,15 @@
         slideAtDivergence(oldChain, newChain, applyActiveState, revealActiveTab);
       }
 
-      // Hover popover for child subheadings
-      let popover = document.getElementById('sticky-hover-popover');
-      if (!popover) {
-        popover = document.createElement('div');
-        popover.id = 'sticky-hover-popover';
-        popover.className = 'sticky-hover-popover';
-        popover.hidden = true;
-        popover.setAttribute('data-pagefind-ignore', '');
-        popover.innerHTML = `<div class="sticky-popover-tab sticky-tab-btn" role="button"></div><div class="sticky-hover-popover-list"></div>`;
-        document.body.appendChild(popover);
-      }
-      let popoverTab = popover.querySelector<HTMLElement>('.sticky-popover-tab');
-      let popoverList = popover.querySelector<HTMLElement>('.sticky-hover-popover-list');
-      if (!popoverTab) {
-        popoverTab = document.createElement('div');
-        popoverTab.className = 'sticky-popover-tab sticky-tab-btn';
-        popoverTab.setAttribute('role', 'button');
-        if (popoverList) {
-          popover.insertBefore(popoverTab, popoverList);
-        } else {
-          popover.appendChild(popoverTab);
-        }
-      }
-      if (!popoverList) {
-        popoverList = document.createElement('div');
-        popoverList.className = 'sticky-hover-popover-list';
-        popover.appendChild(popoverList);
-      }
+      // Hover popover for child subheadings. The container, its dummy tab,
+      // and the list are all rendered directly in base.html, so the shape
+      // lives in exactly one place instead of a parallel copy here -- every
+      // use below already tolerates `popover`/`popoverTab`/`popoverList`
+      // being null, since the popover only ever appears on pages that
+      // actually render sticky tabs.
+      const popover = document.getElementById('sticky-hover-popover');
+      const popoverTab = popover?.querySelector<HTMLElement>('.sticky-popover-tab') ?? null;
+      const popoverList = popover?.querySelector<HTMLElement>('.sticky-hover-popover-list') ?? null;
 
       function showPopoverForNode(node, btn) {
         if (!popover || !popoverList) return;
@@ -428,7 +409,7 @@
           return;
         }
 
-        popoverList.innerHTML = '';
+        popoverList.replaceChildren();
         const itemTemplate = document.getElementById('sticky-hover-item-template') as HTMLTemplateElement | null;
         if (!itemTemplate) return;
         childNodes.forEach((childNode) => {
