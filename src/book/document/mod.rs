@@ -1,6 +1,7 @@
 //! One source document, turned into everything a page needs.
 
 mod code;
+mod external_links;
 mod html;
 mod icon;
 mod links;
@@ -494,7 +495,42 @@ Here is issue $gh("tomet-lang/tomet") and path is ${self.path}.
         );
         assert!(
             out.body_html.contains(
-                "<li class=\"tm-list-item-with-badge\"><span class=\"tm-list-marker tm-list-marker-badge\"><a class=\"tm-url\" href=\"https://example.com\">Guide</a></span>docs</li>"
+                "<li class=\"tm-list-item-with-badge\"><span class=\"tm-list-marker tm-list-marker-badge\"><a class=\"tm-url\" href=\"https://example.com\"><img class=\"tm-link-icon tm-link-favicon\""
+            ),
+            "actual body_html: {}",
+            out.body_html
+        );
+    }
+
+    #[test]
+    fn external_links_are_enhanced_in_document_body() {
+        let config = BookConfig::default();
+        let vault = tomet_links::VaultLinkIndex::from_paths(&["notes/page.tmt".to_string()]);
+
+        let out = process_tomet_document(
+            r#"#[ Links ]
+
+Visit @link(https://github.com/tomet-lang/tomet)[GitHub Repo] and @link(https://example.org)[Sample Site].
+"#,
+            "notes/page.tmt",
+            None,
+            &config,
+            &vault,
+            None,
+            &HashSet::new(),
+        )
+        .unwrap();
+
+        assert!(
+            out.body_html.contains(
+                r#"<a class="tm-url" href="https://github.com/tomet-lang/tomet"><svg class="tm-link-icon" aria-hidden="true"><use href="/icons/simple.svg#github"></use></svg>GitHub Repo</a>"#
+            ),
+            "actual body_html: {}",
+            out.body_html
+        );
+        assert!(
+            out.body_html.contains(
+                r#"<a class="tm-url" href="https://example.org"><img class="tm-link-icon tm-link-favicon" src="https://www.google.com/s2/favicons?domain=example.org&amp;sz=32""#
             ),
             "actual body_html: {}",
             out.body_html
@@ -645,6 +681,7 @@ pub fn process_parsed_document_with_blocks(
     let (raw_body_html, outline) = tomet_html::render_body_with_outline(&doc, &render_opts);
     let body_html = marker::enhance_list_markers(&raw_body_html, &config.ui.markers);
     let body_html = code::enhance_code_blocks(&body_html, Some(&config.book.lang));
+    let body_html = external_links::enhance_external_links(&body_html, &config.ui.links);
 
     // 6. Table of contents, title, and the sticky-tab tree
     let (first_h1, mut toc) = toc_from_outline(&outline);

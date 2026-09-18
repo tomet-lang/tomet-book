@@ -1,8 +1,10 @@
 use anyhow::{Context, Result};
 use rayon::prelude::*;
+use regex::Regex;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
 use tracing::debug;
 
 use super::DocFailure;
@@ -17,6 +19,9 @@ pub enum ImagePreset {
     Profile,
     /// Small thumbnails for hover preview cards and index popovers (max width: 240px).
     Thumb,
+    /// Images embedded directly in a document's body (max width: 1600px for
+    /// 2x Retina on the ~860px article column, see .pane-article-container).
+    Body,
 }
 
 impl ImagePreset {
@@ -25,6 +30,7 @@ impl ImagePreset {
             Self::Banner => 1600,
             Self::Profile => 640,
             Self::Thumb => 240,
+            Self::Body => 1600,
         }
     }
 
@@ -33,6 +39,7 @@ impl ImagePreset {
             Self::Banner => "banners",
             Self::Profile => "profiles",
             Self::Thumb => "thumbs",
+            Self::Body => "content",
         }
     }
 }
@@ -143,6 +150,22 @@ pub fn resolve_local_media_path(
     None
 }
 
+static BODY_IMG_SRC: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"<img\b[^>]*\bsrc="([^"]*)""#).unwrap());
+
+/// Every `src` an `<img>` tag in rendered body HTML points at, in order of
+/// appearance. Regex over the already-rendered string, the same approach
+/// `enhance_list_markers`/`enhance_code_blocks` (document/marker.rs,
+/// document/code.rs) already use for their own post-render passes --
+/// `tomet_html` renders the body in an external crate, so this is the one
+/// place tmtbook can still reach into it.
+fn body_image_srcs(body_html: &str) -> Vec<String> {
+    BODY_IMG_SRC
+        .captures_iter(body_html)
+        .map(|cap| cap[1].to_string())
+        .collect()
+}
+
 /// Optimizes referenced banners and profile images across all documents in parallel.
 pub fn optimize_docs_media(
     docs: &mut [Result<ProcessedDoc, DocFailure>],
@@ -173,6 +196,12 @@ pub fn optimize_docs_media(
         for img in &doc.images {
             if let Some((rel, abs)) = resolve_local_media_path(img, src_dir, asset_prefix) {
                 targets.insert((ImagePreset::Profile, rel, abs));
+            }
+        }
+
+        for src in body_image_srcs(&doc.body_html) {
+            if let Some((rel, abs)) = resolve_local_media_path(&src, src_dir, asset_prefix) {
+                targets.insert((ImagePreset::Body, rel, abs));
             }
         }
     }
@@ -224,6 +253,16 @@ pub fn optimize_docs_media(
                 *img = cached_url.clone();
             }
         }
+
+        for src in body_image_srcs(&doc.body_html) {
+            if let Some((rel, _)) = resolve_local_media_path(&src, src_dir, asset_prefix)
+                && let Some(cached_url) = optimized_map.get(&(ImagePreset::Body, rel))
+            {
+                doc.body_html = doc
+                    .body_html
+                    .replace(&format!("src=\"{src}\""), &format!("src=\"{cached_url}\""));
+            }
+        }
     }
 }
 
@@ -271,6 +310,20 @@ pub fn optimize_single_doc_media(
                 }
                 Ok(None) => {}
                 Err(e) => tracing::warn!("Failed to optimize profile image {}: {e}", abs.display()),
+            }
+        }
+    }
+
+    for src in body_image_srcs(&doc.body_html) {
+        if let Some((rel, abs)) = resolve_local_media_path(&src, src_dir, asset_prefix) {
+            match optimize_image(&abs, &rel, ImagePreset::Body, out_dir) {
+                Ok(Some(cached_url)) => {
+                    doc.body_html = doc
+                        .body_html
+                        .replace(&format!("src=\"{src}\""), &format!("src=\"{cached_url}\""));
+                }
+                Ok(None) => {}
+                Err(e) => tracing::warn!("Failed to optimize body image {}: {e}", abs.display()),
             }
         }
     }
@@ -376,6 +429,12 @@ mod tests {
         }
         prof_img.save(src_dir.join("images/profile.png")).unwrap();
 
+        let mut body_img = RgbImage::new(2000, 600);
+        for p in body_img.pixels_mut() {
+            *p = Rgb([70, 80, 90]);
+        }
+        body_img.save(src_dir.join("images/content.png")).unwrap();
+
         let doc = ProcessedDoc {
             slug: "alice".to_string(),
             rel_path: "alice.tmt".to_string(),
@@ -396,7 +455,7 @@ mod tests {
             has_data: true,
             toc: Vec::new(),
             section_tabs: Vec::new(),
-            body_html: String::new(),
+            body_html: r#"<p>Hello</p><img src="/vault/images/content.png" alt="">"#.to_string(),
             outgoing: Vec::new(),
         };
 
@@ -422,10 +481,29 @@ mod tests {
             optimized_doc.original_images,
             vec!["/vault/images/profile.png".to_string()]
         );
+        assert_eq!(
+            optimized_doc.body_html,
+            r#"<p>Hello</p><img src="/cache/content/images/content.webp" alt="">"#
+        );
 
         assert!(out_dir.join("cache/banners/images/banner.webp").exists());
         assert!(out_dir.join("cache/profiles/images/profile.webp").exists());
+        assert!(out_dir.join("cache/content/images/content.webp").exists());
 
         let _ = fs::remove_dir_all(&tmp);
+    }
+
+    #[test]
+    fn body_image_srcs_finds_every_local_img_tag() {
+        let html = r#"<p>intro</p>
+<img src="/vault/a.png" alt="">
+<figure><img class="x" src="/vault/b.jpg" width="10"></figure>
+<p>no image here</p>"#;
+
+        assert_eq!(
+            body_image_srcs(html),
+            vec!["/vault/a.png".to_string(), "/vault/b.jpg".to_string()]
+        );
+        assert!(body_image_srcs("<p>nothing</p>").is_empty());
     }
 }

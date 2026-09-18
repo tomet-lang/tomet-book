@@ -86,6 +86,8 @@ pub struct UiConfig {
     pub strings: HashMap<String, String>,
     #[serde(default)]
     pub markers: MarkersConfig,
+    #[serde(default)]
+    pub links: LinksConfig,
 }
 
 impl UiConfig {
@@ -125,6 +127,7 @@ impl Default for UiConfig {
             infobox: InfoboxConfig::default(),
             strings: HashMap::new(),
             markers: MarkersConfig::default(),
+            links: LinksConfig::default(),
         }
     }
 }
@@ -183,6 +186,32 @@ impl MarkerEntryConfig {
             Self::Detailed { pkg, .. } => pkg.as_deref().unwrap_or("lucide"),
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct LinksConfig {
+    #[serde(default = "default_true")]
+    pub external_icons: bool,
+    #[serde(default)]
+    pub favicon_service: FaviconService,
+}
+
+impl Default for LinksConfig {
+    fn default() -> Self {
+        Self {
+            external_icons: default_true(),
+            favicon_service: FaviconService::default(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum FaviconService {
+    #[default]
+    Google,
+    DuckDuckGo,
+    None,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -526,5 +555,25 @@ fire = { icon = "flame", color = "#f97316" }
         assert_eq!(fire.icon(), "flame");
         assert_eq!(fire.color(), Some("#f97316"));
         assert_eq!(fire.pkg(), "lucide");
+    }
+
+    #[test]
+    fn links_config_defaults_and_customization() {
+        let cfg = load("");
+        assert!(cfg.ui.links.external_icons);
+        assert_eq!(cfg.ui.links.favicon_service, FaviconService::Google);
+
+        let custom = load(
+            r#"
+[ui.links]
+external_icons = false
+favicon_service = "duckduckgo"
+"#,
+        );
+        assert!(!custom.ui.links.external_icons);
+        assert_eq!(
+            custom.ui.links.favicon_service,
+            FaviconService::DuckDuckGo
+        );
     }
 }

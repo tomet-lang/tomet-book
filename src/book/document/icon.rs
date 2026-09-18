@@ -17,7 +17,7 @@ use std::sync::LazyLock;
 use tomet_ast::Value;
 use tomet_html::CustomElementCtx;
 
-use crate::book::assets::LUCIDE_SPRITE;
+use crate::book::assets::{LUCIDE_SPRITE, SIMPLE_SPRITE};
 
 use super::html::escape_html;
 
@@ -34,8 +34,22 @@ static LUCIDE_ICON_NAMES: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
         .collect()
 });
 
+static SIMPLE_ICON_NAMES: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
+    SIMPLE_SPRITE
+        .match_indices("<symbol id=\"")
+        .filter_map(|(start, matched)| {
+            let rest = &SIMPLE_SPRITE[start + matched.len()..];
+            rest.find('"').map(|end| &rest[..end])
+        })
+        .collect()
+});
+
 pub(crate) fn is_lucide_icon(name: &str) -> bool {
     LUCIDE_ICON_NAMES.contains(name)
+}
+
+pub(crate) fn is_simple_icon(name: &str) -> bool {
+    SIMPLE_ICON_NAMES.contains(name)
 }
 
 fn arg_str<'a>(args: Option<&'a Value>, key: &str) -> Option<&'a str> {
@@ -121,7 +135,13 @@ pub fn render(ctx: CustomElementCtx) -> Option<String> {
     let name_attr = escape_html(name);
     let pkg_attr = escape_html(pkg);
 
-    if pkg != "lucide" || !LUCIDE_ICON_NAMES.contains(name) {
+    let (icon_names, href_prefix) = match pkg {
+        "lucide" => (&*LUCIDE_ICON_NAMES, "/icons/lucide.svg"),
+        "simple" => (&*SIMPLE_ICON_NAMES, "/icons/simple.svg"),
+        _ => return Some(placeholder(&name_attr, &pkg_attr, ctx.inline)),
+    };
+
+    if !icon_names.contains(name) {
         return Some(placeholder(&name_attr, &pkg_attr, ctx.inline));
     }
 
@@ -129,7 +149,7 @@ pub fn render(ctx: CustomElementCtx) -> Option<String> {
     // id="...">` in the sprite, so it is already a safe bare identifier --
     // no escaping needed in the `#name` fragment.
     let svg = format!(
-        "<svg class=\"tm-doc-icon\" data-icon=\"{name_attr}\" aria-hidden=\"true\"><use href=\"/icons/lucide.svg#{name}\"></use></svg>"
+        "<svg class=\"tm-doc-icon\" data-icon=\"{name_attr}\" aria-hidden=\"true\"><use href=\"{href_prefix}#{name}\"></use></svg>"
     );
 
     Some(if ctx.inline {
@@ -169,6 +189,16 @@ mod tests {
         assert_eq!(
             html,
             "<svg class=\"tm-doc-icon\" data-icon=\"star\" aria-hidden=\"true\"><use href=\"/icons/lucide.svg#star\"></use></svg>"
+        );
+    }
+
+    #[test]
+    fn renders_a_vendored_simple_icon_inline() {
+        let a = args("github", Some("simple"));
+        let html = render(ctx("doc.icon", &a, true)).unwrap();
+        assert_eq!(
+            html,
+            "<svg class=\"tm-doc-icon\" data-icon=\"github\" aria-hidden=\"true\"><use href=\"/icons/simple.svg#github\"></use></svg>"
         );
     }
 

@@ -2,7 +2,7 @@
    peek-overlay/-dialog/-header/-header-crumbs/-header-actions box models
    are Tailwind utility classes in the markup now (base.html) -- except
    properties this file's own @media (max-width: 768px) block further down
-   also sets (peek-overlay/-dialog's width/height/max-*/border/border-radius,
+   also sets (peek-overlay/-dialog's width,height,max-*,border,border-radius,
    peek-scroll-body's padding): those stay here, since an unconditional
    utility on the same element would win over this file's own mobile
    override at every width, not just below 768px (Tailwind's output sits

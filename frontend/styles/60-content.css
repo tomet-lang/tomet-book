@@ -230,6 +230,22 @@ article a.tm-url:hover::after {
   opacity: 1;
 }
 
+/* External link prefix icon (Simple Icons SVG or favicon image) */
+.tm-link-icon {
+  display: inline-block;
+  width: 0.95em;
+  height: 0.95em;
+  margin-right: 0.3em;
+  vertical-align: -0.12em;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+.tm-link-favicon {
+  border-radius: 2px;
+  object-fit: contain;
+}
+
 /* Internal links: clean offset underline for color-independent accessibility.
    Maintains seamless Japanese typography without inserting awkward gaps between words and particles. */
 article a:not([href^="http://"]):not([href^="https://"]):not(.tm-url):not(.tm-ref-unresolved):not(:has(img)) {
@@ -339,7 +355,11 @@ article li.tm-strikethrough > .tm-list-marker {
   letter-spacing: 0.02em;
 }
 
-article img { max-width: 100%; height: auto; display: block; margin: 16px auto; cursor: zoom-in; }
+/* max-height caps a portrait image at 80% of the viewport instead of
+   letting it grow as tall as its aspect ratio and the (unconstrained)
+   article column width would take it -- max-width alone only bounds the
+   horizontal axis. */
+article img { max-width: 100%; max-height: 80vh; height: auto; display: block; margin: 16px auto; cursor: zoom-in; }
 
 /* Code blocks: wrapped with header bar containing language and copy button */
 .code-block-wrapper {

@@ -42,6 +42,10 @@ pub const BOOK_JS: &str = include_str!(concat!(env!("OUT_DIR"), "/tmtbook.js"));
 /// so `@doc.icon("<name>", pkg:"lucide")` can reference any of them by
 /// `<use href="/icons/lucide.svg#<name>">` without a code change to add one.
 pub const LUCIDE_SPRITE: &str = include_str!("../../frontend/icons/lucide/sprite.svg");
+/// Simple Icons sprite sheet, vendored from `simple-icons`,
+/// so `@doc.icon("<name>", pkg:"simple")` and external link icons can
+/// reference any of them by `<use href="/icons/simple.svg#<name>">`.
+pub const SIMPLE_SPRITE: &str = include_str!("../../frontend/icons/simple/sprite.svg");
 
 /// One stylesheet per Custom Element, kept out of `BOOK_CSS` on purpose: each
 /// is `<link>`-ed from inside that element's declarative shadow root (see
@@ -87,9 +91,11 @@ pub fn write_static_assets(out_dir: &Path, src_dir: &Path, config: &BookConfig) 
     super::write_if_changed(&out_dir.join("tmtbook.js"), BOOK_JS)
         .context("Failed to write tmtbook.js")?;
 
-    // 3. Write embedded icons/lucide.svg
+    // 3. Write embedded icons/lucide.svg and icons/simple.svg
     super::write_if_changed(&out_dir.join("icons/lucide.svg"), LUCIDE_SPRITE)
         .context("Failed to write icons/lucide.svg")?;
+    super::write_if_changed(&out_dir.join("icons/simple.svg"), SIMPLE_SPRITE)
+        .context("Failed to write icons/simple.svg")?;
 
     // 4. Write embedded per-component stylesheets (linked from inside each
     // Custom Element's declarative shadow root -- see TMT_BTN_CSS above).
