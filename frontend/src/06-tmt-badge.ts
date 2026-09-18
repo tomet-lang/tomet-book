@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  const T = (window.TMT ??= {} as any);
 
   class TmtBadge extends HTMLElement {
     static get observedAttributes() {
@@ -7,6 +8,7 @@
     }
 
     connectedCallback() {
+      T.ensureShadowRoot(this);
       if (this.hasAttribute('href') && !this.hasAttribute('tabindex')) {
         this.setAttribute('tabindex', '0');
         this.setAttribute('role', 'link');

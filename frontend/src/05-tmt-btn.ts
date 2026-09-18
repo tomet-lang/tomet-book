@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  const T = (window.TMT ??= {} as any);
 
   class TmtBtn extends HTMLElement {
     static get observedAttributes() {
@@ -7,6 +8,7 @@
     }
 
     connectedCallback() {
+      T.ensureShadowRoot(this);
       this._btn = this.shadowRoot?.querySelector('.tmt-btn-inner');
       this._syncAttributes();
 

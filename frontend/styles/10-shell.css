@@ -135,6 +135,7 @@ html[data-view="classic"] .classic-view {
   --tmt-btn-hover-bg: var(--shell-border);
   --tmt-btn-active-color: var(--shell-text);
   --tmt-btn-active-bg: var(--shell-border);
+  --tmt-btn-active-border: var(--shell-border);
   border: 1px solid var(--shell-border);
   border-radius: 0;
   padding: 4px 6px;
@@ -329,7 +330,7 @@ html[data-view="classic"] .classic-view {
   --tmt-btn-hover-color: var(--shell-text);
   --tmt-btn-active-bg: var(--shell-border);
   --tmt-btn-active-color: var(--shell-text);
-  --tmt-btn-active-border: var(--link);
+  --tmt-btn-active-border: var(--shell-border);
 }
 .rail-tab-palette {
   --tmt-btn-column-padding: 12px 0;
@@ -378,6 +379,15 @@ html[data-view="classic"] .classic-view {
   border: 1px solid var(--shell-border);
   box-shadow: 0 6px 22px rgba(0, 0, 0, 0.3),
               inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  /* tmt-swatch's checked/hover states fall back to --surface-subtle/--link
+     (the main content palette) when these aren't set -- unlike tmt-btn,
+     nothing bridged them to the shell's own tokens, so the checked swatch's
+     full-width background/border stood out as an off-theme white-ish box
+     against this popover's dark grain instead of blending in like the
+     rail's own tmt-btn instances do. */
+  --tmt-swatch-hover-bg: var(--shell-border);
+  --tmt-swatch-active-bg: var(--shell-border);
+  --tmt-swatch-active-border: var(--shell-border);
 }
 
 /* Author-level reinforcement -- see edit-dropdown-menu[hidden] in

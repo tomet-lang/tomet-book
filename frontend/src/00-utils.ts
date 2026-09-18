@@ -1,5 +1,25 @@
 // ==================== SHARED HELPERS ====================
 
+/** Declarative Shadow DOM (`<template shadowrootmode>`) only auto-attaches
+ *  when the browser's HTML parser meets it during real document parsing --
+ *  the legacy `Element.innerHTML` setter's fragment-parsing algorithm
+ *  deliberately skips it. Content swapped in that way (80-router.js's
+ *  `swapContent` replaces whole panes via `.innerHTML =`) leaves the
+ *  template sitting inert as a plain child instead of a live shadow root,
+ *  so every tmt-* element inside falls back to unstyled light-DOM content.
+ *  Call this at the top of every tmt-* custom element's connectedCallback:
+ *  a no-op when the browser already attached the shadow root declaratively,
+ *  and otherwise finishes the job by hand from the same inert template. */
+export function ensureShadowRoot(el: HTMLElement): void {
+  if (el.shadowRoot) return;
+  const tpl = el.querySelector(':scope > template[shadowrootmode]') as HTMLTemplateElement | null;
+  if (!tpl) return;
+  const mode = tpl.getAttribute('shadowrootmode') === 'closed' ? 'closed' : 'open';
+  const shadow = el.attachShadow({ mode });
+  shadow.appendChild(tpl.content.cloneNode(true));
+  tpl.remove();
+}
+
 /** Coalesce repeated calls into at most one `fn()` invocation per animation
  *  frame. The returned function also exposes `.cancel()`, for a caller that
  *  needs to drop a still-pending call (e.g. a drag that just ended). */
@@ -214,6 +234,7 @@ export function createScrollSpy({
 // Backward-compatibility registration onto window.TMT
 const T = (window.TMT ??= {} as any);
 Object.assign(T, {
+  ensureShadowRoot,
   rafThrottle,
   storage,
   session,

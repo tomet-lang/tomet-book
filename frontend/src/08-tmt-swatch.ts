@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  const T = (window.TMT ??= {} as any);
 
   class TmtSwatch extends HTMLElement {
     static get observedAttributes() {
@@ -7,6 +8,7 @@
     }
 
     connectedCallback() {
+      T.ensureShadowRoot(this);
       if (!this.hasAttribute('role')) this.setAttribute('role', 'radio');
       this._syncAttributes();
       this.addEventListener('click', this._handleClick.bind(this));

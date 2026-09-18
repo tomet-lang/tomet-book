@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  const T = (window.TMT ??= {} as any);
 
   class TmtSwitch extends HTMLElement {
     static get observedAttributes() {
@@ -7,6 +8,7 @@
     }
 
     connectedCallback() {
+      T.ensureShadowRoot(this);
       if (!this.hasAttribute('role')) this.setAttribute('role', 'switch');
       if (!this.hasAttribute('tabindex') && !this.hasAttribute('disabled')) {
         this.setAttribute('tabindex', '0');

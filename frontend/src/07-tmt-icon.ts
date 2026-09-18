@@ -1,9 +1,14 @@
 (() => {
   'use strict';
+  const T = (window.TMT ??= {} as any);
 
   class TmtIcon extends HTMLElement {
     static get observedAttributes() {
       return ['name', 'size', 'pkg'];
+    }
+
+    connectedCallback() {
+      T.ensureShadowRoot(this);
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
