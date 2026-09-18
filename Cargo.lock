@@ -3389,26 +3389,15 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
- "notify",
- "tmtbook-core",
- "tmtbook-serve",
- "tokio",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "tmtbook-core"
-version = "0.1.0"
-dependencies = [
- "anyhow",
  "image",
  "minijinja",
+ "notify",
  "pagefind",
  "rayon",
  "regex",
  "serde",
  "serde_json",
+ "tmtbook-serve",
  "tokio",
  "tomet-ast",
  "tomet-html",
@@ -3420,6 +3409,7 @@ dependencies = [
  "tomet-tree",
  "toml 0.8.23",
  "tracing",
+ "tracing-subscriber",
  "unicode-segmentation",
  "walkdir",
 ]

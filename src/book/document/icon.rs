@@ -5,7 +5,7 @@
 //! `tomet_html::RenderOptions::custom_element` hook.
 //!
 //! Only `pkg:"lucide"` is supported today, referencing the sprite sheet
-//! vendored whole at `ui/icons/lucide/sprite.svg` (every
+//! vendored whole at `frontend/icons/lucide/sprite.svg` (every
 //! Lucide icon, not a curated subset) via `crate::book::assets::LUCIDE_SPRITE`.
 //! Both an unknown `pkg` and an unknown `name` render a visible placeholder
 //! (rather than nothing), so a typo in a document shows up in the page

@@ -20,7 +20,7 @@ tests/store/
 #[ Build file ]
 build/
 dist/
-ui/dist/
+frontend/dist/
 package/
 result
 result-*

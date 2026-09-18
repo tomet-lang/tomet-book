@@ -11,15 +11,15 @@ let
   root = ../..;
 
   # Only what the compiler actually reads: the cargo sources, plus the CSS, JS
-  # and templates under src/assets that `include_str!` bakes into the binary,
-  # plus tailwind.config.js (read by build.rs's `tailwindcss` invocation).
+  # and templates under frontend/ that `include_str!` bakes into the binary,
+  # plus tailwind.config.ts (read by build.rs's `tailwindcss` invocation).
   # Everything else in the repo -- notes in tmtroot/, the justfile, the flake
   # files -- would otherwise trigger a full recompile when edited.
   src = lib.fileset.toSource {
     inherit root;
     fileset = lib.fileset.unions [
       (craneLib.fileset.commonCargoSources root)
-      (root + "/ui")
+      (root + "/frontend")
     ];
   };
 

@@ -41,22 +41,22 @@ impl<'a> BookRenderer<'a> {
 
         env.add_template(
             "base.html",
-            include_str!("../../../../ui/templates/base.html"),
+            include_str!("../../frontend/templates/base.html"),
         )
         .context("Failed to add base.html template")?;
         env.add_template(
             "page.html",
-            include_str!("../../../../ui/templates/page.html"),
+            include_str!("../../frontend/templates/page.html"),
         )
         .context("Failed to add page.html template")?;
         env.add_template(
             "index.html",
-            include_str!("../../../../ui/templates/index.html"),
+            include_str!("../../frontend/templates/index.html"),
         )
         .context("Failed to add index.html template")?;
         env.add_template(
             "macros.html",
-            include_str!("../../../../ui/templates/macros.html"),
+            include_str!("../../frontend/templates/macros.html"),
         )
         .context("Failed to add macros.html template")?;
 

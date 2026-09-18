@@ -5,9 +5,9 @@ use std::path::{Path, PathBuf};
 use std::time::Instant;
 use tracing::{info, warn};
 
-use tmtbook_core::book::build_book;
-use tmtbook_core::book::loader::{exclude_prefixes, is_ignored_rel};
-use tmtbook_core::config::BookConfig;
+use crate::book::build_book;
+use crate::book::loader::{exclude_prefixes, is_ignored_rel};
+use crate::config::BookConfig;
 use tmtbook_serve::{DevServerHandler, ReloadSignal};
 
 pub struct TometDevHandler {
@@ -15,10 +15,10 @@ pub struct TometDevHandler {
     out_dir: PathBuf,
     config: BookConfig,
     excludes: Vec<String>,
-    scanned: Option<tmtbook_core::book::loader::ScannedVault>,
-    backlinks: HashMap<String, Vec<tmtbook_core::book::renderer::Backlink>>,
+    scanned: Option<crate::book::loader::ScannedVault>,
+    backlinks: HashMap<String, Vec<crate::book::renderer::Backlink>>,
     unpublished: HashSet<String>,
-    book_index: Vec<tmtbook_core::book::renderer::EntrySummary>,
+    book_index: Vec<crate::book::renderer::EntrySummary>,
 }
 
 impl TometDevHandler {
@@ -84,7 +84,7 @@ impl DevServerHandler for TometDevHandler {
         }
 
         if self.scanned.is_none() {
-            self.scanned = tmtbook_core::book::loader::scan_vault(&self.src_dir, &self.config).ok();
+            self.scanned = crate::book::loader::scan_vault(&self.src_dir, &self.config).ok();
         }
 
         Ok(())
@@ -109,7 +109,7 @@ impl DevServerHandler for TometDevHandler {
         }
 
         if plan.css {
-            let _ = tmtbook_core::book::assets::write_static_assets(
+            let _ = crate::book::assets::write_static_assets(
                 &self.out_dir,
                 &self.src_dir,
                 &self.config,
@@ -118,7 +118,7 @@ impl DevServerHandler for TometDevHandler {
             signals.push(ReloadSignal::Css);
         }
 
-        let renderer = match tmtbook_core::book::renderer::BookRenderer::new(&self.config, true) {
+        let renderer = match crate::book::renderer::BookRenderer::new(&self.config, true) {
             Ok(r) => r,
             Err(e) => {
                 warn!("Failed to create renderer: {e}");
@@ -133,11 +133,11 @@ impl DevServerHandler for TometDevHandler {
             let start = Instant::now();
             let scanned = self.scanned.as_ref().unwrap();
 
-            match tmtbook_core::book::render_single_document(
+            match crate::book::render_single_document(
                 abs_path,
                 rel_path,
                 &self.out_dir,
-                &tmtbook_core::book::RenderContext {
+                &crate::book::RenderContext {
                     config: &self.config,
                     src_dir: &self.src_dir,
                     vault_index: &scanned.vault_index,
@@ -148,7 +148,7 @@ impl DevServerHandler for TometDevHandler {
                     book_index: &self.book_index,
                 },
                 self.backlinks
-                    .get(tmtbook_core::book::document::strip_doc_extension(rel_path))
+                    .get(crate::book::document::strip_doc_extension(rel_path))
                     .map(Vec::as_slice)
                     .unwrap_or(&[]),
             ) {
@@ -177,7 +177,7 @@ impl DevServerHandler for TometDevHandler {
 
         if !plan.media.is_empty() {
             for (abs_path, rel_path) in &plan.media {
-                let _ = tmtbook_core::book::assets::sync_single_media(
+                let _ = crate::book::assets::sync_single_media(
                     &self.out_dir,
                     abs_path,
                     rel_path,
@@ -213,7 +213,7 @@ fn is_ignored_event_path(path: &Path, src_dir: &Path, out_dir: &Path, excludes: 
     }
 
     match path.strip_prefix(src_dir) {
-        Ok(rel) => is_ignored_rel(&tmtbook_core::book::normalize_path(rel), excludes),
+        Ok(rel) => is_ignored_rel(&crate::book::normalize_path(rel), excludes),
         Err(_) => false,
     }
 }
@@ -243,7 +243,7 @@ fn plan_events(
 
             let file_name = path.file_name().and_then(|s| s.to_str()).unwrap_or("");
             if file_name == "tmtbook.toml"
-                || tmtbook_core::book::catalog::is_control_document(file_name)
+                || crate::book::catalog::is_control_document(file_name)
                 || file_name.ends_with(".js")
                 || file_name.ends_with(".html")
             {
@@ -269,13 +269,13 @@ fn plan_events(
                     plan.global = true;
                 } else if let Some(rel) = rel.filter(|_| seen_docs.insert(path.to_path_buf())) {
                     plan.docs
-                        .push((path.to_path_buf(), tmtbook_core::book::normalize_path(rel)));
+                        .push((path.to_path_buf(), crate::book::normalize_path(rel)));
                 }
-            } else if tmtbook_core::book::loader::MEDIA_EXTENSIONS.contains(&ext.as_str())
+            } else if crate::book::loader::MEDIA_EXTENSIONS.contains(&ext.as_str())
                 && let Some(rel) = rel.filter(|_| seen_media.insert(path.to_path_buf()))
             {
                 plan.media
-                    .push((path.to_path_buf(), tmtbook_core::book::normalize_path(rel)));
+                    .push((path.to_path_buf(), crate::book::normalize_path(rel)));
             }
         }
     }

@@ -19,19 +19,19 @@ use crate::config::BookConfig;
 /// unconditional utility positioned after them would otherwise clobber at
 /// every viewport width, not just the ones the media query targets.
 pub const BOOK_CSS: &str = concat!(
-    include_str!("../../../../ui/styles/00-base.css"),
-    include_str!("../../../../ui/styles/10-shell.css"),
-    include_str!("../../../../ui/styles/20-panes.css"),
-    include_str!("../../../../ui/styles/30-sticky-tabs.css"),
-    include_str!("../../../../ui/styles/35-sticky-tabs-vertical.css"),
-    include_str!("../../../../ui/styles/40-hero.css"),
-    include_str!("../../../../ui/styles/50-nav-infobox.css"),
-    include_str!("../../../../ui/styles/60-content.css"),
-    include_str!("../../../../ui/styles/70-widgets.css"),
-    include_str!("../../../../ui/styles/72-center-peek.css"),
+    include_str!("../../frontend/styles/00-base.css"),
+    include_str!("../../frontend/styles/10-shell.css"),
+    include_str!("../../frontend/styles/20-panes.css"),
+    include_str!("../../frontend/styles/30-sticky-tabs.css"),
+    include_str!("../../frontend/styles/35-sticky-tabs-vertical.css"),
+    include_str!("../../frontend/styles/40-hero.css"),
+    include_str!("../../frontend/styles/50-nav-infobox.css"),
+    include_str!("../../frontend/styles/60-content.css"),
+    include_str!("../../frontend/styles/70-widgets.css"),
+    include_str!("../../frontend/styles/72-center-peek.css"),
     include_str!(concat!(env!("OUT_DIR"), "/tailwind.css")),
-    include_str!("../../../../ui/styles/90-responsive.css"),
-    include_str!("../../../../ui/styles/98-no-js.css"),
+    include_str!("../../frontend/styles/90-responsive.css"),
+    include_str!("../../frontend/styles/98-no-js.css"),
 );
 /// The compiled JavaScript runtime for tmtbook, bundled by esbuild from
 /// `ui/src/index.ts` during the cargo build script.
@@ -41,18 +41,18 @@ pub const BOOK_JS: &str = include_str!(concat!(env!("OUT_DIR"), "/tmtbook.js"));
 /// whole from `lucide-static` rather than one file per icon we might use,
 /// so `@doc.icon("<name>", pkg:"lucide")` can reference any of them by
 /// `<use href="/icons/lucide.svg#<name>">` without a code change to add one.
-pub const LUCIDE_SPRITE: &str = include_str!("../../../../ui/icons/lucide/sprite.svg");
+pub const LUCIDE_SPRITE: &str = include_str!("../../frontend/icons/lucide/sprite.svg");
 
 /// One stylesheet per Custom Element, kept out of `BOOK_CSS` on purpose: each
 /// is `<link>`-ed from inside that element's declarative shadow root (see
 /// `dsd_btn_shadow` and friends in macros.html) instead of being inlined
 /// per-instance, so the browser fetches and caches it once no matter how many
 /// `<tmt-btn>` etc. appear on a page.
-pub const TMT_BTN_CSS: &str = include_str!("../../../../ui/styles/components/tmt-btn.css");
-pub const TMT_BADGE_CSS: &str = include_str!("../../../../ui/styles/components/tmt-badge.css");
-pub const TMT_ICON_CSS: &str = include_str!("../../../../ui/styles/components/tmt-icon.css");
-pub const TMT_SWATCH_CSS: &str = include_str!("../../../../ui/styles/components/tmt-swatch.css");
-pub const TMT_SWITCH_CSS: &str = include_str!("../../../../ui/styles/components/tmt-switch.css");
+pub const TMT_BTN_CSS: &str = include_str!("../../frontend/styles/components/tmt-btn.css");
+pub const TMT_BADGE_CSS: &str = include_str!("../../frontend/styles/components/tmt-badge.css");
+pub const TMT_ICON_CSS: &str = include_str!("../../frontend/styles/components/tmt-icon.css");
+pub const TMT_SWATCH_CSS: &str = include_str!("../../frontend/styles/components/tmt-swatch.css");
+pub const TMT_SWITCH_CSS: &str = include_str!("../../frontend/styles/components/tmt-switch.css");
 
 /// A short digest of an asset's contents, for `?v=` cache busting.
 ///

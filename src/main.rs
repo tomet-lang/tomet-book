@@ -5,12 +5,10 @@ use tracing::info;
 use tracing_subscriber::{EnvFilter, fmt};
 
 mod cli;
-mod serve;
 
 use cli::{Cli, Commands};
-use serve::TometDevHandler;
-use tmtbook_core::book;
-use tmtbook_core::config::BookConfig;
+use tmtbook::book;
+use tmtbook::config::BookConfig;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -45,10 +43,8 @@ async fn main() -> Result<()> {
             port,
         } => {
             let (src_dir, out_dir, config) = resolve_build_paths(&dir, dest)?;
-            let prefix = Some(config.build.clean_url_prefix().to_string());
-            let handler = TometDevHandler::new(src_dir.clone(), out_dir.clone(), config);
 
-            tmtbook_serve::run_dev_server(src_dir, out_dir, host, port, prefix, handler).await?;
+            tmtbook::run_dev_server(src_dir, out_dir, config, host, port).await?;
         }
         Commands::Init { dir, title } => {
             let target_file = dir.join("tmtbook.toml");
