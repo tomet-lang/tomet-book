@@ -29,7 +29,7 @@ test:
 
 # Type-check TypeScript without producing output
 check-ui:
-    tsc --project ui/tsconfig.json --noEmit
+    tsc --project frontend/tsconfig.json --noEmit
 
 # Type-check without producing a binary
 check: check-ui
