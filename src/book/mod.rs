@@ -98,6 +98,8 @@ pub struct BuildReport {
     pub unpublished: HashSet<String>,
     /// The book's table of contents, for the same reason.
     pub book_index: Vec<EntrySummary>,
+    /// Note icon HTML snippets keyed by slug, for internal link decoration.
+    pub doc_icons: HashMap<String, String>,
 }
 
 enum DocOutcome {
@@ -145,6 +147,8 @@ pub struct RenderContext<'a, 'r> {
     pub unpublished: &'a HashSet<String>,
     /// The book's table of contents, as the last full build arranged it.
     pub book_index: &'a [EntrySummary],
+    /// Note icon HTML snippets keyed by slug, for internal link decoration.
+    pub doc_icons: &'a HashMap<String, String>,
 }
 
 pub fn render_single_document(
@@ -173,6 +177,13 @@ pub fn render_single_document(
         cx.unpublished,
     )?;
     image_opt::optimize_single_doc_media(&mut processed, cx.src_dir, out_dir, config);
+    if config.ui.links.note_icons && !cx.doc_icons.is_empty() {
+        processed.body_html = document::enhance_internal_links(
+            &processed.body_html,
+            cx.doc_icons,
+            config.build.clean_url_prefix(),
+        );
+    }
     let html = cx
         .renderer
         .render_page(&processed, backlinks, cx.book_index)?;
@@ -559,6 +570,35 @@ pub fn build_book(
     // 5.5. Optimize referenced banners and profile images
     image_opt::optimize_docs_media(&mut processed, src_dir, out_dir, config);
 
+    // 5.6. Enhance internal links with target note icons
+    let doc_icons: HashMap<String, String> = if config.ui.links.note_icons {
+        let note_icons: HashMap<String, String> = processed
+            .iter()
+            .filter_map(|r| r.as_ref().ok())
+            .filter_map(|doc| {
+                doc.link_icon
+                    .as_ref()
+                    .map(|icon| (doc.slug.clone(), icon.clone()))
+            })
+            .collect();
+
+        if !note_icons.is_empty() {
+            let clean_url_prefix = config.build.clean_url_prefix();
+            processed.par_iter_mut().for_each(|res| {
+                if let Ok(doc) = res {
+                    doc.body_html = document::enhance_internal_links(
+                        &doc.body_html,
+                        &note_icons,
+                        clean_url_prefix,
+                    );
+                }
+            });
+        }
+        note_icons
+    } else {
+        HashMap::new()
+    };
+
     // 6. Reverse the links: who points at each page.
     let docs: Vec<&ProcessedDoc> = processed.iter().filter_map(|r| r.as_ref().ok()).collect();
     let backlinks = build_backlink_index(&docs, clean_url_prefix);
@@ -856,6 +896,7 @@ pub fn build_book(
         backlinks,
         unpublished,
         book_index,
+        doc_icons,
     };
 
     if report.failures.is_empty() {
@@ -905,6 +946,7 @@ mod tests {
             primary_color: None,
             icon: None,
             icon_image_url: None,
+            link_icon: None,
             banner_url: None,
             banner_original_url: None,
             banner_y: None,
@@ -1129,6 +1171,7 @@ mod manifest_tests {
             primary_color: None,
             icon: None,
             icon_image_url: None,
+            link_icon: None,
             banner_url: None,
             banner_original_url: None,
             banner_y: None,
@@ -1323,5 +1366,40 @@ mod manifest_tests {
         assert!(!root.join("img/old.png").exists());
 
         let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn build_book_enhances_internal_links_with_note_icons() {
+        let src = scratch("build-internal-icons-src");
+        let out = scratch("build-internal-icons-out");
+
+        fs::write(
+            src.join("target.tmt"),
+            "@meta{icon: \"🛍️\"}\n\n#[ Target ]\n\nTarget page.\n",
+        )
+        .unwrap();
+        fs::write(
+            src.join("source.tmt"),
+            "#[ Source ]\n\nVisit @link(ref:\"target\")[My Store].\n",
+        )
+        .unwrap();
+
+        let mut config = BookConfig::default();
+        config.build.pagefind = false;
+
+        let report = build_book(&src, &out, &config, false).unwrap();
+        assert_eq!(report.rendered, 2);
+        assert!(report.doc_icons.contains_key("target"));
+
+        let source_html = fs::read_to_string(out.join("wiki/source/index.html")).unwrap();
+        assert!(
+            source_html.contains(
+                r#"<a class="tm-file" href="/wiki/target"><span class="tm-link-icon tm-link-icon-emoji" aria-hidden="true">🛍️</span>My Store</a>"#
+            ),
+            "actual source_html: {source_html}"
+        );
+
+        let _ = fs::remove_dir_all(&src);
+        let _ = fs::remove_dir_all(&out);
     }
 }

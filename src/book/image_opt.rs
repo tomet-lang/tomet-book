@@ -445,6 +445,7 @@ mod tests {
             primary_color: None,
             icon: None,
             icon_image_url: None,
+            link_icon: None,
             banner_url: Some("/vault/images/banner.png".to_string()),
             banner_original_url: Some("/vault/images/banner.png".to_string()),
             banner_y: None,

@@ -119,6 +119,44 @@ pub fn meta_icon_element(raw_meta: Option<&tomet_ast::Value>) -> Option<String> 
     render_meta_value(el, true)
 }
 
+/// Link prefix icon representation for `@doc.icon(...)` in `@meta`.
+pub fn meta_link_icon_element(raw_meta: Option<&tomet_ast::Value>) -> Option<String> {
+    let tomet_ast::Value::Map(entries) = raw_meta? else {
+        return None;
+    };
+    let (_, value) = entries.iter().find(|(k, _)| k == "icon")?;
+    let tomet_ast::Value::Element(el) = value else {
+        return None;
+    };
+    let name = el.sigil.name().map(|n| n.to_string()).unwrap_or_default();
+    if name != "doc.icon" {
+        return None;
+    }
+    let bindings = tomet_semantics::Bindings::default();
+    let args = tomet_semantics::normalized_element_args_in(el, &bindings);
+    let icon_name = arg_str(args.as_ref(), "name").unwrap_or_default();
+    let pkg = arg_str(args.as_ref(), "pkg").unwrap_or("lucide");
+    render_link_icon(icon_name, pkg)
+}
+
+/// Renders a link-sized prefix icon for Lucide or Simple Icons.
+pub fn render_link_icon(name: &str, pkg: &str) -> Option<String> {
+    let (icon_names, href_prefix, subtype) = match pkg {
+        "lucide" => (&*LUCIDE_ICON_NAMES, "/icons/lucide.svg", "tm-link-icon-lucide"),
+        "simple" => (&*SIMPLE_ICON_NAMES, "/icons/simple.svg", "tm-link-icon-simple"),
+        _ => return None,
+    };
+
+    if !icon_names.contains(name) {
+        return None;
+    }
+
+    let name_attr = escape_html(name);
+    Some(format!(
+        "<svg class=\"tm-link-icon {subtype}\" aria-hidden=\"true\"><use href=\"{href_prefix}#{name_attr}\"></use></svg>"
+    ))
+}
+
 /// [`tomet_html::RenderOptions::custom_element`] entry point. Answers only
 /// for `doc.icon`; every other `Custom` kind falls through to the crate's
 /// generic rendering (`None`).

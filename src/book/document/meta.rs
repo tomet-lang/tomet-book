@@ -42,6 +42,7 @@ pub struct MetaProperties {
     pub primary_color: Option<String>,
     pub icon: Option<String>,
     pub icon_image_url: Option<String>,
+    pub link_icon: Option<String>,
     pub banner_url: Option<String>,
     pub banner_y: Option<f64>,
     pub images: Vec<String>,
@@ -344,27 +345,83 @@ pub fn format_text_icon(s: &str) -> String {
     }
 }
 
+fn format_text_icon_link(s: &str) -> String {
+    let graphemes: Vec<&str> = s.graphemes(true).collect();
+    match graphemes.len() {
+        0 => String::new(),
+        1 => {
+            let g = graphemes[0];
+            let safe_g = super::html::escape_html(g);
+            let cls = if g.is_ascii() {
+                "tm-link-icon tm-link-icon-text"
+            } else {
+                "tm-link-icon tm-link-icon-emoji"
+            };
+            format!(r#"<span class="{cls}" aria-hidden="true">{safe_g}</span>"#)
+        }
+        _ => {
+            let initials = graphemes[..2.min(graphemes.len())].join("");
+            let safe_init = super::html::escape_html(&initials);
+            format!(r#"<span class="tm-link-icon tm-link-icon-text" aria-hidden="true">{safe_init}</span>"#)
+        }
+    }
+}
+
 /// Supports:
 /// - `@embed("avatar.png")` / `@link(...)` elements -> `<img ...>`
 /// - Image file paths or URLs (`"avatar.png"`, `"https://..."`) -> `<img ...>`
 /// - Plain string / emoji (`"🎂"`, `"cat"`) -> formatted avatar icon
 /// - `@doc.icon(...)` falls through to None here and is handled by `icon::meta_icon_element`.
-fn extract_icon(cx: &MetaCtx, map: &Map<String, Value>) -> (Option<String>, Option<String>) {
+fn extract_icon(
+    cx: &MetaCtx,
+    map: &Map<String, Value>,
+) -> (Option<String>, Option<String>, Option<String>) {
     let Some(val) = map.get("icon") else {
-        return (None, None);
+        return (None, None, None);
     };
 
     match val {
         Value::String(s) => {
+            let s_trimmed = s.trim();
+            if let Some(lucide_name) = s_trimmed.strip_prefix("lucide:")
+                && super::icon::is_lucide_icon(lucide_name)
+            {
+                let link_icon = super::icon::render_link_icon(lucide_name, "lucide");
+                let doc_icon = format!(
+                    r#"<svg class="tm-doc-icon" data-pkg="lucide" data-icon="{}" aria-hidden="true"><use href="/icons/lucide.svg#{}"></use></svg>"#,
+                    super::html::escape_html(lucide_name),
+                    super::html::escape_html(lucide_name),
+                );
+                return (Some(doc_icon), None, link_icon);
+            }
+            if let Some(simple_name) = s_trimmed.strip_prefix("simple:")
+                && super::icon::is_simple_icon(simple_name)
+            {
+                let link_icon = super::icon::render_link_icon(simple_name, "simple");
+                let doc_icon = format!(
+                    r#"<svg class="tm-doc-icon" data-pkg="simple" data-icon="{}" aria-hidden="true"><use href="/icons/simple.svg#{}"></use></svg>"#,
+                    super::html::escape_html(simple_name),
+                    super::html::escape_html(simple_name),
+                );
+                return (Some(doc_icon), None, link_icon);
+            }
+
             if is_image_target(s) || s.starts_with("http://") || s.starts_with("https://") {
                 let resolved = cx.media_path(s);
+                let safe = super::html::escape_html(&resolved);
                 let html = format!(
-                    r#"<img class="tm-doc-icon-img" src="{}" alt="icon" loading="lazy">"#,
-                    super::html::escape_html(&resolved)
+                    r#"<img class="tm-doc-icon-img" src="{safe}" alt="icon" loading="lazy">"#
                 );
-                (Some(html), Some(resolved))
+                let link_icon = format!(
+                    r#"<img class="tm-link-icon tm-link-favicon tm-link-icon-img" src="{safe}" alt="" width="14" height="14" loading="lazy" decoding="async" />"#
+                );
+                (Some(html), Some(resolved), Some(link_icon))
             } else {
-                (Some(format_text_icon(s)), None)
+                (
+                    Some(format_text_icon(s)),
+                    None,
+                    Some(format_text_icon_link(s)),
+                )
             }
         }
         Value::Object(obj) => {
@@ -372,19 +429,22 @@ fn extract_icon(cx: &MetaCtx, map: &Map<String, Value>) -> (Option<String>, Opti
             if el_name == Some("embed") || el_name == Some("link") || el_name == Some("ref") {
                 if let Some(target) = extract_media_target(val) {
                     let resolved = cx.media_path(&target);
+                    let safe = super::html::escape_html(&resolved);
                     let html = format!(
-                        r#"<img class="tm-doc-icon-img" src="{}" alt="icon" loading="lazy">"#,
-                        super::html::escape_html(&resolved)
+                        r#"<img class="tm-doc-icon-img" src="{safe}" alt="icon" loading="lazy">"#
                     );
-                    (Some(html), Some(resolved))
+                    let link_icon = format!(
+                        r#"<img class="tm-link-icon tm-link-favicon tm-link-icon-img" src="{safe}" alt="" width="14" height="14" loading="lazy" decoding="async" />"#
+                    );
+                    (Some(html), Some(resolved), Some(link_icon))
                 } else {
-                    (None, None)
+                    (None, None, None)
                 }
             } else {
-                (None, None)
+                (None, None, None)
             }
         }
-        _ => (None, None),
+        _ => (None, None, None),
     }
 }
 
@@ -399,7 +459,10 @@ pub fn extract(
     vault_index: &tomet_links::VaultLinkIndex,
     config: &BookConfig,
 ) -> MetaProperties {
-    let Some(Value::Object(map)) = meta_json else {
+    let Some(meta_val) = meta_json else {
+        return MetaProperties::default();
+    };
+    let Value::Object(map) = meta_val else {
         return MetaProperties::default();
     };
 
@@ -410,7 +473,7 @@ pub fn extract(
     };
 
     let mut linked_slugs = Vec::new();
-    for value in map.values() {
+    for (_key, value) in map {
         let items: Vec<MetaLinkInfo> = match value {
             Value::Array(arr) => arr.iter().filter_map(|v| cx.resolve_link_val(v)).collect(),
             _ => cx.resolve_link_val(value).into_iter().collect(),
@@ -425,13 +488,14 @@ pub fn extract(
         }
     }
 
-    let (icon_html, icon_image_url) = extract_icon(&cx, map);
+    let (icon_html, icon_image_url, link_icon) = extract_icon(&cx, map);
 
     MetaProperties {
         linked_slugs,
         primary_color: primary_color(map),
         icon: icon_html,
         icon_image_url,
+        link_icon,
         banner_url: map
             .get("banner")
             .and_then(extract_media_target)

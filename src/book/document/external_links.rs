@@ -99,13 +99,13 @@ fn resolve_link_icon(host: &str, config: &LinksConfig) -> Option<String> {
     let norm = normalize_host(host);
 
     // 1. Check known domains for Simple Icons
-    if let Some(icon_name) = domain_to_simple_icon(&norm) {
-        if is_simple_icon(icon_name) {
-            let safe_name = escape_html(icon_name);
-            return Some(format!(
-                "<svg class=\"tm-link-icon\" aria-hidden=\"true\"><use href=\"/icons/simple.svg#{safe_name}\"></use></svg>"
-            ));
-        }
+    if let Some(icon_name) = domain_to_simple_icon(&norm)
+        && is_simple_icon(icon_name)
+    {
+        let safe_name = escape_html(icon_name);
+        return Some(format!(
+            "<svg class=\"tm-link-icon\" aria-hidden=\"true\"><use href=\"/icons/simple.svg#{safe_name}\"></use></svg>"
+        ));
     }
 
     // 2. Fallback to Favicon API service
@@ -194,6 +194,7 @@ mod tests {
     fn enhances_unknown_domain_with_duckduckgo_favicon() {
         let config = LinksConfig {
             external_icons: true,
+            note_icons: true,
             favicon_service: FaviconService::DuckDuckGo,
         };
         let html = r#"<p><a class="tm-url" href="https://example.com/blog">My Blog</a></p>"#;
@@ -207,6 +208,7 @@ mod tests {
     fn leaves_links_alone_when_disabled() {
         let config = LinksConfig {
             external_icons: false,
+            note_icons: true,
             favicon_service: FaviconService::Google,
         };
         let html = r#"<p><a class="tm-url" href="https://github.com/">GitHub</a></p>"#;
@@ -226,6 +228,7 @@ mod tests {
     fn does_not_add_icon_when_favicon_service_none_and_not_known_brand() {
         let config = LinksConfig {
             external_icons: true,
+            note_icons: true,
             favicon_service: FaviconService::None,
         };
         let html = r#"<p><a href="https://unknown-domain-123.com/">Link</a></p>"#;

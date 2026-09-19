@@ -192,6 +192,8 @@ impl MarkerEntryConfig {
 pub struct LinksConfig {
     #[serde(default = "default_true")]
     pub external_icons: bool,
+    #[serde(default = "default_true", alias = "internal_icons")]
+    pub note_icons: bool,
     #[serde(default)]
     pub favicon_service: FaviconService,
 }
@@ -200,6 +202,7 @@ impl Default for LinksConfig {
     fn default() -> Self {
         Self {
             external_icons: default_true(),
+            note_icons: default_true(),
             favicon_service: FaviconService::default(),
         }
     }
@@ -561,19 +564,30 @@ fire = { icon = "flame", color = "#f97316" }
     fn links_config_defaults_and_customization() {
         let cfg = load("");
         assert!(cfg.ui.links.external_icons);
+        assert!(cfg.ui.links.note_icons);
         assert_eq!(cfg.ui.links.favicon_service, FaviconService::Google);
 
         let custom = load(
             r#"
 [ui.links]
 external_icons = false
+note_icons = false
 favicon_service = "duckduckgo"
 "#,
         );
         assert!(!custom.ui.links.external_icons);
+        assert!(!custom.ui.links.note_icons);
         assert_eq!(
             custom.ui.links.favicon_service,
             FaviconService::DuckDuckGo
         );
+
+        let alias = load(
+            r#"
+[ui.links]
+internal_icons = false
+"#,
+        );
+        assert!(!alias.ui.links.note_icons);
     }
 }

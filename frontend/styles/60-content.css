@@ -230,25 +230,61 @@ article a.tm-url:hover::after {
   opacity: 1;
 }
 
-/* External link prefix icon (Simple Icons SVG or favicon image) */
+/* Link prefix icon (Simple Icons SVG, Lucide SVG, favicon image, or note icon) */
 .tm-link-icon {
   display: inline-block;
   width: 0.95em;
   height: 0.95em;
-  margin-right: 0.3em;
+  margin: 0 0.3em 0 0;
   vertical-align: -0.12em;
-  fill: currentColor;
+  text-decoration: none !important;
   flex-shrink: 0;
 }
 
-.tm-link-favicon {
+svg.tm-link-icon,
+.tm-link-icon-simple {
+  fill: currentColor;
+}
+
+.tm-link-icon-lucide {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tm-link-icon-emoji {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95em;
+  line-height: 1;
+  vertical-align: -0.08em;
+}
+
+.tm-link-icon-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75em;
+  font-weight: 600;
+  line-height: 1;
+  vertical-align: -0.05em;
+  letter-spacing: -0.02em;
+  opacity: 0.85;
+}
+
+.tm-link-favicon,
+.tm-link-icon-img {
   border-radius: 2px;
   object-fit: contain;
+  cursor: inherit;
 }
 
 /* Internal links: clean offset underline for color-independent accessibility.
    Maintains seamless Japanese typography without inserting awkward gaps between words and particles. */
-article a:not([href^="http://"]):not([href^="https://"]):not(.tm-url):not(.tm-ref-unresolved):not(:has(img)) {
+article a:not([href^="http://"]):not([href^="https://"]):not(.tm-url):not(.tm-ref-unresolved):not(:has(img:not(.tm-link-icon))) {
   color: var(--link);
   text-decoration: underline;
   text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
@@ -257,7 +293,7 @@ article a:not([href^="http://"]):not([href^="https://"]):not(.tm-url):not(.tm-re
   transition: text-decoration-color 0.15s ease;
 }
 
-article a:not([href^="http://"]):not([href^="https://"]):not(.tm-url):not(.tm-ref-unresolved):not(:has(img)):hover {
+article a:not([href^="http://"]):not([href^="https://"]):not(.tm-url):not(.tm-ref-unresolved):not(:has(img:not(.tm-link-icon))):hover {
   text-decoration-color: currentColor;
 }
 
@@ -359,7 +395,7 @@ article li.tm-strikethrough > .tm-list-marker {
    letting it grow as tall as its aspect ratio and the (unconstrained)
    article column width would take it -- max-width alone only bounds the
    horizontal axis. */
-article img { max-width: 100%; max-height: 80vh; height: auto; display: block; margin: 16px auto; cursor: zoom-in; }
+article img:not(.tm-link-icon):not(.tm-doc-icon-img) { max-width: 100%; max-height: 80vh; height: auto; display: block; margin: 16px auto; cursor: zoom-in; }
 
 /* Code blocks: wrapped with header bar containing language and copy button */
 .code-block-wrapper {
@@ -544,9 +580,15 @@ article rt {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+.tm-doc-icon[data-pkg="simple"],
+.tm-doc-icon:has(use[href*="simple.svg"]) {
+  fill: currentColor;
+  stroke: none;
+}
 .tm-doc-icon-img {
   width: 1em;
   height: 1em;
+  margin: 0;
   vertical-align: -0.125em;
   object-fit: contain;
   display: inline-block;

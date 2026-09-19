@@ -4,6 +4,7 @@ mod code;
 mod external_links;
 mod html;
 mod icon;
+mod internal_links;
 mod links;
 mod marker;
 mod meta;
@@ -16,6 +17,7 @@ use std::path::Path;
 
 use crate::config::BookConfig;
 
+pub use internal_links::enhance_internal_links;
 pub use links::strip_doc_extension;
 pub use meta::{HeroChipItem, InfoboxRowItem};
 pub use toc::{SectionTab, TocItem};
@@ -33,6 +35,7 @@ pub struct ProcessedDoc {
     pub primary_color: Option<String>,
     pub icon: Option<String>,
     pub icon_image_url: Option<String>,
+    pub link_icon: Option<String>,
     pub banner_url: Option<String>,
     pub banner_original_url: Option<String>,
     pub banner_y: Option<f64>,
@@ -536,6 +539,56 @@ Visit @link(https://github.com/tomet-lang/tomet)[GitHub Repo] and @link(https://
             out.body_html
         );
     }
+
+    #[test]
+    fn internal_links_are_enhanced_with_note_icon() {
+        let config = BookConfig::default();
+        let vault = tomet_links::VaultLinkIndex::from_paths(&[
+            "notes/source.tmt".to_string(),
+            "notes/target.tmt".to_string(),
+        ]);
+
+        let target_doc = process_tomet_document(
+            "@meta{icon: @doc.icon(\"star\")}\n\n#[ Target ]\n\nTarget note.\n",
+            "notes/target.tmt",
+            None,
+            &config,
+            &vault,
+            None,
+            &HashSet::new(),
+        )
+        .unwrap();
+
+        assert!(target_doc.link_icon.is_some());
+
+        let mut source_doc = process_tomet_document(
+            "#[ Source ]\n\nCheck @link(ref:\"target\")[Target Note].\n",
+            "notes/source.tmt",
+            None,
+            &config,
+            &vault,
+            None,
+            &HashSet::new(),
+        )
+        .unwrap();
+
+        let mut icons = std::collections::HashMap::new();
+        icons.insert(target_doc.slug.clone(), target_doc.link_icon.unwrap());
+
+        source_doc.body_html = enhance_internal_links(
+            &source_doc.body_html,
+            &icons,
+            config.build.clean_url_prefix(),
+        );
+
+        assert!(
+            source_doc.body_html.contains(
+                r#"<svg class="tm-link-icon tm-link-icon-lucide" aria-hidden="true"><use href="/icons/lucide.svg#star"></use></svg>Target Note"#
+            ),
+            "actual body_html: {}",
+            source_doc.body_html
+        );
+    }
 }
 
 /// Read a document far enough to know what it is.
@@ -677,6 +730,7 @@ pub fn process_parsed_document_with_blocks(
         auto_slug_headings: true,
         lang: Some(config.book.lang.clone()),
         custom_element: Some(tomet_html::CustomElementRenderer::new(icon::render)),
+        ..Default::default()
     };
     let (raw_body_html, outline) = tomet_html::render_body_with_outline(&doc, &render_opts);
     let body_html = marker::enhance_list_markers(&raw_body_html, &config.ui.markers);
@@ -720,6 +774,7 @@ pub fn process_parsed_document_with_blocks(
     if let Some(icon_html) = icon::meta_icon_element(raw_meta.as_ref()) {
         props.icon = Some(icon_html);
         props.icon_image_url = None;
+        props.link_icon = icon::meta_link_icon_element(raw_meta.as_ref());
     }
 
     // Merge links from @meta into body links, dropping self-references and duplicates.
@@ -747,6 +802,7 @@ pub fn process_parsed_document_with_blocks(
         primary_color: props.primary_color,
         icon: props.icon,
         icon_image_url: props.icon_image_url,
+        link_icon: props.link_icon,
         banner_url: props.banner_url,
         banner_original_url,
         banner_y: props.banner_y,

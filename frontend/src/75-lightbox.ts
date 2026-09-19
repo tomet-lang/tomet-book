@@ -73,7 +73,7 @@
     }
 
     // These, by contrast, are page content: new nodes every time.
-    document.querySelectorAll('article img, .infobox-main-img, .hero-banner-img').forEach((img) => {
+    document.querySelectorAll('article img:not(.tm-link-icon):not(.tm-doc-icon-img), .infobox-main-img, .hero-banner-img').forEach((img) => {
       img.addEventListener('click', () => {
         const src = img.getAttribute('data-original') || img.getAttribute('src');
         if (src) openLightbox(src, img.getAttribute('alt') || '');
