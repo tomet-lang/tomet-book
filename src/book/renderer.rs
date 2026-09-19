@@ -123,6 +123,8 @@ impl<'a> BookRenderer<'a> {
 
         let ctx = context! {
             source_path => &doc.source_path,
+            rel_path => &doc.rel_path,
+            slug => &doc.slug,
             page_title => &doc.title,
             section => &doc.section,
             kind => &doc.kind,

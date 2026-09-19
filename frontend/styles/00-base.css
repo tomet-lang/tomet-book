@@ -616,6 +616,19 @@
   display: none !important;
 }
 
+/* Screen-reader only / search indexable hidden element */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 /* Chromium's UA stylesheet gives <button> its own default font (a plain
    Arial-like control font) instead of inheriting the page's font like every
    other element -- Firefox inherits it here without being told to. Left

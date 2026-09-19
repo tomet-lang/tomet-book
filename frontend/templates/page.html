@@ -405,6 +405,12 @@
         <img src="{{ banner_url }}" data-pagefind-meta="image[src]" alt="" hidden />
           {% endif %}
         {% endif %}
+        {% if slug %}
+        <span class="sr-only" data-pagefind-meta="path" data-pagefind-weight="10.0">{{ slug | safe }}</span>
+        {% endif %}
+        {% if rel_path and rel_path != slug %}
+        <span class="sr-only" data-pagefind-weight="10.0">{{ rel_path | safe }}</span>
+        {% endif %}
         {% if banner_url or icon or (hero_chips and hero_chips | length > 0) %}
         <div class="book-hero-section relative bg-surface border border-border -mt-6 -mx-8 mb-7 overflow-visible z-10">
           {% if banner_url %}

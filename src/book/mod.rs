@@ -1402,4 +1402,38 @@ mod manifest_tests {
         let _ = fs::remove_dir_all(&src);
         let _ = fs::remove_dir_all(&out);
     }
+
+    #[test]
+    fn build_book_emits_pagefind_path_metadata() {
+        let src = scratch("build-pagefind-path-src");
+        let out = scratch("build-pagefind-path-out");
+
+        let nested_dir = src.join("dev");
+        fs::create_dir_all(&nested_dir).unwrap();
+        fs::write(
+            nested_dir.join("roadmap.tmt"),
+            "#[ Roadmap ]\n\nProject roadmap contents.\n",
+        )
+        .unwrap();
+
+        let mut config = BookConfig::default();
+        config.build.pagefind = false;
+
+        let report = build_book(&src, &out, &config, false).unwrap();
+        assert_eq!(report.rendered, 1);
+
+        let roadmap_html = fs::read_to_string(out.join("wiki/dev/roadmap/index.html")).unwrap();
+        assert!(
+            roadmap_html.contains(r#"<span class="sr-only" data-pagefind-meta="path" data-pagefind-weight="10.0">dev/roadmap</span>"#),
+            "HTML should contain span with dev/roadmap: {roadmap_html}"
+        );
+        assert!(
+            roadmap_html.contains(r#"<span class="sr-only" data-pagefind-weight="10.0">dev/roadmap.tmt</span>"#),
+            "HTML should contain span with dev/roadmap.tmt: {roadmap_html}"
+        );
+
+        let _ = fs::remove_dir_all(&src);
+        let _ = fs::remove_dir_all(&out);
+    }
 }
+
