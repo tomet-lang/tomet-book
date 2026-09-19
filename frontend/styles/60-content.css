@@ -233,12 +233,17 @@ article a.tm-url:hover::after {
 /* Link prefix icon (Simple Icons SVG, Lucide SVG, favicon image, or note icon) */
 .tm-link-icon {
   display: inline-block;
+  vertical-align: middle;
+  text-decoration: none !important;
+  flex-shrink: 0;
+}
+
+svg.tm-link-icon,
+img.tm-link-icon {
   width: 0.95em;
   height: 0.95em;
   margin: 0 0.3em 0 0;
-  vertical-align: -0.12em;
-  text-decoration: none !important;
-  flex-shrink: 0;
+  vertical-align: middle;
 }
 
 svg.tm-link-icon,
@@ -254,13 +259,12 @@ svg.tm-link-icon,
   stroke-linejoin: round;
 }
 
+/* Emoji link icons: natural inline text baseline, no artificial box constraints */
 .tm-link-icon-emoji {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.95em;
+  display: inline-block;
+  vertical-align: baseline;
+  margin: 0 0.3em 0 0;
   line-height: 1;
-  vertical-align: -0.08em;
 }
 
 .tm-link-icon-text {
@@ -270,8 +274,9 @@ svg.tm-link-icon,
   font-size: 0.75em;
   font-weight: 600;
   line-height: 1;
-  vertical-align: -0.05em;
+  vertical-align: middle;
   letter-spacing: -0.02em;
+  margin: 0 0.35em 0 0;
   opacity: 0.85;
 }
 
