@@ -28,6 +28,7 @@ pub const BOOK_CSS: &str = concat!(
     include_str!("../../frontend/styles/50-nav-infobox.css"),
     include_str!("../../frontend/styles/60-content.css"),
     include_str!("../../frontend/styles/70-widgets.css"),
+    include_str!("../../frontend/styles/71-source-viewer.css"),
     include_str!("../../frontend/styles/72-center-peek.css"),
     include_str!(concat!(env!("OUT_DIR"), "/tailwind.css")),
     include_str!("../../frontend/styles/90-responsive.css"),

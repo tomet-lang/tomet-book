@@ -109,8 +109,11 @@ pub fn ui_strings() -> HashMap<String, String> {
         ("edit.cursor", "Open in Cursor"),
         ("edit.copy_path", "Copy Path"),
         ("edit.copy_path_title", "Copy file path"),
+        ("edit.view_source", "View Source"),
+        ("edit.close", "Close"),
         ("toast.copied", "📋 Copied path to clipboard"),
         ("toast.copy_failed", "❌ Failed to copy path"),
+        ("toast.source_load_failed", "❌ Failed to load source"),
         ("code.copy", "Copy code"),
         ("code.copied", "Copied"),
         // Links that point at a page nobody has written yet

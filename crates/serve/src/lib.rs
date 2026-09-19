@@ -1,12 +1,16 @@
 use anyhow::Result;
 use axum::{
     Router,
-    extract::ws::{Message, WebSocket, WebSocketUpgrade},
+    extract::{
+        Query,
+        ws::{Message, WebSocket, WebSocketUpgrade},
+    },
+    http::StatusCode,
     routing::get,
 };
 use notify::{Event, RecursiveMode, Watcher};
 use std::net::{IpAddr, SocketAddr};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::mpsc::RecvTimeoutError;
 use std::time::{Duration, Instant};
@@ -137,12 +141,20 @@ where
 
     // 4. Axum server
     let ws_tx = Arc::clone(&reload_tx);
+    let source_root = watch_dir.clone();
     let app = Router::new()
         .route(
             "/live-reload",
             get(move |ws: WebSocketUpgrade| {
                 let tx = Arc::clone(&ws_tx);
                 async move { ws.on_upgrade(|socket| handle_ws(socket, tx)) }
+            }),
+        )
+        .route(
+            "/__tmtbook/source",
+            get(move |Query(q): Query<SourceQuery>| {
+                let root = source_root.clone();
+                async move { handle_source(root, q.path).await }
             }),
         )
         .fallback_service(ServeDir::new(&serve_dir));
@@ -168,6 +180,40 @@ where
     Ok(())
 }
 
+/// Query of a `GET /__tmtbook/source`: read `path`'s current raw contents
+/// back, so a client can slice out the exact text a `data-tmt-start`/
+/// `data-tmt-end` pair refers to -- rendered HTML has already lost the
+/// original `.tmt` syntax (`**bold**` became `<em>`, ...), so there is no
+/// other way to show a reader the real source.
+#[derive(Debug, serde::Deserialize)]
+struct SourceQuery {
+    path: String,
+}
+
+async fn handle_source(root: PathBuf, path: String) -> Result<String, (StatusCode, String)> {
+    let target = resolve_within(&root, &path).map_err(|e| (StatusCode::BAD_REQUEST, e))?;
+    tokio::fs::read_to_string(&target)
+        .await
+        .map_err(|e| (StatusCode::NOT_FOUND, format!("{}: {e}", target.display())))
+}
+
+/// Resolves `rel` against `root`, rejecting anything that would land
+/// outside it -- `..` segments, an absolute path, or a symlink escape.
+fn resolve_within(root: &Path, rel: &str) -> Result<PathBuf, String> {
+    let root = root
+        .canonicalize()
+        .map_err(|e| format!("watched root {}: {e}", root.display()))?;
+    let candidate = root
+        .join(rel)
+        .canonicalize()
+        .map_err(|e| format!("no such file {rel}: {e}"))?;
+    if candidate.starts_with(&root) {
+        Ok(candidate)
+    } else {
+        Err(format!("{rel} is outside the served directory"))
+    }
+}
+
 async fn handle_ws(mut socket: WebSocket, tx: Arc<broadcast::Sender<ReloadSignal>>) {
     let mut rx = tx.subscribe();
     while let Ok(signal) = rx.recv().await {
@@ -176,5 +222,86 @@ async fn handle_ws(mut socket: WebSocket, tx: Arc<broadcast::Sender<ReloadSignal
         {
             break;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A fresh, empty directory under the system temp dir, removed when
+    /// dropped -- avoids pulling in a `tempfile` dependency for what's
+    /// only ever a handful of tiny fixture files.
+    struct TempDir(PathBuf);
+
+    impl TempDir {
+        fn new(name: &str) -> Self {
+            let dir = std::env::temp_dir().join(format!(
+                "tmtbook-serve-test-{name}-{}-{}",
+                std::process::id(),
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos()
+            ));
+            std::fs::create_dir_all(&dir).unwrap();
+            Self(dir)
+        }
+
+        fn path(&self) -> &Path {
+            &self.0
+        }
+    }
+
+    impl Drop for TempDir {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    #[test]
+    fn resolve_within_accepts_a_file_under_the_root() {
+        let root = TempDir::new("accepts");
+        std::fs::write(root.path().join("page.tmt"), "hello").unwrap();
+        let resolved = resolve_within(root.path(), "page.tmt").unwrap();
+        assert_eq!(
+            resolved,
+            root.path().join("page.tmt").canonicalize().unwrap()
+        );
+    }
+
+    #[test]
+    fn resolve_within_rejects_a_path_that_climbs_out_of_the_root() {
+        let root = TempDir::new("rejects");
+        let inner = root.path().join("vault");
+        std::fs::create_dir_all(&inner).unwrap();
+        std::fs::write(root.path().join("secret.txt"), "nope").unwrap();
+        assert!(resolve_within(&inner, "../secret.txt").is_err());
+    }
+
+    #[tokio::test]
+    async fn handle_source_returns_the_files_raw_contents() {
+        let root = TempDir::new("source");
+        std::fs::write(root.path().join("page.tmt"), "- one\n- two\n").unwrap();
+
+        let body = handle_source(root.path().to_path_buf(), "page.tmt".to_string())
+            .await
+            .unwrap();
+
+        assert_eq!(body, "- one\n- two\n");
+    }
+
+    #[tokio::test]
+    async fn handle_source_rejects_a_traversal_attempt() {
+        let root = TempDir::new("source-traversal");
+        let vault = root.path().join("vault");
+        std::fs::create_dir_all(&vault).unwrap();
+        std::fs::write(root.path().join("secret.txt"), "nope").unwrap();
+
+        let err = handle_source(vault, "../secret.txt".to_string())
+            .await
+            .unwrap_err();
+
+        assert_eq!(err.0, StatusCode::BAD_REQUEST);
     }
 }

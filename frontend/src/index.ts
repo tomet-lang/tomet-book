@@ -27,6 +27,7 @@ import './78-costume';
 import './80-router';
 import './85-classic-view';
 import './90-edit-menu';
+import './91-source-viewer';
 import './92-code-copy';
 import './95-init';
 import './97-live-reload';

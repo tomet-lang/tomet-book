@@ -102,5 +102,5 @@
     }
   }
 
-  Object.assign(T, { setupEditDropdown });
+  Object.assign(T, { setupEditDropdown, showToast });
 })();

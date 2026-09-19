@@ -15,6 +15,7 @@
   const initImageLightbox = (...a) => T.initImageLightbox(...a);
   const setupCostumeSwitchers = (...a) => T.setupCostumeSwitchers(...a);
   const setupEditDropdown = (...a) => T.setupEditDropdown(...a);
+  const setupSourceViewer = (...a) => T.setupSourceViewer(...a);
   const setupClientRouter = (...a) => T.setupClientRouter?.(...a);
   const t = (key: string, fallback = "") => T.t(key, fallback);
 
@@ -35,6 +36,7 @@
     initImageLightbox();
     setupCostumeSwitchers();
     setupEditDropdown();
+    setupSourceViewer();
     setupClientRouter();
   }
 

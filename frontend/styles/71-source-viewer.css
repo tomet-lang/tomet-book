@@ -1,0 +1,68 @@
+/* ==================== DEV-ONLY SOURCE VIEWER ====================
+   A full-screen overlay holding one read-only <textarea> with the page's
+   raw `.tmt` source -- see 91-source-viewer.ts. Only ever reachable from
+   the dev server's edit dropdown; a static build never renders the
+   button that opens it. */
+
+.tmt-source-viewer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5vh 5vw;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.tmt-source-viewer-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  max-width: 900px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  box-sizing: border-box;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+.tmt-source-viewer-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  flex: none;
+}
+
+.tmt-source-viewer-btn {
+  padding: 5px 14px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.tmt-source-viewer-btn:hover {
+  border-color: var(--link);
+}
+
+.tmt-source-viewer-textarea {
+  flex: 1;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface-subtle);
+  color: var(--text);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  resize: none;
+}
+.tmt-source-viewer-textarea:focus {
+  outline: none;
+}
