@@ -11,6 +11,11 @@
       try {
         const pagefindUrl = '/pagefind/pagefind.js';
         const pf = await import(/* @vite-ignore */ pagefindUrl);
+        await pf.options({
+          ranking: {
+            pageLength: 0.1,
+          },
+        });
         await pf.init();
         pagefindInstance = pf;
       } catch (e) {
@@ -57,7 +62,104 @@
       resultsContainer.replaceChildren(status);
     }
 
-    function renderResults(results) {
+    function normalizeStrict(s: string): string {
+      return (s || '').toLowerCase().trim();
+    }
+
+    function normalizeFuzzy(s: string): string {
+      return (s || '')
+        .toLowerCase()
+        .replace(/[@#\-_/\\.()[\]{}:;,+*~]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    interface SearchCandidate {
+      url: string;
+      rawScore: number;
+      excerpt?: string;
+      meta?: {
+        title?: string;
+        path?: string;
+        aliases?: string;
+        image?: string;
+        [key: string]: any;
+      };
+      filters?: {
+        kind?: string;
+        section?: string;
+        [key: string]: any;
+      };
+      [key: string]: any;
+    }
+
+    function calculateSearchBoost(query: string, item: SearchCandidate): number {
+      const qStrict = normalizeStrict(query);
+      const qFuzzy = normalizeFuzzy(query);
+      if (!qStrict) return 0;
+
+      const title = item.meta?.title || '';
+      const path = item.meta?.path || '';
+      const filename = path ? path.split('/').pop()?.replace(/\.tmt$/, '') || '' : '';
+      const urlStem = (item.url || '').replace(/\/+$/, '').split('/').pop() || '';
+
+      const rawAliases = item.meta?.aliases
+        ? item.meta.aliases
+            .split(/[,、]/)
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [];
+
+      const targets = [
+        { text: title, weight: 1.0 },
+        { text: filename, weight: 1.0 },
+        { text: urlStem, weight: 0.9 },
+        { text: path, weight: 0.8 },
+        ...rawAliases.map((a) => ({ text: a, weight: 0.98 })),
+      ];
+
+      let maxBoost = 0;
+
+      for (const { text, weight } of targets) {
+        if (!text) continue;
+        const tStrict = normalizeStrict(text);
+        const tFuzzy = normalizeFuzzy(text);
+
+        // Tier 1: Exact match (either strict or fuzzy)
+        // e.g. "@Raora-Panthera" === "@Raora-Panthera" or "Raora Panthera" === "Raora Panthera"
+        if (tStrict === qStrict || (qFuzzy && tFuzzy === qFuzzy)) {
+          maxBoost = Math.max(maxBoost, 100000 * weight);
+          continue;
+        }
+
+        // Tier 2: Prefix match (text starts with query)
+        // e.g. "Raora Panthera" starts with "Raora"
+        if (tStrict.startsWith(qStrict) || (qFuzzy && tFuzzy.startsWith(qFuzzy))) {
+          maxBoost = Math.max(maxBoost, 50000 * weight);
+          continue;
+        }
+
+        // Tier 3: Word-boundary match
+        if (qFuzzy) {
+          const escaped = qFuzzy.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+          const wordPattern = new RegExp(`(^|\\s)${escaped}($|\\s)`);
+          if (wordPattern.test(tFuzzy)) {
+            maxBoost = Math.max(maxBoost, 20000 * weight);
+            continue;
+          }
+        }
+
+        // Tier 4: Substring match anywhere in title/filename/alias
+        if (tStrict.includes(qStrict) || (qFuzzy && tFuzzy.includes(qFuzzy))) {
+          maxBoost = Math.max(maxBoost, 10000 * weight);
+          continue;
+        }
+      }
+
+      return maxBoost;
+    }
+
+    function renderResults(results: SearchCandidate[]) {
       const itemTemplate = document.getElementById('search-result-item-template') as HTMLTemplateElement | null;
       if (!itemTemplate) return;
 
@@ -94,6 +196,16 @@
           section?.remove();
         }
 
+        const pathEl = item.querySelector<HTMLElement>('.search-result-path');
+        const displayPath =
+          res.meta?.path || (res.url ? res.url.replace(/^\/wiki\//, '').replace(/\/+$/, '') : '');
+        if (displayPath && pathEl) {
+          pathEl.textContent = displayPath;
+          pathEl.hidden = false;
+        } else {
+          pathEl?.remove();
+        }
+
         const aliases = item.querySelector<HTMLElement>('.search-result-aliases');
         if (res.meta?.aliases && aliases) {
           const label = aliases.querySelector('.alias-label');
@@ -107,10 +219,21 @@
 
         const excerpt = item.querySelector<HTMLElement>('.search-result-excerpt');
         if (res.excerpt && excerpt) {
-          // Pagefind's excerpt carries its own <mark> highlighting, so it
-          // has to stay real markup here, not escaped text.
-          excerpt.innerHTML = res.excerpt;
-          excerpt.hidden = false;
+          // If the excerpt is essentially just repeating the path, hide it to keep results clean
+          const cleanExcerptText = res.excerpt.replace(/<[^>]+>/g, '').trim();
+          const cleanPath = (displayPath || '').trim();
+          if (
+            cleanExcerptText &&
+            cleanPath &&
+            (cleanExcerptText === cleanPath || cleanExcerptText.startsWith(cleanPath))
+          ) {
+            excerpt.remove();
+          } else {
+            // Pagefind's excerpt carries its own <mark> highlighting, so it
+            // has to stay real markup here, not escaped text.
+            excerpt.innerHTML = res.excerpt;
+            excerpt.hidden = false;
+          }
         } else {
           excerpt?.remove();
         }
@@ -156,7 +279,28 @@
           return;
         }
 
-        const topResults = await Promise.all(search.results.slice(0, 10).map((r) => r.data()));
+        // Fetch up to 30 candidates to re-rank with exact / prefix / title / path boosts
+        const candidateCount = Math.min(search.results.length, 30);
+        const candidates: SearchCandidate[] = await Promise.all(
+          search.results.slice(0, candidateCount).map(async (r: any) => {
+            const data = await r.data();
+            return {
+              ...data,
+              rawScore: r.score,
+            };
+          })
+        );
+
+        candidates.sort((a, b) => {
+          const boostA = calculateSearchBoost(query, a);
+          const boostB = calculateSearchBoost(query, b);
+          if (boostA !== boostB) {
+            return boostB - boostA;
+          }
+          return b.rawScore - a.rawScore;
+        });
+
+        const topResults = candidates.slice(0, 10);
         selectedIndex = -1;
 
         renderResults(topResults);
