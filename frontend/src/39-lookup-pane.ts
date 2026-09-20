@@ -141,7 +141,6 @@
     const activeTags = new Set(Array.isArray(savedState?.tags) ? savedState.tags : []);
     let searchToken = 0;
     let searchPage = typeof savedState?.page === 'number' ? savedState.page : 0;
-    let searchResultRefs = null;
     let pendingScrollTop = typeof savedState?.scrollTop === 'number' ? savedState.scrollTop : null;
 
     if (savedState?.query) {
@@ -195,35 +194,59 @@
 
     async function renderSearchPage(query) {
       const myToken = ++searchToken;
-      const pf = await T.getPagefind?.();
+      const nativeIndex = await T.getNativeIndex?.();
       if (myToken !== searchToken) return; // a newer keystroke/tag click superseded this one
-      if (!pf) {
-        showPlaceholder(t('search.loading'));
-        return;
+
+      let pageData;
+      let totalCount;
+
+      if (nativeIndex) {
+        const sections = activeTags.size > 0 ? activeTags : null;
+        const allResults = T.nativeSearchDocuments(query || '', nativeIndex, { sections });
+        totalCount = allResults.length;
+        if (totalCount === 0) {
+          showPlaceholder(t('search.empty'));
+          return;
+        }
+
+        const totalPages = Math.ceil(totalCount / SEARCH_PAGE_SIZE);
+        searchPage = Math.min(Math.max(0, searchPage), Math.max(0, totalPages - 1));
+        pageData = allResults.slice(searchPage * SEARCH_PAGE_SIZE, (searchPage + 1) * SEARCH_PAGE_SIZE);
+      } else {
+        // Native index unavailable (e.g. `search = "pagefind"` or "none" in
+        // tmtbook.toml) -- fall back to Pagefind, as this pane always did.
+        const pf = await T.getPagefind?.();
+        if (myToken !== searchToken) return;
+        if (!pf) {
+          showPlaceholder(t('search.loading'));
+          return;
+        }
+
+        const filters = activeTags.size > 0 ? { section: [...activeTags] } : undefined;
+        // Pagefind treats '' as a literal (zero-match) query; null is what
+        // actually means "no text term" -- with no filters either, that lists
+        // every note, which is exactly the "paginated from the start" state.
+        const search = await pf.search(query || null, filters ? { filters } : undefined);
+        if (myToken !== searchToken) return;
+        const searchResultRefs = search?.results || [];
+        totalCount = searchResultRefs.length;
+
+        if (totalCount === 0) {
+          showPlaceholder(t('search.empty'));
+          return;
+        }
+
+        const totalPages = Math.ceil(totalCount / SEARCH_PAGE_SIZE);
+        searchPage = Math.min(Math.max(0, searchPage), Math.max(0, totalPages - 1));
+        const pageRefs = searchResultRefs.slice(
+          searchPage * SEARCH_PAGE_SIZE,
+          (searchPage + 1) * SEARCH_PAGE_SIZE
+        );
+        pageData = await Promise.all(pageRefs.map((r) => r.data()));
+        if (myToken !== searchToken) return;
       }
 
-      const filters = activeTags.size > 0 ? { section: [...activeTags] } : undefined;
-      // Pagefind treats '' as a literal (zero-match) query; null is what
-      // actually means "no text term" -- with no filters either, that lists
-      // every note, which is exactly the "paginated from the start" state.
-      const search = await pf.search(query || null, filters ? { filters } : undefined);
-      if (myToken !== searchToken) return;
-      searchResultRefs = search?.results || [];
-
-      if (searchResultRefs.length === 0) {
-        showPlaceholder(t('search.empty'));
-        return;
-      }
-
-      const totalPages = Math.ceil(searchResultRefs.length / SEARCH_PAGE_SIZE);
-      searchPage = Math.min(Math.max(0, searchPage), Math.max(0, totalPages - 1));
-      const pageRefs = searchResultRefs.slice(
-        searchPage * SEARCH_PAGE_SIZE,
-        (searchPage + 1) * SEARCH_PAGE_SIZE
-      );
-      const pageData = await Promise.all(pageRefs.map((r) => r.data()));
-      if (myToken !== searchToken) return;
-
+      const totalPages = Math.ceil(totalCount / SEARCH_PAGE_SIZE);
       const list = document.createElement('ul');
       list.className = 'book-index-items';
       pageData.forEach((d) => {

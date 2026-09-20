@@ -84,6 +84,8 @@ interface TmtRuntime {
   createScrollSpy?(options: ScrollSpyOptions): ScrollSpyInstance;
   fetchDocument?(url: string | null | undefined): Promise<Document | null>;
   getPagefind?(): Promise<any>;
+  getNativeIndex?(): Promise<{ docs: any[] } | null>;
+  nativeSearchDocuments?(query: string, index: { docs: any[] }, opts?: { sections?: Set<string> | null }): any[];
 
   // Panes & Views
   collapseDataPane?(): void;

@@ -1,4 +1,5 @@
 use super::*;
+use crate::config::SearchEngine;
 
 /// A unique scratch directory; avoids pulling in a temp-file dependency.
 fn scratch(name: &str) -> std::path::PathBuf {
@@ -175,7 +176,7 @@ fn build_book_enhances_internal_links_with_note_icons() {
     .unwrap();
 
     let mut config = BookConfig::default();
-    config.build.pagefind = false;
+    config.build.search = SearchEngine::None;
 
     let report = build_book(&src, &out, &config, false).unwrap();
     assert_eq!(report.rendered, 2);
@@ -207,7 +208,7 @@ fn build_book_emits_pagefind_path_metadata() {
     .unwrap();
 
     let mut config = BookConfig::default();
-    config.build.pagefind = false;
+    config.build.search = SearchEngine::None;
 
     let report = build_book(&src, &out, &config, false).unwrap();
     assert_eq!(report.rendered, 1);
@@ -248,7 +249,7 @@ fn build_book_sanitizes_urls_with_spaces_symbols_and_emoji() {
     .unwrap();
 
     let mut config = BookConfig::default();
-    config.build.pagefind = false;
+    config.build.search = SearchEngine::None;
 
     let report = build_book(&src, &out, &config, false).unwrap();
     assert_eq!(report.rendered, 2);
@@ -316,7 +317,7 @@ fn build_book_flat_routing_collision_error_by_default() {
     fs::write(js_dir.join("closures.tmt"), "#[ JS Closures ]\n\nbody\n").unwrap();
 
     let mut config = BookConfig::default();
-    config.build.pagefind = false;
+    config.build.search = SearchEngine::None;
     config.build.routing = RoutingStrategy::Flat;
 
     let res = build_book(&src, &out, &config, false);
@@ -353,7 +354,7 @@ fn build_book_flat_routing_disambiguation() {
     .unwrap();
 
     let mut config = BookConfig::default();
-    config.build.pagefind = false;
+    config.build.search = SearchEngine::None;
     config.build.routing = RoutingStrategy::Flat;
     config.build.on_collision = CollisionStrategy::Disambiguate;
 
@@ -402,7 +403,7 @@ fn build_book_explicit_slug_precedence() {
     .unwrap();
 
     let mut config = BookConfig::default();
-    config.build.pagefind = false;
+    config.build.search = SearchEngine::None;
 
     let report = build_book(&src, &out, &config, false).unwrap();
     assert_eq!(report.rendered, 2);
@@ -443,7 +444,7 @@ fn build_book_id_routing_behavior() {
 
     // 1. Under hierarchical routing, @meta{ id } must be IGNORED
     let mut hier_config = BookConfig::default();
-    hier_config.build.pagefind = false;
+    hier_config.build.search = SearchEngine::None;
     hier_config.build.routing = RoutingStrategy::Hierarchical;
 
     let report_hier = build_book(&src, &out_hier, &hier_config, false).unwrap();
@@ -454,7 +455,7 @@ fn build_book_id_routing_behavior() {
 
     // 2. Under id routing, @meta{ id } is USED
     let mut id_config = BookConfig::default();
-    id_config.build.pagefind = false;
+    id_config.build.search = SearchEngine::None;
     id_config.build.routing = RoutingStrategy::Id;
 
     let report_id = build_book(&src, &out_id, &id_config, false).unwrap();
@@ -466,4 +467,41 @@ fn build_book_id_routing_behavior() {
     let _ = fs::remove_dir_all(&src);
     let _ = fs::remove_dir_all(&out_hier);
     let _ = fs::remove_dir_all(&out_id);
+}
+
+#[test]
+fn build_book_emits_native_search_index_json() {
+    let src = scratch("test-native-search-src");
+    let out = scratch("test-native-search-out");
+
+    fs::write(
+        src.join("intro.tmt"),
+        "@meta{ title: \"Getting Started\" }\n\n#[ Getting Started ]\n\nWelcome to tomet documentation.\n",
+    )
+    .unwrap();
+
+    let config = BookConfig::default();
+    assert_eq!(config.build.search, SearchEngine::Native);
+
+    let report = build_book(&src, &out, &config, false).unwrap();
+    assert_eq!(report.rendered, 1);
+
+    // 1. Verify dist/search-index.json exists
+    let index_file = out.join("search-index.json");
+    assert!(index_file.is_file(), "search-index.json must be generated");
+
+    let content = fs::read_to_string(&index_file).unwrap();
+    assert!(content.contains("Getting Started"));
+    assert!(content.contains("Welcome to tomet documentation."));
+
+    // 2. When search is SearchEngine::None, index should not be written
+    let out_none = scratch("test-none-search-out");
+    let mut none_config = BookConfig::default();
+    none_config.build.search = SearchEngine::None;
+    build_book(&src, &out_none, &none_config, false).unwrap();
+    assert!(!out_none.join("search-index.json").exists());
+
+    let _ = fs::remove_dir_all(&src);
+    let _ = fs::remove_dir_all(&out);
+    let _ = fs::remove_dir_all(&out_none);
 }

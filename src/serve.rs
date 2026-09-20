@@ -288,7 +288,26 @@ pub fn handle_http_request(
     let clean_url_prefix = clean_url_prefix.as_str();
     let clean_asset_prefix = clean_asset_prefix.as_str();
 
-    // 2. Root "/"
+    // 2. Search index (in-memory)
+    let is_search_index = path == "/search-index.json"
+        || (!clean_url_prefix.is_empty()
+            && path == format!("{clean_url_prefix}/search-index.json"));
+
+    if is_search_index {
+        let state_lock = state.read().unwrap();
+        if let Some(ref st) = *state_lock
+            && let Some(ref json) = st.search_index_json
+        {
+            return (
+                StatusCode::OK,
+                [(header::CONTENT_TYPE, "application/json; charset=utf-8")],
+                json.clone(),
+            )
+                .into_response();
+        }
+    }
+
+    // 3. Root "/"
     if path == "/" || path.is_empty() {
         if !clean_url_prefix.is_empty() {
             let redirect_target = format!("{clean_url_prefix}/");
@@ -929,6 +948,46 @@ title = "Updated Title"
         let body_str_after = String::from_utf8_lossy(&body_bytes_after);
         assert!(body_str_after.contains("Hot Reloaded Contents Label"));
         assert!(!body_str_after.contains("Initial Contents Label"));
+
+        let _ = fs::remove_dir_all(&src);
+    }
+
+    #[tokio::test]
+    async fn test_dev_server_serves_in_memory_search_index() {
+        let src = scratch("ssr-search-src");
+        fs::write(
+            src.join("hello.tmt"),
+            "#[ Hello World ]\n\nWelcome to tomet search.\n",
+        )
+        .unwrap();
+
+        let mut config = BookConfig::default();
+        config.build.url_prefix = "/wiki".to_string();
+
+        let handler = TometDevHandler::new(src.clone(), src.join("dist"), config.clone());
+        handler.on_init().unwrap();
+
+        // 1. Request /search-index.json
+        let uri = Uri::from_static("/search-index.json");
+        let resp = handle_http_request(&uri, handler.state(), &src, &config);
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(
+            resp.headers().get(header::CONTENT_TYPE).unwrap(),
+            "application/json; charset=utf-8"
+        );
+
+        let body_bytes = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+        let body_str = String::from_utf8_lossy(&body_bytes);
+        assert!(body_str.contains("Hello World"));
+        assert!(body_str.contains("Welcome to tomet search."));
+
+        // 2. Also available at /wiki/search-index.json
+        let uri_prefixed = Uri::from_static("/wiki/search-index.json");
+        let resp_pref = handle_http_request(&uri_prefixed, handler.state(), &src, &config);
+        assert_eq!(resp_pref.status(), StatusCode::OK);
+
+        // 3. Ensure NO disk files written to dist
+        assert!(!src.join("dist").exists());
 
         let _ = fs::remove_dir_all(&src);
     }

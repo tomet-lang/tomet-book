@@ -10,6 +10,7 @@ pub(crate) mod manifest;
 pub mod pagefind;
 pub(crate) mod prune;
 pub mod renderer;
+pub mod search;
 pub mod slug;
 pub mod state;
 
@@ -25,7 +26,7 @@ use tracing::{info, warn};
 
 pub use state::{RenderContext, VaultState, render_single_document, render_single_document_html};
 
-use crate::config::BookConfig;
+use crate::config::{BookConfig, SearchEngine};
 use assets::{copy_vault_media, write_static_assets};
 use document::ProcessedDoc;
 use loader::{ScannedVault, scan_vault};
@@ -672,17 +673,34 @@ pub fn build_book(
 
     manifest.write(out_dir)?;
 
-    // 9. Run Pagefind, but only when the pages it would index actually moved.
-    //    Re-indexing an unchanged site is by far the most expensive thing a
-    //    build can do, and it produces the same index every time.
-    if config.build.pagefind {
-        let output_changed = written > 0 || catalog_written || redirect_written || pruned_pages > 0;
-        let index_missing = !out_dir.join("pagefind").is_dir();
+    // 9. Search indexing based on configured search engine
+    match config.build.search {
+        SearchEngine::Native => {
+            let start = Instant::now();
+            let search_index = search::build_search_index(&docs, clean_url_prefix);
+            let search_json = search_index.to_json()?;
+            let search_index_path = out_dir.join("search-index.json");
+            write_if_changed(&search_index_path, &search_json)?;
+            info!(
+                "⚡ Native search index generated in {:?} ({} documents, {} bytes)",
+                start.elapsed(),
+                search_index.docs.len(),
+                search_json.len()
+            );
+        }
+        SearchEngine::Pagefind => {
+            let output_changed =
+                written > 0 || catalog_written || redirect_written || pruned_pages > 0;
+            let index_missing = !out_dir.join("pagefind").is_dir();
 
-        if output_changed || index_missing {
-            let _ = run_pagefind(out_dir);
-        } else {
-            info!("No page changed, keeping the existing Pagefind index");
+            if output_changed || index_missing {
+                let _ = run_pagefind(out_dir);
+            } else {
+                info!("No page changed, keeping the existing Pagefind index");
+            }
+        }
+        SearchEngine::None => {
+            info!("Search indexing skipped (search = none)");
         }
     }
 

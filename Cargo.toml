@@ -13,6 +13,7 @@ name = "tmtbook"
 path = "src/main.rs"
 
 [dependencies]
+tmtbook-search = { path = "crates/search" }
 tmtbook-serve = { path = "crates/serve" }
 
 #[ Tomet Ecosystem ]
@@ -53,4 +54,4 @@ embedded-search = ["dep:pagefind"]
 embedded-search-extended = ["embedded-search", "pagefind/extended"]
 
 [workspace]
-members = ["crates/serve"]
+members = ["crates/serve", "crates/search"]

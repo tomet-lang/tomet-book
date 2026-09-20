@@ -53,6 +53,8 @@ pub struct VaultState {
     pub renderer: BookRenderer,
     pub sections: Vec<SectionSummary>,
     pub catalog_entries: Vec<EntrySummary>,
+    pub search_index: Option<tmtbook_search::SearchIndex>,
+    pub search_index_json: Option<String>,
 }
 
 impl VaultState {
@@ -150,6 +152,14 @@ impl VaultState {
 
         let clean_url_prefix = config.build.clean_url_prefix();
         let docs: Vec<&ProcessedDoc> = processed.iter().filter_map(|r| r.as_ref().ok()).collect();
+        let (search_index, search_index_json) =
+            if config.build.search == crate::config::SearchEngine::Native {
+                let idx = super::search::build_search_index(&docs, clean_url_prefix);
+                let json = idx.to_json().ok();
+                (Some(idx), json)
+            } else {
+                (None, None)
+            };
         let backlinks = build_backlink_index(&docs, clean_url_prefix);
 
         let entries_by_slug: HashMap<String, EntrySummary> = docs
@@ -211,6 +221,8 @@ impl VaultState {
             renderer,
             sections,
             catalog_entries,
+            search_index,
+            search_index_json,
         })
     }
 

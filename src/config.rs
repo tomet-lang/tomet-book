@@ -281,6 +281,15 @@ pub enum CollisionStrategy {
     Disambiguate,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum SearchEngine {
+    #[default]
+    Native,
+    Pagefind,
+    None,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildConfig {
     #[serde(default = "default_exclude")]
@@ -290,8 +299,8 @@ pub struct BuildConfig {
     /// See `book::kinds`.
     #[serde(default = "default_kinds")]
     pub kinds: Vec<String>,
-    #[serde(default = "default_true")]
-    pub pagefind: bool,
+    #[serde(default)]
+    pub search: SearchEngine,
     #[serde(default = "default_url_prefix")]
     pub url_prefix: String,
     #[serde(default = "default_asset_prefix")]
@@ -361,7 +370,7 @@ impl Default for BuildConfig {
         Self {
             exclude: default_exclude(),
             kinds: default_kinds(),
-            pagefind: true,
+            search: SearchEngine::default(),
             url_prefix: default_url_prefix(),
             asset_prefix: default_asset_prefix(),
             routing: RoutingStrategy::default(),

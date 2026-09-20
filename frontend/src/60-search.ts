@@ -2,7 +2,7 @@
   const T = (window.TMT ??= {} as any);
   const t = (key: string, fallback = "") => T.t(key, fallback);
 
-  // ==================== SEARCH (PAGEFIND) ====================
+  // ==================== SEARCH (NATIVE + PAGEFIND FALLBACK) ====================
   let pagefindInstance = null;
   let searchDebounceTimer = null;
 
@@ -25,75 +25,96 @@
     return pagefindInstance;
   }
 
-  function setupSearch() {
-    const input = document.getElementById('wiki-search-input');
-    const resultsContainer = document.getElementById('wiki-search-results');
-    if (!input || !resultsContainer) return;
-    if (input.dataset.searchInitialized === 'true') return;
-    input.dataset.searchInitialized = 'true';
+  interface NativeSearchDocument {
+    id: number;
+    slug: string;
+    title: string;
+    url: string;
+    path: string;
+    aliases?: string[];
+    kind?: string;
+    section?: string;
+    image?: string;
+    headings?: string[];
+    text: string;
+  }
 
-    function showResults() {
-      resultsContainer.hidden = false;
-      adjustPosition();
+  interface NativeSearchIndex {
+    docs: NativeSearchDocument[];
+  }
+
+  let nativeIndexPromise: Promise<NativeSearchIndex | null> | null = null;
+
+  async function getNativeIndex(): Promise<NativeSearchIndex | null> {
+    if (!nativeIndexPromise) {
+      nativeIndexPromise = fetch('/search-index.json')
+        .then((res) => (res.ok ? res.json() : null))
+        .catch((e) => {
+          console.warn('Native search index not found or error loading:', e);
+          return null;
+        });
     }
+    return nativeIndexPromise;
+  }
 
-    function adjustPosition() {
-      if (window.innerWidth <= 768) {
-        resultsContainer.style.left = '';
-        return;
+  // Tokenizes a query into lowercase words. Prefers Intl.Segmenter (handles
+  // languages without whitespace, e.g. Japanese) and falls back to splitting
+  // on whitespace/punctuation where it's unavailable.
+  function tokenizeQuery(query: string): string[] {
+    const q = query.trim();
+    if (!q) return [];
+
+    if (typeof Intl !== 'undefined' && typeof (Intl as any).Segmenter === 'function') {
+      const segmenter = new (Intl as any).Segmenter(undefined, { granularity: 'word' });
+      const tokens: string[] = [];
+      for (const { segment, isWordLike } of segmenter.segment(q)) {
+        if (isWordLike) tokens.push(segment.toLowerCase());
       }
-      resultsContainer.style.left = '0';
-      const rect = resultsContainer.getBoundingClientRect();
-      const maxRight = window.innerWidth - 10;
-      if (rect.right > maxRight) {
-        const overflow = rect.right - maxRight;
-        resultsContainer.style.left = `-${overflow}px`;
-      }
+      if (tokens.length > 0) return tokens;
     }
 
-    window.addEventListener('resize', () => {
-      if (!resultsContainer.hidden) adjustPosition();
-    });
+    return q
+      .toLowerCase()
+      .split(/[\s、,，.。]+/)
+      .filter(Boolean);
+  }
 
-    function showStatus(message) {
-      const status = document.createElement('div');
-      status.className = 'search-status';
-      status.textContent = message;
-      resultsContainer.replaceChildren(status);
-    }
+  function normalizeStrict(s: string): string {
+    return (s || '').toLowerCase().trim();
+  }
 
-    function normalizeStrict(s: string): string {
-      return (s || '').toLowerCase().trim();
-    }
+  function normalizeFuzzy(s: string): string {
+    return (s || '')
+      .toLowerCase()
+      .replace(/[@#\-_/\\.()[\]{}:;,+*~]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
 
-    function normalizeFuzzy(s: string): string {
-      return (s || '')
-        .toLowerCase()
-        .replace(/[@#\-_/\\.()[\]{}:;,+*~]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-    }
-
-    interface SearchCandidate {
-      url: string;
-      rawScore: number;
-      excerpt?: string;
-      meta?: {
-        title?: string;
-        path?: string;
-        aliases?: string;
-        image?: string;
-        [key: string]: any;
-      };
-      filters?: {
-        kind?: string;
-        section?: string;
-        [key: string]: any;
-      };
+  interface SearchCandidate {
+    url: string;
+    rawScore: number;
+    excerpt?: string;
+    meta?: {
+      title?: string;
+      path?: string;
+      aliases?: string;
+      image?: string;
       [key: string]: any;
-    }
+    };
+    filters?: {
+      kind?: string;
+      section?: string;
+      [key: string]: any;
+    };
+    [key: string]: any;
+  }
 
-    function calculateSearchBoost(query: string, item: SearchCandidate): number {
+  // Shared by the floating search box and the sidebar's lookup pane, so both
+  // surfaces rank native-index results the same way Pagefind's tuned ranking
+  // approximated: exact/prefix/word-boundary/substring hits on title, alias,
+  // filename, URL stem and path, in that priority order.
+  function calculateSearchBoost(query: string, item: SearchCandidate): number {
       const qStrict = normalizeStrict(query);
       const qFuzzy = normalizeFuzzy(query);
       if (!qStrict) return 0;
@@ -157,6 +178,152 @@
       }
 
       return maxBoost;
+  }
+
+  function escapeHtml(s: string): string {
+    return s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // Builds an HTML excerpt around the first token match in `text`,
+  // wrapping every token occurrence in <mark>. Output is safe to assign
+  // to innerHTML: the source text is escaped before highlighting.
+  function buildHighlightedExcerpt(text: string, tokens: string[], maxLen = 160): string {
+    if (!text) return '';
+    const lowerText = text.toLowerCase();
+
+    let matchIndex = -1;
+    for (const tok of tokens) {
+      const idx = lowerText.indexOf(tok);
+      if (idx !== -1 && (matchIndex === -1 || idx < matchIndex)) matchIndex = idx;
+    }
+
+    const anchor = matchIndex === -1 ? 0 : matchIndex;
+    const start = Math.max(0, anchor - Math.floor(maxLen / 3));
+    const end = Math.min(text.length, start + maxLen);
+    const slice = text.slice(start, end);
+
+    const uniqueTokens = Array.from(new Set(tokens.filter(Boolean))).sort((a, b) => b.length - a.length);
+    let highlighted = escapeHtml(slice);
+    if (uniqueTokens.length > 0) {
+      const pattern = uniqueTokens.map((tok) => tok.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')).join('|');
+      const re = new RegExp(`(${pattern})`, 'gi');
+      highlighted = highlighted.replace(re, '<mark>$1</mark>');
+    }
+
+    return `${start > 0 ? '…' : ''}${highlighted}${end < text.length ? '…' : ''}`;
+  }
+
+  function toSearchCandidate(doc: NativeSearchDocument, rawScore: number, excerpt?: string): SearchCandidate {
+    return {
+      url: doc.url,
+      rawScore,
+      excerpt,
+      meta: {
+        title: doc.title,
+        path: doc.path,
+        aliases: (doc.aliases || []).join(', '),
+        image: doc.image,
+      },
+      filters: {
+        kind: doc.kind,
+        section: doc.section,
+      },
+    };
+  }
+
+  // Searches the in-memory native index, shared by the floating search box
+  // and the sidebar's lookup pane. With a query, every token must appear
+  // somewhere in the document (AND search) and results are ranked with
+  // `calculateSearchBoost`; with an empty query every document (after the
+  // optional section filter) is returned in index order, so a caller doing
+  // pagination gets the same "browse everything" behavior Pagefind gave the
+  // lookup pane when it was called with no term.
+  function nativeSearchDocuments(
+    query: string,
+    index: NativeSearchIndex,
+    opts: { sections?: Set<string> | null } = {}
+  ): SearchCandidate[] {
+    const sections = opts.sections;
+    const docs = sections && sections.size > 0 ? index.docs.filter((d) => d.section && sections.has(d.section)) : index.docs;
+
+    const tokens = tokenizeQuery(query);
+    if (tokens.length === 0) {
+      return docs.map((doc) => toSearchCandidate(doc, 0));
+    }
+
+    const matches: SearchCandidate[] = [];
+    for (const doc of docs) {
+      const haystack = [doc.title, ...(doc.aliases || []), ...(doc.headings || []), doc.path, doc.text]
+        .join(' ')
+        .toLowerCase();
+
+      if (!tokens.every((tok) => haystack.includes(tok))) continue;
+
+      const textLower = doc.text.toLowerCase();
+      let textScore = 0;
+      for (const tok of tokens) {
+        let from = 0;
+        for (;;) {
+          const idx = textLower.indexOf(tok, from);
+          if (idx === -1) break;
+          textScore += 1;
+          from = idx + tok.length;
+        }
+      }
+
+      matches.push(toSearchCandidate(doc, textScore, buildHighlightedExcerpt(doc.text, tokens)));
+    }
+
+    matches.sort((a, b) => {
+      const boostA = calculateSearchBoost(query, a);
+      const boostB = calculateSearchBoost(query, b);
+      if (boostA !== boostB) return boostB - boostA;
+      return b.rawScore - a.rawScore;
+    });
+
+    return matches;
+  }
+
+  function setupSearch() {
+    const input = document.getElementById('wiki-search-input');
+    const resultsContainer = document.getElementById('wiki-search-results');
+    if (!input || !resultsContainer) return;
+    if (input.dataset.searchInitialized === 'true') return;
+    input.dataset.searchInitialized = 'true';
+
+    function showResults() {
+      resultsContainer.hidden = false;
+      adjustPosition();
+    }
+
+    function adjustPosition() {
+      if (window.innerWidth <= 768) {
+        resultsContainer.style.left = '';
+        return;
+      }
+      resultsContainer.style.left = '0';
+      const rect = resultsContainer.getBoundingClientRect();
+      const maxRight = window.innerWidth - 10;
+      if (rect.right > maxRight) {
+        const overflow = rect.right - maxRight;
+        resultsContainer.style.left = `-${overflow}px`;
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      if (!resultsContainer.hidden) adjustPosition();
+    });
+
+    function showStatus(message) {
+      const status = document.createElement('div');
+      status.className = 'search-status';
+      status.textContent = message;
+      resultsContainer.replaceChildren(status);
     }
 
     function renderResults(results: SearchCandidate[]) {
@@ -245,7 +412,7 @@
     }
 
     input.addEventListener('focus', () => {
-      getPagefind();
+      getNativeIndex();
       if (input.value.trim().length > 0) {
         showResults();
       }
@@ -264,6 +431,26 @@
       }
 
       searchDebounceTimer = setTimeout(async () => {
+        const nativeIndex = await getNativeIndex();
+
+        if (nativeIndex) {
+          const topResults = nativeSearchDocuments(query, nativeIndex).slice(0, 10);
+          selectedIndex = -1;
+
+          if (topResults.length === 0) {
+            showStatus(t('search.empty'));
+            showResults();
+            return;
+          }
+
+          renderResults(topResults);
+          showResults();
+          return;
+        }
+
+        // Native index unavailable (e.g. `search = "pagefind"` or "none"
+        // in tmtbook.toml, or this page was served before a build ran) —
+        // fall back to Pagefind.
         const pf = await getPagefind();
         if (!pf) {
           showStatus(t('search.loading'));
@@ -384,5 +571,5 @@
     }
   });
 
-  Object.assign(T, { setupSearch, getPagefind });
+  Object.assign(T, { setupSearch, getPagefind, getNativeIndex, nativeSearchDocuments });
 })();

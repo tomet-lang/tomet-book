@@ -3397,6 +3397,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
+ "tmtbook-search",
  "tmtbook-serve",
  "tokio",
  "tomet-ast",
@@ -3413,6 +3414,14 @@ dependencies = [
  "tracing-subscriber",
  "unicode-segmentation",
  "walkdir",
+]
+
+[[package]]
+name = "tmtbook-search"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
