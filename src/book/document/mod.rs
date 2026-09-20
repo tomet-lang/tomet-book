@@ -418,10 +418,10 @@ body
         assert_eq!(out.hero_chips[0].value, "rust");
         assert_eq!(
             out.hero_chips[0].href.as_deref(),
-            Some("/wiki/30-39 Knowledge/rust")
+            Some("/wiki/30-39-Knowledge/rust")
         );
 
-        assert!(out.outgoing.contains(&"30-39 Knowledge/rust".to_string()));
+        assert!(out.outgoing.contains(&"30-39-Knowledge/rust".to_string()));
 
         let author_row = out
             .infobox_rows
@@ -431,7 +431,7 @@ body
         assert!(
             author_row
                 .value
-                .contains(r#"href="/wiki/30-39 Knowledge/rust""#)
+                .contains(r#"href="/wiki/30-39-Knowledge/rust""#)
         );
     }
 
@@ -698,7 +698,7 @@ pub fn process_parsed_document_with_blocks(
 
     // 3. Collect outgoing links, then resolve them
     let from_path = Path::new(rel_path);
-    let slug = strip_doc_extension(&crate::book::normalize_path_str(rel_path)).to_string();
+    let slug = crate::book::slug::clean_doc_slug(rel_path);
     let mut outgoing = links::outgoing_page_slugs(&doc, from_path, &slug, vault_index, unpublished);
 
     let mode = tomet_transform::TargetMode::WebSlug {
@@ -714,7 +714,15 @@ pub fn process_parsed_document_with_blocks(
                 // A page the site does not publish is not a page. Resolving
                 // it would print a link to a file that was never written.
                 .filter(|p| !unpublished.contains(&crate::book::normalize_path(p)))
-                .map(|p| p.to_path_buf())
+                .map(|p| {
+                    let norm = crate::book::normalize_path(p);
+                    if links::strip_doc_extension(&norm) != norm {
+                        let clean_slug = crate::book::slug::clean_doc_slug(&norm);
+                        std::path::PathBuf::from(format!("{clean_slug}.tmt"))
+                    } else {
+                        p.to_path_buf()
+                    }
+                })
         },
         &mode,
     );

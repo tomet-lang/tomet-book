@@ -123,7 +123,8 @@ mod tests {
         let mut icons = HashMap::new();
         icons.insert(
             "Shopify".to_string(),
-            r#"<span class="tm-link-icon tm-link-icon-emoji" aria-hidden="true">🛍️</span>"#.to_string(),
+            r#"<span class="tm-link-icon tm-link-icon-emoji" aria-hidden="true">🛍️</span>"#
+                .to_string(),
         );
 
         let html = r#"<p><a class="tm-file" href="/wiki/Shopify">Shopify</a></p>"#;
@@ -184,7 +185,8 @@ mod tests {
             r#"<span class="tm-link-icon">🛍️</span>"#.to_string(),
         );
 
-        let html = r#"<p><a class="tm-file" href="/wiki/Shopify"><img src="badge.png" alt="" /></a></p>"#;
+        let html =
+            r#"<p><a class="tm-file" href="/wiki/Shopify"><img src="badge.png" alt="" /></a></p>"#;
         let out = enhance_internal_links(html, &icons, "/wiki");
         assert_eq!(out, html);
     }
@@ -207,7 +209,8 @@ mod tests {
         let mut icons = HashMap::new();
         icons.insert(
             "docs/guide".to_string(),
-            r#"<span class="tm-link-icon tm-link-icon-emoji" aria-hidden="true">📖</span>"#.to_string(),
+            r#"<span class="tm-link-icon tm-link-icon-emoji" aria-hidden="true">📖</span>"#
+                .to_string(),
         );
 
         let html = r#"<p><a class="tm-file" href="/docs/guide">Guide</a></p>"#;

@@ -118,7 +118,8 @@ pub fn resolve_meta_link(
         });
 
     if let Some(path) = resolved {
-        let slug = strip_doc_extension(&crate::book::normalize_path(path)).to_string();
+        let norm = crate::book::normalize_path(path);
+        let slug = crate::book::slug::clean_doc_slug(&norm);
         Some((format!("{clean_url_prefix}/{slug}"), display_label))
     } else {
         Some((String::new(), display_label))
@@ -133,7 +134,9 @@ pub fn format_meta_value_to_html(
     url_prefix: &str,
     unresolved_title: &str,
 ) -> String {
-    if let Some((href, label)) = resolve_meta_link(raw_str, from_path, vault_index, url_prefix) {
+    if let Some((href, label)) =
+        resolve_meta_link(raw_str, from_path, vault_index, url_prefix)
+    {
         let label = escape_html(&label);
         if href.is_empty() {
             let title = escape_html(unresolved_title);
@@ -218,16 +221,21 @@ mod tests {
         let idx = index(&["30-39 Knowledge/rust.tmt"]);
         let (href, label) =
             resolve_meta_link("[[rust]]", Path::new("notes/a.tmt"), &idx, "/wiki").unwrap();
-        assert_eq!(href, "/wiki/30-39 Knowledge/rust");
+        assert_eq!(href, "/wiki/30-39-Knowledge/rust");
         assert_eq!(label, "rust");
     }
 
     #[test]
     fn resolve_meta_link_keeps_the_alias_as_the_label() {
         let idx = index(&["30-39 Knowledge/rust.tmt"]);
-        let (href, label) =
-            resolve_meta_link("[[rust|ラスト]]", Path::new("notes/a.tmt"), &idx, "/wiki").unwrap();
-        assert_eq!(href, "/wiki/30-39 Knowledge/rust");
+        let (href, label) = resolve_meta_link(
+            "[[rust|ラスト]]",
+            Path::new("notes/a.tmt"),
+            &idx,
+            "/wiki",
+        )
+        .unwrap();
+        assert_eq!(href, "/wiki/30-39-Knowledge/rust");
         assert_eq!(label, "ラスト");
     }
 
@@ -249,7 +257,8 @@ mod tests {
     #[test]
     fn trailing_slash_on_the_url_prefix_is_not_doubled() {
         let idx = index(&["rust.tmt"]);
-        let (href, _) = resolve_meta_link("[[rust]]", Path::new("a.tmt"), &idx, "/wiki/").unwrap();
+        let (href, _) =
+            resolve_meta_link("[[rust]]", Path::new("a.tmt"), &idx, "/wiki/").unwrap();
         assert_eq!(href, "/wiki/rust");
     }
 
@@ -331,13 +340,17 @@ pub fn outgoing_page_slugs(
         if unpublished.contains(&path) {
             continue;
         }
-        let slug = strip_doc_extension(&path);
+        let stripped = strip_doc_extension(&path);
         // strip_doc_extension leaves non-documents untouched, which is how a
         // link to an image is told apart from a link to a page.
-        if slug == path || slug == own_slug || slugs.iter().any(|s| s == slug) {
+        if stripped == path {
             continue;
         }
-        slugs.push(slug.to_string());
+        let slug = crate::book::slug::clean_doc_slug(&path);
+        if slug == own_slug || slugs.iter().any(|s| s == &slug) {
+            continue;
+        }
+        slugs.push(slug);
     }
 
     slugs

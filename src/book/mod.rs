@@ -6,6 +6,7 @@ pub mod kinds;
 pub mod loader;
 pub mod pagefind;
 pub mod renderer;
+pub mod slug;
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -235,8 +236,12 @@ fn read_written_index(
         };
 
         let from_path = Path::new(&file.rel_path);
-        let outline =
-            catalog::parse_index_document(&source, from_path, &scanned.vault_index, &rows);
+        let outline = catalog::parse_index_document(
+            &source,
+            from_path,
+            &scanned.vault_index,
+            &rows,
+        );
 
         if outline.kind_missing {
             warn!("{} does not declare @kind(doc.index)", file.rel_path);
@@ -1428,12 +1433,82 @@ mod manifest_tests {
             "HTML should contain span with dev/roadmap: {roadmap_html}"
         );
         assert!(
-            roadmap_html.contains(r#"<span class="sr-only" data-pagefind-weight="10.0">dev/roadmap.tmt</span>"#),
+            roadmap_html.contains(
+                r#"<span class="sr-only" data-pagefind-weight="10.0">dev/roadmap.tmt</span>"#
+            ),
             "HTML should contain span with dev/roadmap.tmt: {roadmap_html}"
         );
 
         let _ = fs::remove_dir_all(&src);
         let _ = fs::remove_dir_all(&out);
     }
-}
 
+    #[test]
+    fn build_book_sanitizes_urls_with_spaces_symbols_and_emoji() {
+        let src = scratch("build-clean-url-src");
+        let out = scratch("build-clean-url-out");
+
+        let rust_dir = src.join("30-39 Knowledge");
+        fs::create_dir_all(&rust_dir).unwrap();
+        fs::write(
+            rust_dir.join("Rust (基礎) 🦀.tmt"),
+            "#[ Rust基礎 ]\n\nLink to @link(ref:\"Web 開発 {Next}\").\n",
+        )
+        .unwrap();
+
+        fs::write(
+            src.join("Web 開発 {Next}.tmt"),
+            "#[ Web開発 ]\n\nLink to @link(ref:\"Rust (基礎) 🦀\").\n",
+        )
+        .unwrap();
+
+        let mut config = BookConfig::default();
+        config.build.pagefind = false;
+
+        let report = build_book(&src, &out, &config, false).unwrap();
+        assert_eq!(report.rendered, 2);
+
+        // 1. Filesystem outputs must have sanitized paths
+        let rust_html_path = out.join("wiki/30-39-Knowledge/Rust-基礎/index.html");
+        let web_html_path = out.join("wiki/Web-開発-Next/index.html");
+        assert!(
+            rust_html_path.is_file(),
+            "expected {rust_html_path:?} to exist"
+        );
+        assert!(
+            web_html_path.is_file(),
+            "expected {web_html_path:?} to exist"
+        );
+
+        // 2. Rendered link hrefs must point to clean URLs
+        let rust_html = fs::read_to_string(&rust_html_path).unwrap();
+        assert!(
+            rust_html.contains(r#"href="/wiki/Web-開発-Next""#),
+            "Rust doc HTML must link to clean URL: {rust_html}"
+        );
+
+        let web_html = fs::read_to_string(&web_html_path).unwrap();
+        assert!(
+            web_html.contains(r#"href="/wiki/30-39-Knowledge/Rust-基礎""#),
+            "Web doc HTML must link to clean URL: {web_html}"
+        );
+
+        // 3. Backlinks must be indexed under clean slugs
+        let rust_incoming = report
+            .backlinks
+            .get("30-39-Knowledge/Rust-基礎")
+            .expect("rust backlinks");
+        assert_eq!(rust_incoming.len(), 1);
+        assert_eq!(rust_incoming[0].url, "/wiki/Web-開発-Next");
+
+        let web_incoming = report
+            .backlinks
+            .get("Web-開発-Next")
+            .expect("web backlinks");
+        assert_eq!(web_incoming.len(), 1);
+        assert_eq!(web_incoming[0].url, "/wiki/30-39-Knowledge/Rust-基礎");
+
+        let _ = fs::remove_dir_all(&src);
+        let _ = fs::remove_dir_all(&out);
+    }
+}

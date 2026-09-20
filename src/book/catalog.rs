@@ -102,7 +102,12 @@ pub fn parse_index_document(
         outline.query_errors.push(e.to_string());
     }
 
-    outline.entries = collect_blocks(&doc.blocks, from_path, vault_index, &mut outline.unresolved);
+    outline.entries = collect_blocks(
+        &doc.blocks,
+        from_path,
+        vault_index,
+        &mut outline.unresolved,
+    );
     outline
 }
 
@@ -164,7 +169,9 @@ fn collect_blocks(
             let children = item
                 .children
                 .as_deref()
-                .map(|blocks| collect_blocks(blocks, from_path, vault_index, unresolved))
+                .map(|blocks| {
+                    collect_blocks(blocks, from_path, vault_index, unresolved)
+                })
                 .unwrap_or_default();
 
             let Some(target) = target else {
@@ -220,10 +227,10 @@ fn resolve_page_slug(
 ) -> Option<String> {
     let resolved = vault_index.resolve_ref(target, Some(from_path))?;
     let path = resolved.to_string_lossy().replace('\\', "/");
-    let slug = strip_doc_extension(&path);
+    let stripped = strip_doc_extension(&path);
     // strip_doc_extension leaves non-documents untouched, which is how a link
     // to an image is told apart from a link to a page.
-    (slug != path).then(|| slug.to_string())
+    (stripped != path).then(|| crate::book::slug::clean_doc_slug(&path))
 }
 
 #[cfg(test)]
@@ -236,7 +243,12 @@ mod tests {
     }
 
     fn parse(source: &str, paths: &[&str]) -> IndexOutline {
-        parse_index_document(source, Path::new("book.index.tmt"), &index_of(paths), &[])
+        parse_index_document(
+            source,
+            Path::new("book.index.tmt"),
+            &index_of(paths),
+            &[],
+        )
     }
 
     fn row(path: &str, tags: &[&str]) -> tomet_transform::IndexRow {

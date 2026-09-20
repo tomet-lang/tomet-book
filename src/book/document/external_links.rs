@@ -164,7 +164,8 @@ mod tests {
     #[test]
     fn enhances_github_link_with_simple_icon() {
         let config = LinksConfig::default();
-        let html = r#"<p><a class="tm-url" href="https://github.com/tomet-lang/tomet">GitHub</a></p>"#;
+        let html =
+            r#"<p><a class="tm-url" href="https://github.com/tomet-lang/tomet">GitHub</a></p>"#;
         let out = enhance_external_links(html, &config);
         assert_eq!(
             out,
@@ -175,7 +176,8 @@ mod tests {
     #[test]
     fn enhances_zenn_link_with_simple_icon() {
         let config = LinksConfig::default();
-        let html = r#"<p><a class="tm-url" href="https://zenn.dev/articles/123">Zenn Article</a></p>"#;
+        let html =
+            r#"<p><a class="tm-url" href="https://zenn.dev/articles/123">Zenn Article</a></p>"#;
         let out = enhance_external_links(html, &config);
         assert!(out.contains("/icons/simple.svg#zenn"));
     }

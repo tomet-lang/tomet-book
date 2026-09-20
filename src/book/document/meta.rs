@@ -362,7 +362,9 @@ fn format_text_icon_link(s: &str) -> String {
         _ => {
             let initials = graphemes[..2.min(graphemes.len())].join("");
             let safe_init = super::html::escape_html(&initials);
-            format!(r#"<span class="tm-link-icon tm-link-icon-text" aria-hidden="true">{safe_init}</span>"#)
+            format!(
+                r#"<span class="tm-link-icon tm-link-icon-text" aria-hidden="true">{safe_init}</span>"#
+            )
         }
     }
 }
@@ -760,7 +762,13 @@ mod tests {
 
     #[test]
     fn no_metadata_yields_nothing_to_show() {
-        let props = extract(None, None, Path::new("a.tmt"), &index(), &ctx_config());
+        let props = extract(
+            None,
+            None,
+            Path::new("a.tmt"),
+            &index(),
+            &ctx_config(),
+        );
         assert!(!props.has_data());
         assert!(props.infobox_rows.is_empty());
     }
@@ -813,7 +821,7 @@ mod tests {
         assert_eq!(values, vec!["rust", "4月9日"]);
         assert_eq!(
             props.hero_chips[0].href.as_deref(),
-            Some("/wiki/30-39 Knowledge/rust")
+            Some("/wiki/30-39-Knowledge/rust")
         );
     }
 
@@ -908,12 +916,12 @@ mod tests {
         assert_eq!(props.hero_chips[0].value, "rust");
         assert_eq!(
             props.hero_chips[0].href.as_deref(),
-            Some("/wiki/30-39 Knowledge/rust")
+            Some("/wiki/30-39-Knowledge/rust")
         );
         assert!(
             props
                 .linked_slugs
-                .contains(&"30-39 Knowledge/rust".to_string())
+                .contains(&"30-39-Knowledge/rust".to_string())
         );
 
         let author_row = props
@@ -924,7 +932,7 @@ mod tests {
         assert!(
             author_row
                 .value
-                .contains(r#"href="/wiki/30-39 Knowledge/rust""#)
+                .contains(r#"href="/wiki/30-39-Knowledge/rust""#)
         );
         assert!(author_row.value.contains("Rust Lang"));
     }

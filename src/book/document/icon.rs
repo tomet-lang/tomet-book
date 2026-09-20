@@ -142,8 +142,16 @@ pub fn meta_link_icon_element(raw_meta: Option<&tomet_ast::Value>) -> Option<Str
 /// Renders a link-sized prefix icon for Lucide or Simple Icons.
 pub fn render_link_icon(name: &str, pkg: &str) -> Option<String> {
     let (icon_names, href_prefix, subtype) = match pkg {
-        "lucide" => (&*LUCIDE_ICON_NAMES, "/icons/lucide.svg", "tm-link-icon-lucide"),
-        "simple" => (&*SIMPLE_ICON_NAMES, "/icons/simple.svg", "tm-link-icon-simple"),
+        "lucide" => (
+            &*LUCIDE_ICON_NAMES,
+            "/icons/lucide.svg",
+            "tm-link-icon-lucide",
+        ),
+        "simple" => (
+            &*SIMPLE_ICON_NAMES,
+            "/icons/simple.svg",
+            "tm-link-icon-simple",
+        ),
         _ => return None,
     };
 
