@@ -29,7 +29,7 @@ mkShell rec {
     ##[ UI ]
     typescript
     esbuild
-    tailwindcss
+    tailwindcss_4
     ##[ Rust ]
     rust-toolchain
     cargo-edit

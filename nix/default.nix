@@ -27,7 +27,7 @@ flake-parts.lib.mkFlake { inherit inputs; } {
       };
 
       devShells.default = pkgs.callPackage ./dev.nix {
-        inherit inputs craneLib;
+        inherit inputs;
         fenix = inputs.fenix.packages.${pkgs.stdenv.hostPlatform.system};
 
         tmtbook = pkgs.callPackage ./pkgs/tmtbook.nix { inherit craneLib; };
