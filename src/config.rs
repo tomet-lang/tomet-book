@@ -264,6 +264,23 @@ impl Default for InfoboxConfig {
     }
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "kebab-case")]
+pub enum RoutingStrategy {
+    #[default]
+    Hierarchical,
+    Flat,
+    Id,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "kebab-case")]
+pub enum CollisionStrategy {
+    #[default]
+    Error,
+    Disambiguate,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildConfig {
     #[serde(default = "default_exclude")]
@@ -279,6 +296,10 @@ pub struct BuildConfig {
     pub url_prefix: String,
     #[serde(default = "default_asset_prefix")]
     pub asset_prefix: String,
+    #[serde(default)]
+    pub routing: RoutingStrategy,
+    #[serde(default)]
+    pub on_collision: CollisionStrategy,
     #[serde(default)]
     pub config_path: Option<PathBuf>,
 }
@@ -343,6 +364,8 @@ impl Default for BuildConfig {
             pagefind: true,
             url_prefix: default_url_prefix(),
             asset_prefix: default_asset_prefix(),
+            routing: RoutingStrategy::default(),
+            on_collision: CollisionStrategy::default(),
             config_path: None,
         }
     }
@@ -577,10 +600,7 @@ favicon_service = "duckduckgo"
         );
         assert!(!custom.ui.links.external_icons);
         assert!(!custom.ui.links.note_icons);
-        assert_eq!(
-            custom.ui.links.favicon_service,
-            FaviconService::DuckDuckGo
-        );
+        assert_eq!(custom.ui.links.favicon_service, FaviconService::DuckDuckGo);
 
         let alias = load(
             r#"
@@ -589,5 +609,31 @@ internal_icons = false
 "#,
         );
         assert!(!alias.ui.links.note_icons);
+    }
+
+    #[test]
+    fn routing_and_collision_config_defaults_and_customization() {
+        let def = load("");
+        assert_eq!(def.build.routing, RoutingStrategy::Hierarchical);
+        assert_eq!(def.build.on_collision, CollisionStrategy::Error);
+
+        let custom = load(
+            r#"
+[build]
+routing = "flat"
+on_collision = "disambiguate"
+"#,
+        );
+        assert_eq!(custom.build.routing, RoutingStrategy::Flat);
+        assert_eq!(custom.build.on_collision, CollisionStrategy::Disambiguate);
+
+        let id_mode = load(
+            r#"
+[build]
+routing = "id"
+"#,
+        );
+        assert_eq!(id_mode.build.routing, RoutingStrategy::Id);
+        assert_eq!(id_mode.build.on_collision, CollisionStrategy::Error);
     }
 }

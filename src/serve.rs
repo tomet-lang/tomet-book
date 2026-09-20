@@ -20,6 +20,7 @@ pub struct TometDevHandler {
     unpublished: HashSet<String>,
     book_index: Vec<crate::book::renderer::EntrySummary>,
     doc_icons: HashMap<String, String>,
+    route_table: crate::book::slug::RouteTable,
 }
 
 impl TometDevHandler {
@@ -35,6 +36,7 @@ impl TometDevHandler {
             unpublished: HashSet::new(),
             book_index: Vec::new(),
             doc_icons: HashMap::new(),
+            route_table: crate::book::slug::RouteTable::default(),
         }
     }
 
@@ -58,6 +60,7 @@ impl TometDevHandler {
                 self.book_index = report.book_index;
                 self.scanned = Some(report.scanned);
                 self.doc_icons = report.doc_icons;
+                self.route_table = report.route_table;
                 true
             }
             Err(e) => {
@@ -83,6 +86,7 @@ impl DevServerHandler for TometDevHandler {
                 self.book_index = report.book_index;
                 self.scanned = Some(report.scanned);
                 self.doc_icons = report.doc_icons;
+                self.route_table = report.route_table;
             }
             Err(e) => warn!("Initial build failed: {e}"),
         }
@@ -151,9 +155,10 @@ impl DevServerHandler for TometDevHandler {
                     unpublished: &self.unpublished,
                     book_index: &self.book_index,
                     doc_icons: &self.doc_icons,
+                    route_table: &self.route_table,
                 },
                 self.backlinks
-                    .get(crate::book::document::strip_doc_extension(rel_path))
+                    .get(&self.route_table.get_or_clean(rel_path))
                     .map(Vec::as_slice)
                     .unwrap_or(&[]),
             ) {

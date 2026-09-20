@@ -82,6 +82,7 @@ pub fn parse_index_document(
     from_path: &Path,
     vault_index: &tomet_links::VaultLinkIndex,
     rows: &[tomet_transform::IndexRow],
+    route_table: Option<&crate::book::slug::RouteTable>,
 ) -> IndexOutline {
     let Ok(mut doc) = tomet_parser::parse_document(source) else {
         return IndexOutline::default();
@@ -107,6 +108,7 @@ pub fn parse_index_document(
         from_path,
         vault_index,
         &mut outline.unresolved,
+        route_table,
     );
     outline
 }
@@ -144,6 +146,7 @@ fn collect_blocks(
     from_path: &Path,
     vault_index: &tomet_links::VaultLinkIndex,
     unresolved: &mut Vec<String>,
+    route_table: Option<&crate::book::slug::RouteTable>,
 ) -> Vec<IndexEntry> {
     let mut entries = Vec::new();
 
@@ -170,7 +173,7 @@ fn collect_blocks(
                 .children
                 .as_deref()
                 .map(|blocks| {
-                    collect_blocks(blocks, from_path, vault_index, unresolved)
+                    collect_blocks(blocks, from_path, vault_index, unresolved, route_table)
                 })
                 .unwrap_or_default();
 
@@ -181,7 +184,7 @@ fn collect_blocks(
                 continue;
             };
 
-            match resolve_page_slug(&target, from_path, vault_index) {
+            match resolve_page_slug(&target, from_path, vault_index, route_table) {
                 Some(slug) => entries.push(IndexEntry { slug, children }),
                 None => {
                     unresolved.push(target);
@@ -224,13 +227,20 @@ fn resolve_page_slug(
     target: &str,
     from_path: &Path,
     vault_index: &tomet_links::VaultLinkIndex,
+    route_table: Option<&crate::book::slug::RouteTable>,
 ) -> Option<String> {
     let resolved = vault_index.resolve_ref(target, Some(from_path))?;
     let path = resolved.to_string_lossy().replace('\\', "/");
     let stripped = strip_doc_extension(&path);
     // strip_doc_extension leaves non-documents untouched, which is how a link
     // to an image is told apart from a link to a page.
-    (stripped != path).then(|| crate::book::slug::clean_doc_slug(&path))
+    (stripped != path).then(|| {
+        if let Some(table) = route_table {
+            table.get_or_clean(&path)
+        } else {
+            crate::book::slug::clean_doc_slug(&path)
+        }
+    })
 }
 
 #[cfg(test)]
@@ -248,6 +258,7 @@ mod tests {
             Path::new("book.index.tmt"),
             &index_of(paths),
             &[],
+            None,
         )
     }
 
@@ -365,12 +376,14 @@ mod tests {
             Path::new("book.index.tmt"),
             &index_of(&paths),
             &rows,
+            None,
         );
         let by_hand = parse_index_document(
             "@kind(doc.index)\n\n- @link(ref:\"guide\")\n  - @link(ref:\"go\")\n- @link(ref:\"rust\")\n",
             Path::new("book.index.tmt"),
             &index_of(&paths),
             &[],
+            None,
         );
 
         assert!(
@@ -388,6 +401,7 @@ mod tests {
             Path::new("book.index.tmt"),
             &index_of(&["go.tmt"]),
             &[row("go.tmt", &["go"])],
+            None,
         );
         assert!(!out.query_errors.is_empty());
     }

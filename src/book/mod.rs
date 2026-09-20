@@ -101,6 +101,8 @@ pub struct BuildReport {
     pub book_index: Vec<EntrySummary>,
     /// Note icon HTML snippets keyed by slug, for internal link decoration.
     pub doc_icons: HashMap<String, String>,
+    /// Global routing table mapping document paths to slugs.
+    pub route_table: slug::RouteTable,
 }
 
 enum DocOutcome {
@@ -150,6 +152,8 @@ pub struct RenderContext<'a, 'r> {
     pub book_index: &'a [EntrySummary],
     /// Note icon HTML snippets keyed by slug, for internal link decoration.
     pub doc_icons: &'a HashMap<String, String>,
+    /// The vault-wide route table.
+    pub route_table: &'a slug::RouteTable,
 }
 
 pub fn render_single_document(
@@ -176,6 +180,7 @@ pub fn render_single_document(
         cx.vault_index,
         cx.workspace_cfg_blocks,
         cx.unpublished,
+        Some(cx.route_table),
     )?;
     image_opt::optimize_single_doc_media(&mut processed, cx.src_dir, out_dir, config);
     if config.ui.links.note_icons && !cx.doc_icons.is_empty() {
@@ -205,6 +210,7 @@ fn read_written_index(
     scanned: &ScannedVault,
     parsed: &[Result<(tomet_ast::Document, Option<String>), DocFailure>],
     src_dir: &Path,
+    route_table: Option<&slug::RouteTable>,
 ) -> Option<Vec<catalog::IndexEntry>> {
     let index_files: Vec<&loader::DocFileInfo> = scanned
         .control_files
@@ -241,6 +247,7 @@ fn read_written_index(
             from_path,
             &scanned.vault_index,
             &rows,
+            route_table,
         );
 
         if outline.kind_missing {
@@ -544,7 +551,27 @@ pub fn build_book(
         );
     }
 
-    let written_index = read_written_index(&scanned, &parsed, src_dir);
+    let mut route_meta = Vec::new();
+    for (res, doc_file) in parsed.iter().zip(scanned.doc_files.iter()) {
+        if unpublished.contains(&doc_file.rel_path) {
+            continue;
+        }
+        if let Ok((doc, _)) = res {
+            let (slug, id) = slug::extract_route_metadata(doc);
+            route_meta.push((doc_file.rel_path.as_str(), slug, id));
+        }
+    }
+    let doc_route_inputs: Vec<slug::DocRouteInput<'_>> = route_meta
+        .iter()
+        .map(|(path, slug, id)| slug::DocRouteInput {
+            rel_path: path,
+            explicit_slug: slug.as_deref(),
+            meta_id: id.as_deref(),
+        })
+        .collect();
+    let route_table = slug::RouteTable::build(&doc_route_inputs, &config.build)?;
+
+    let written_index = read_written_index(&scanned, &parsed, src_dir, Some(&route_table));
 
     info!(
         "Processing {} document(s)...",
@@ -564,6 +591,7 @@ pub fn build_book(
                 &scanned.vault_index,
                 &scanned.workspace_config_blocks,
                 &unpublished,
+                Some(&route_table),
             )
             .map_err(|e| DocFailure {
                 rel_path: doc_file.rel_path.clone(),
@@ -902,6 +930,7 @@ pub fn build_book(
         unpublished,
         book_index,
         doc_icons,
+        route_table,
     };
 
     if report.failures.is_empty() {
@@ -1510,5 +1539,176 @@ mod manifest_tests {
 
         let _ = fs::remove_dir_all(&src);
         let _ = fs::remove_dir_all(&out);
+    }
+
+    #[test]
+    fn build_book_flat_routing_collision_error_by_default() {
+        use crate::config::RoutingStrategy;
+
+        let src = scratch("flat-collision-err-src");
+        let out = scratch("flat-collision-err-out");
+
+        let rust_dir = src.join("tech/rust");
+        let js_dir = src.join("tech/js");
+        fs::create_dir_all(&rust_dir).unwrap();
+        fs::create_dir_all(&js_dir).unwrap();
+        fs::write(
+            rust_dir.join("closures.tmt"),
+            "#[ Rust Closures ]\n\nbody\n",
+        )
+        .unwrap();
+        fs::write(js_dir.join("closures.tmt"), "#[ JS Closures ]\n\nbody\n").unwrap();
+
+        let mut config = BookConfig::default();
+        config.build.pagefind = false;
+        config.build.routing = RoutingStrategy::Flat;
+
+        let res = build_book(&src, &out, &config, false);
+        assert!(res.is_err(), "build_book must fail on collision by default");
+        let err_msg = res.unwrap_err().to_string();
+        assert!(err_msg.contains("Duplicate slug(s) detected"), "{err_msg}");
+        assert!(err_msg.contains("tech/rust/closures.tmt"), "{err_msg}");
+        assert!(err_msg.contains("tech/js/closures.tmt"), "{err_msg}");
+
+        let _ = fs::remove_dir_all(&src);
+        let _ = fs::remove_dir_all(&out);
+    }
+
+    #[test]
+    fn build_book_flat_routing_disambiguation() {
+        use crate::config::{CollisionStrategy, RoutingStrategy};
+
+        let src = scratch("flat-disambiguate-src");
+        let out = scratch("flat-disambiguate-out");
+
+        let rust_dir = src.join("tech/rust");
+        let js_dir = src.join("tech/js");
+        fs::create_dir_all(&rust_dir).unwrap();
+        fs::create_dir_all(&js_dir).unwrap();
+        fs::write(
+            rust_dir.join("closures.tmt"),
+            "#[ Rust Closures ]\n\nLink to @link(ref:\"tech/js/closures.tmt\").\n",
+        )
+        .unwrap();
+        fs::write(
+            js_dir.join("closures.tmt"),
+            "#[ JS Closures ]\n\nLink to @link(ref:\"tech/rust/closures.tmt\").\n",
+        )
+        .unwrap();
+
+        let mut config = BookConfig::default();
+        config.build.pagefind = false;
+        config.build.routing = RoutingStrategy::Flat;
+        config.build.on_collision = CollisionStrategy::Disambiguate;
+
+        let report = build_book(&src, &out, &config, false).unwrap();
+        assert_eq!(report.rendered, 2);
+
+        // Outputs should be disambiguated with flat hyphenated names
+        let rust_html_path = out.join("wiki/rust-closures/index.html");
+        let js_html_path = out.join("wiki/js-closures/index.html");
+        assert!(rust_html_path.is_file(), "expected {rust_html_path:?}");
+        assert!(js_html_path.is_file(), "expected {js_html_path:?}");
+
+        // Links must resolve to disambiguated URLs
+        let rust_html = fs::read_to_string(&rust_html_path).unwrap();
+        assert!(
+            rust_html.contains(r#"href="/wiki/js-closures""#),
+            "Rust doc must link to /wiki/js-closures: {rust_html}"
+        );
+
+        let js_html = fs::read_to_string(&js_html_path).unwrap();
+        assert!(
+            js_html.contains(r#"href="/wiki/rust-closures""#),
+            "JS doc must link to /wiki/rust-closures: {js_html}"
+        );
+
+        let _ = fs::remove_dir_all(&src);
+        let _ = fs::remove_dir_all(&out);
+    }
+
+    #[test]
+    fn build_book_explicit_slug_precedence() {
+        let src = scratch("explicit-slug-src");
+        let out = scratch("explicit-slug-out");
+
+        let nested = src.join("deep/nested");
+        fs::create_dir_all(&nested).unwrap();
+        fs::write(
+            nested.join("guide.tmt"),
+            "@meta{ slug: \"super-guide\" }\n\n#[ Super Guide ]\n\nContent.\n",
+        )
+        .unwrap();
+        fs::write(
+            src.join("index.tmt"),
+            "#[ Home ]\n\nSee @link(ref:\"deep/nested/guide.tmt\").\n",
+        )
+        .unwrap();
+
+        let mut config = BookConfig::default();
+        config.build.pagefind = false;
+
+        let report = build_book(&src, &out, &config, false).unwrap();
+        assert_eq!(report.rendered, 2);
+
+        let guide_html_path = out.join("wiki/super-guide/index.html");
+        assert!(guide_html_path.is_file(), "expected {guide_html_path:?}");
+
+        let index_html = fs::read_to_string(out.join("wiki/index/index.html")).unwrap();
+        assert!(
+            index_html.contains(r#"href="/wiki/super-guide""#),
+            "Index doc must link to /wiki/super-guide: {index_html}"
+        );
+
+        let _ = fs::remove_dir_all(&src);
+        let _ = fs::remove_dir_all(&out);
+    }
+
+    #[test]
+    fn build_book_id_routing_behavior() {
+        use crate::config::RoutingStrategy;
+
+        let src = scratch("id-routing-src");
+        let out_hier = scratch("id-routing-hier-out");
+        let out_id = scratch("id-routing-id-out");
+
+        let notes_dir = src.join("notes");
+        fs::create_dir_all(&notes_dir).unwrap();
+        fs::write(
+            notes_dir.join("my-note.tmt"),
+            "@meta{ id: \"random-uuid-1234\" }\n\n#[ My Note ]\n\nContent.\n",
+        )
+        .unwrap();
+        fs::write(
+            src.join("index.tmt"),
+            "@meta{ slug: \"index\" }\n\n#[ Home ]\n\nSee @link(ref:\"notes/my-note.tmt\").\n",
+        )
+        .unwrap();
+
+        // 1. Under hierarchical routing, @meta{ id } must be IGNORED
+        let mut hier_config = BookConfig::default();
+        hier_config.build.pagefind = false;
+        hier_config.build.routing = RoutingStrategy::Hierarchical;
+
+        let report_hier = build_book(&src, &out_hier, &hier_config, false).unwrap();
+        assert_eq!(report_hier.rendered, 2);
+        assert!(out_hier.join("wiki/notes/my-note/index.html").is_file());
+        let index_hier = fs::read_to_string(out_hier.join("wiki/index/index.html")).unwrap();
+        assert!(index_hier.contains(r#"href="/wiki/notes/my-note""#));
+
+        // 2. Under id routing, @meta{ id } is USED
+        let mut id_config = BookConfig::default();
+        id_config.build.pagefind = false;
+        id_config.build.routing = RoutingStrategy::Id;
+
+        let report_id = build_book(&src, &out_id, &id_config, false).unwrap();
+        assert_eq!(report_id.rendered, 2);
+        assert!(out_id.join("wiki/random-uuid-1234/index.html").is_file());
+        let index_id = fs::read_to_string(out_id.join("wiki/index/index.html")).unwrap();
+        assert!(index_id.contains(r#"href="/wiki/random-uuid-1234""#));
+
+        let _ = fs::remove_dir_all(&src);
+        let _ = fs::remove_dir_all(&out_hier);
+        let _ = fs::remove_dir_all(&out_id);
     }
 }

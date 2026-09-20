@@ -92,6 +92,7 @@ pub fn resolve_meta_link(
     from_path: &Path,
     vault_index: &tomet_links::VaultLinkIndex,
     url_prefix: &str,
+    route_table: Option<&crate::book::slug::RouteTable>,
 ) -> Option<(String, String)> {
     let s = raw.trim();
     if !is_link_ref(s) {
@@ -119,7 +120,9 @@ pub fn resolve_meta_link(
 
     if let Some(path) = resolved {
         let norm = crate::book::normalize_path(path);
-        let slug = crate::book::slug::clean_doc_slug(&norm);
+        let slug = route_table
+            .map(|rt| rt.get_or_clean(&norm))
+            .unwrap_or_else(|| crate::book::slug::clean_doc_slug(&norm));
         Some((format!("{clean_url_prefix}/{slug}"), display_label))
     } else {
         Some((String::new(), display_label))
@@ -133,9 +136,10 @@ pub fn format_meta_value_to_html(
     vault_index: &tomet_links::VaultLinkIndex,
     url_prefix: &str,
     unresolved_title: &str,
+    route_table: Option<&crate::book::slug::RouteTable>,
 ) -> String {
     if let Some((href, label)) =
-        resolve_meta_link(raw_str, from_path, vault_index, url_prefix)
+        resolve_meta_link(raw_str, from_path, vault_index, url_prefix, route_table)
     {
         let label = escape_html(&label);
         if href.is_empty() {
@@ -220,7 +224,7 @@ mod tests {
     fn resolve_meta_link_builds_a_url_under_the_prefix() {
         let idx = index(&["30-39 Knowledge/rust.tmt"]);
         let (href, label) =
-            resolve_meta_link("[[rust]]", Path::new("notes/a.tmt"), &idx, "/wiki").unwrap();
+            resolve_meta_link("[[rust]]", Path::new("notes/a.tmt"), &idx, "/wiki", None).unwrap();
         assert_eq!(href, "/wiki/30-39-Knowledge/rust");
         assert_eq!(label, "rust");
     }
@@ -233,6 +237,7 @@ mod tests {
             Path::new("notes/a.tmt"),
             &idx,
             "/wiki",
+            None,
         )
         .unwrap();
         assert_eq!(href, "/wiki/30-39-Knowledge/rust");
@@ -243,7 +248,7 @@ mod tests {
     fn resolve_meta_link_reports_unresolved_targets_with_an_empty_href() {
         let idx = index(&["a.tmt"]);
         let (href, label) =
-            resolve_meta_link("[[missing]]", Path::new("a.tmt"), &idx, "/wiki").unwrap();
+            resolve_meta_link("[[missing]]", Path::new("a.tmt"), &idx, "/wiki", None).unwrap();
         assert!(href.is_empty());
         assert_eq!(label, "missing");
     }
@@ -251,14 +256,14 @@ mod tests {
     #[test]
     fn resolve_meta_link_ignores_non_references() {
         let idx = index(&["a.tmt"]);
-        assert!(resolve_meta_link("ただの値", Path::new("a.tmt"), &idx, "/wiki").is_none());
+        assert!(resolve_meta_link("ただの値", Path::new("a.tmt"), &idx, "/wiki", None).is_none());
     }
 
     #[test]
     fn trailing_slash_on_the_url_prefix_is_not_doubled() {
         let idx = index(&["rust.tmt"]);
         let (href, _) =
-            resolve_meta_link("[[rust]]", Path::new("a.tmt"), &idx, "/wiki/").unwrap();
+            resolve_meta_link("[[rust]]", Path::new("a.tmt"), &idx, "/wiki/", None).unwrap();
         assert_eq!(href, "/wiki/rust");
     }
 
@@ -271,6 +276,7 @@ mod tests {
             &idx,
             "/wiki",
             "未作成のページ",
+            None,
         );
         // The payload survives as inert text, but never as markup.
         assert_eq!(html, "&lt;img src=x onerror=alert(1)&gt;");
@@ -285,6 +291,7 @@ mod tests {
             &idx,
             "/wiki",
             "未作成のページ",
+            None,
         );
         assert!(!html.contains("<script>"));
         assert!(html.contains("&lt;script&gt;"));
@@ -320,6 +327,7 @@ pub fn outgoing_page_slugs(
     own_slug: &str,
     vault_index: &tomet_links::VaultLinkIndex,
     unpublished: &std::collections::HashSet<String>,
+    route_table: Option<&crate::book::slug::RouteTable>,
 ) -> Vec<String> {
     let mut slugs: Vec<String> = Vec::new();
 
@@ -346,7 +354,9 @@ pub fn outgoing_page_slugs(
         if stripped == path {
             continue;
         }
-        let slug = crate::book::slug::clean_doc_slug(&path);
+        let slug = route_table
+            .map(|rt| rt.get_or_clean(&path))
+            .unwrap_or_else(|| crate::book::slug::clean_doc_slug(&path));
         if slug == own_slug || slugs.iter().any(|s| s == &slug) {
             continue;
         }
@@ -393,6 +403,7 @@ mod outgoing_tests {
             strip_doc_extension(own),
             &index,
             &std::collections::HashSet::new(),
+            None,
         )
     }
 

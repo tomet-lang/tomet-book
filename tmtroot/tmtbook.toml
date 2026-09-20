@@ -5,6 +5,7 @@ dest = "dist"
 
 [build]
 kinds = ["*", "!config", "!index"]
+routing = "id"  # "hierarchical" (default) | "flat" | "id"
 
 [ui.markers]
 enable = true

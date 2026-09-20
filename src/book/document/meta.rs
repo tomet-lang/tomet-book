@@ -62,6 +62,7 @@ struct MetaCtx<'a> {
     from_path: &'a Path,
     vault_index: &'a tomet_links::VaultLinkIndex,
     config: &'a BookConfig,
+    route_table: Option<&'a crate::book::slug::RouteTable>,
 }
 
 impl MetaCtx<'_> {
@@ -81,6 +82,7 @@ impl MetaCtx<'_> {
             self.from_path,
             self.vault_index,
             self.config.build.clean_url_prefix(),
+            self.route_table,
         ) {
             Some((href, label)) => (if href.is_empty() { None } else { Some(href) }, label),
             None => (None, clean_ref_target(raw)),
@@ -101,6 +103,7 @@ impl MetaCtx<'_> {
             self.vault_index,
             self.config.build.clean_url_prefix(),
             unresolved_title,
+            self.route_table,
         )
     }
 
@@ -460,6 +463,7 @@ pub fn extract(
     from_path: &Path,
     vault_index: &tomet_links::VaultLinkIndex,
     config: &BookConfig,
+    route_table: Option<&crate::book::slug::RouteTable>,
 ) -> MetaProperties {
     let Some(meta_val) = meta_json else {
         return MetaProperties::default();
@@ -472,6 +476,7 @@ pub fn extract(
         from_path,
         vault_index,
         config,
+        route_table,
     };
 
     let mut linked_slugs = Vec::new();
@@ -728,6 +733,7 @@ mod tests {
             Path::new("notes/a.tmt"),
             &index(),
             &ctx_config(),
+            None,
         )
     }
 
@@ -768,6 +774,7 @@ mod tests {
             Path::new("a.tmt"),
             &index(),
             &ctx_config(),
+            None,
         );
         assert!(!props.has_data());
         assert!(props.infobox_rows.is_empty());

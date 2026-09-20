@@ -625,9 +625,11 @@ pub fn process_tomet_document(
         vault_index,
         workspace_cfg_src,
         unpublished,
+        None,
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn process_parsed_document(
     doc: tomet_ast::Document,
     rel_path: &str,
@@ -636,6 +638,7 @@ pub fn process_parsed_document(
     vault_index: &tomet_links::VaultLinkIndex,
     workspace_cfg_src: Option<&str>,
     unpublished: &HashSet<String>,
+    route_table: Option<&crate::book::slug::RouteTable>,
 ) -> Result<ProcessedDoc> {
     let blocks = workspace_cfg_src
         .map(extract_workspace_config_blocks)
@@ -648,10 +651,12 @@ pub fn process_parsed_document(
         vault_index,
         &blocks,
         unpublished,
+        route_table,
     )
 }
 
 /// Turn a parsed document into the page it becomes using pre-parsed workspace config blocks.
+#[allow(clippy::too_many_arguments)]
 pub fn process_parsed_document_with_blocks(
     mut doc: tomet_ast::Document,
     rel_path: &str,
@@ -660,6 +665,7 @@ pub fn process_parsed_document_with_blocks(
     vault_index: &tomet_links::VaultLinkIndex,
     workspace_cfg_blocks: &[tomet_ast::Block],
     unpublished: &HashSet<String>,
+    route_table: Option<&crate::book::slug::RouteTable>,
 ) -> Result<ProcessedDoc> {
     // 1. Bring in the vault-wide config (e.g. default.config.tmt)
     inject_workspace_config_blocks(&mut doc, workspace_cfg_blocks);
@@ -698,8 +704,17 @@ pub fn process_parsed_document_with_blocks(
 
     // 3. Collect outgoing links, then resolve them
     let from_path = Path::new(rel_path);
-    let slug = crate::book::slug::clean_doc_slug(rel_path);
-    let mut outgoing = links::outgoing_page_slugs(&doc, from_path, &slug, vault_index, unpublished);
+    let slug = route_table
+        .map(|rt| rt.get_or_clean(rel_path))
+        .unwrap_or_else(|| crate::book::slug::clean_doc_slug(rel_path));
+    let mut outgoing = links::outgoing_page_slugs(
+        &doc,
+        from_path,
+        &slug,
+        vault_index,
+        unpublished,
+        route_table,
+    );
 
     let mode = tomet_transform::TargetMode::WebSlug {
         url_prefix: config.build.clean_url_prefix().to_string(),
@@ -717,7 +732,9 @@ pub fn process_parsed_document_with_blocks(
                 .map(|p| {
                     let norm = crate::book::normalize_path(p);
                     if links::strip_doc_extension(&norm) != norm {
-                        let clean_slug = crate::book::slug::clean_doc_slug(&norm);
+                        let clean_slug = route_table
+                            .map(|rt| rt.get_or_clean(&norm))
+                            .unwrap_or_else(|| crate::book::slug::clean_doc_slug(&norm));
                         std::path::PathBuf::from(format!("{clean_slug}.tmt"))
                     } else {
                         p.to_path_buf()
@@ -771,6 +788,7 @@ pub fn process_parsed_document_with_blocks(
         from_path,
         vault_index,
         config,
+        route_table,
     );
 
     // `icon: @doc.icon("cake")` -- an embedded element rather than the
