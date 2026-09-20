@@ -26,7 +26,7 @@ const DEBOUNCE: Duration = Duration::from_millis(150);
 /// Upper bound on batching, so a long stream of events still gets serviced.
 const MAX_BATCH_WAIT: Duration = Duration::from_millis(1000);
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 #[serde(tag = "type")]
 pub enum ReloadSignal {
     #[serde(rename = "doc")]

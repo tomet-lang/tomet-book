@@ -17,8 +17,8 @@ use tmtbook_serve::{DevServerHandler, ReloadSignal, resolve_within};
 pub struct TometDevHandler {
     src_dir: PathBuf,
     out_dir: PathBuf,
-    config: BookConfig,
-    excludes: Vec<String>,
+    config: RwLock<BookConfig>,
+    excludes: RwLock<Vec<String>>,
     state: Arc<RwLock<Option<VaultState>>>,
 }
 
@@ -28,8 +28,8 @@ impl TometDevHandler {
         Self {
             src_dir,
             out_dir,
-            config,
-            excludes,
+            config: RwLock::new(config),
+            excludes: RwLock::new(excludes),
             state: Arc::new(RwLock::new(None)),
         }
     }
@@ -40,7 +40,22 @@ impl TometDevHandler {
 
     pub fn full_rebuild(&self) -> bool {
         let start = Instant::now();
-        match VaultState::init(&self.src_dir, &self.config, true) {
+        let reloaded_config = match BookConfig::load_from_dir(&self.src_dir) {
+            Ok(cfg) => {
+                info!("⚙️ Reloaded configuration from {}", self.src_dir.display());
+                let mut cfg_lock = self.config.write().unwrap();
+                *cfg_lock = cfg.clone();
+                let mut exc_lock = self.excludes.write().unwrap();
+                *exc_lock = exclude_prefixes(&cfg);
+                cfg
+            }
+            Err(e) => {
+                warn!("Failed to reload tmtbook.toml: {e}");
+                self.config.read().unwrap().clone()
+            }
+        };
+
+        match VaultState::init(&self.src_dir, &reloaded_config, true) {
             Ok(vault_state) => {
                 info!(
                     "⚡ In-memory vault index ready in {:?} ({} docs, {} routes)",
@@ -62,7 +77,8 @@ impl TometDevHandler {
 impl DevServerHandler for TometDevHandler {
     fn on_init(&self) -> Result<()> {
         let start = Instant::now();
-        match VaultState::init(&self.src_dir, &self.config, true) {
+        let config = self.config.read().unwrap().clone();
+        match VaultState::init(&self.src_dir, &config, true) {
             Ok(vault_state) => {
                 info!(
                     "⚡ Dev server ready in {:?} (in-memory SSR, {} docs)",
@@ -78,7 +94,8 @@ impl DevServerHandler for TometDevHandler {
 
     fn on_events(&self, events: &[Event]) -> Vec<ReloadSignal> {
         let mut signals = Vec::new();
-        let plan = plan_events(events, &self.src_dir, &self.out_dir, &self.excludes);
+        let excludes = self.excludes.read().unwrap().clone();
+        let plan = plan_events(events, &self.src_dir, &self.out_dir, &excludes);
         if plan.is_empty() {
             return signals;
         }
@@ -100,7 +117,7 @@ impl DevServerHandler for TometDevHandler {
         if !plan.docs.is_empty() {
             let state_lock = self.state.read().unwrap();
             if let Some(ref state) = *state_lock {
-                let clean_prefix = self.config.build.clean_url_prefix();
+                let clean_prefix = state.config.build.clean_url_prefix();
                 for (_abs_path, rel_path) in &plan.docs {
                     if let Some(slug) = state.route_table.get(rel_path) {
                         let doc_url = format!("{clean_prefix}/{slug}");
@@ -134,13 +151,13 @@ impl DevServerHandler for TometDevHandler {
     fn extend_router(&self, router: Router) -> Router {
         let state = Arc::clone(&self.state);
         let src_dir = self.src_dir.clone();
-        let config = self.config.clone();
+        let fallback_config = self.config.read().unwrap().clone();
 
         router.fallback(move |uri: Uri| {
             let state = Arc::clone(&state);
             let src_dir = src_dir.clone();
-            let config = config.clone();
-            async move { handle_http_request(&uri, &state, &src_dir, &config) }
+            let fallback_config = fallback_config.clone();
+            async move { handle_http_request(&uri, &state, &src_dir, &fallback_config) }
         })
     }
 }
@@ -254,8 +271,22 @@ pub fn handle_http_request(
         _ => {}
     }
 
-    let clean_url_prefix = config.build.clean_url_prefix();
-    let clean_asset_prefix = config.build.clean_asset_prefix();
+    let (clean_url_prefix, clean_asset_prefix) = {
+        let state_lock = state.read().unwrap();
+        if let Some(ref st) = *state_lock {
+            (
+                st.config.build.clean_url_prefix().to_string(),
+                st.config.build.clean_asset_prefix().to_string(),
+            )
+        } else {
+            (
+                config.build.clean_url_prefix().to_string(),
+                config.build.clean_asset_prefix().to_string(),
+            )
+        }
+    };
+    let clean_url_prefix = clean_url_prefix.as_str();
+    let clean_asset_prefix = clean_asset_prefix.as_str();
 
     // 2. Root "/"
     if path == "/" || path.is_empty() {
@@ -828,6 +859,76 @@ mod ssr_tests {
         let uri = Uri::from_static("/wiki/non-existent-page");
         let resp = handle_http_request(&uri, handler.state(), &src, &config);
         assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+
+        let _ = fs::remove_dir_all(&src);
+    }
+
+    #[tokio::test]
+    async fn test_dev_server_hot_reloads_config() {
+        use notify::event::{DataChange, ModifyKind};
+
+        let src = scratch("ssr-config-reload-src");
+        fs::write(
+            src.join("hello.tmt"),
+            "#[ Hello ]\n\nWelcome to our wiki.\n",
+        )
+        .unwrap();
+
+        // Initial tmtbook.toml with a custom UI string override
+        fs::write(
+            src.join("tmtbook.toml"),
+            r#"
+[book]
+title = "Original Title"
+
+[ui.strings]
+"panel.toc" = "Initial Contents Label"
+"#,
+        )
+        .unwrap();
+
+        let initial_config = BookConfig::load_from_dir(&src).unwrap();
+        let handler = TometDevHandler::new(src.clone(), src.join("dist"), initial_config.clone());
+        handler.on_init().unwrap();
+
+        // 1. Initial request: should render with Initial Contents Label
+        let uri = Uri::from_static("/wiki/hello");
+        let resp = handle_http_request(&uri, handler.state(), &src, &initial_config);
+        assert_eq!(resp.status(), StatusCode::OK);
+        let body_bytes = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+        let body_str = String::from_utf8_lossy(&body_bytes);
+        assert!(body_str.contains("Initial Contents Label"));
+        assert!(!body_str.contains("Hot Reloaded Contents Label"));
+
+        // 2. Modify tmtbook.toml
+        fs::write(
+            src.join("tmtbook.toml"),
+            r#"
+[book]
+title = "Updated Title"
+
+[ui.strings]
+"panel.toc" = "Hot Reloaded Contents Label"
+"#,
+        )
+        .unwrap();
+
+        // 3. Send file modification event for tmtbook.toml
+        let ev = notify::Event {
+            kind: notify::EventKind::Modify(ModifyKind::Data(DataChange::Content)),
+            paths: vec![src.join("tmtbook.toml")],
+            attrs: Default::default(),
+        };
+        let signals = handler.on_events(&[ev]);
+        assert_eq!(signals, vec![ReloadSignal::Full]);
+
+        // 4. Subsequent request: should immediately render with updated label!
+        let resp_after = handle_http_request(&uri, handler.state(), &src, &initial_config);
+        assert_eq!(resp_after.status(), StatusCode::OK);
+        let body_bytes_after = to_bytes(resp_after.into_body(), usize::MAX).await.unwrap();
+        let body_str_after = String::from_utf8_lossy(&body_bytes_after);
+        assert!(body_str_after.contains("Hot Reloaded Contents Label"));
+        assert!(!body_str_after.contains("Initial Contents Label"));
 
         let _ = fs::remove_dir_all(&src);
     }
