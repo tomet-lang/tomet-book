@@ -5,9 +5,9 @@ use serde::{Deserialize, Serialize};
 use super::document::ProcessedDoc;
 use crate::config::BookConfig;
 
-pub struct BookRenderer<'a> {
-    env: Environment<'a>,
-    config: &'a BookConfig,
+pub struct BookRenderer {
+    env: Environment<'static>,
+    clean_url_prefix: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -35,8 +35,8 @@ pub struct EntrySummary {
     pub children: Vec<EntrySummary>,
 }
 
-impl<'a> BookRenderer<'a> {
-    pub fn new(config: &'a BookConfig, is_dev: bool) -> Result<Self> {
+impl BookRenderer {
+    pub fn new(config: &BookConfig, is_dev: bool) -> Result<Self> {
         let mut env = Environment::new();
 
         env.add_template(
@@ -110,7 +110,10 @@ impl<'a> BookRenderer<'a> {
         env.add_global("is_dev", Value::from(is_dev));
         env.add_global("rail_letters", Value::from_serialize(&rail_letters));
 
-        Ok(Self { env, config })
+        Ok(Self {
+            env,
+            clean_url_prefix: config.build.clean_url_prefix().to_string(),
+        })
     }
 
     pub fn render_page(
@@ -145,7 +148,7 @@ impl<'a> BookRenderer<'a> {
             backlinks => backlinks,
             book_index => book_index,
             // So the index can mark where the reader is standing.
-            page_url => format!("{}/{}", self.config.build.clean_url_prefix(), doc.slug),
+            page_url => format!("{}/{}", self.clean_url_prefix, doc.slug),
         };
 
         let rendered = tmpl.render(ctx)?;

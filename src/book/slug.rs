@@ -108,6 +108,7 @@ pub fn extract_route_metadata(doc: &tomet_ast::Document) -> (Option<String>, Opt
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct RouteTable {
     rel_to_slug: HashMap<String, String>,
+    slug_to_rel: HashMap<String, String>,
 }
 
 impl RouteTable {
@@ -115,6 +116,12 @@ impl RouteTable {
     pub fn get(&self, rel_path: &str) -> Option<&str> {
         let normalized = crate::book::normalize_path_str(rel_path);
         self.rel_to_slug.get(&normalized).map(|s| s.as_str())
+    }
+
+    /// Look up the vault-relative path assigned to a given clean slug.
+    pub fn rel_path_for_slug(&self, slug: &str) -> Option<&str> {
+        let clean = slug.trim_matches('/');
+        self.slug_to_rel.get(clean).map(|s| s.as_str())
     }
 
     /// Look up the clean slug for a path, or fall back to `clean_doc_slug(rel_path)`.
@@ -217,12 +224,18 @@ impl RouteTable {
 
         // 4. Build final lookup table
         let mut rel_to_slug = HashMap::with_capacity(docs.len());
+        let mut slug_to_rel = HashMap::with_capacity(docs.len());
         for (i, doc) in docs.iter().enumerate() {
             let normalized = crate::book::normalize_path_str(doc.rel_path);
-            rel_to_slug.insert(normalized, candidates[i].clone());
+            let slug = candidates[i].clone();
+            rel_to_slug.insert(normalized.clone(), slug.clone());
+            slug_to_rel.insert(slug, normalized);
         }
 
-        Ok(Self { rel_to_slug })
+        Ok(Self {
+            rel_to_slug,
+            slug_to_rel,
+        })
     }
 }
 
@@ -416,8 +429,10 @@ mod tests {
                 meta_id: None,
             },
         ];
-        let mut cfg = BuildConfig::default();
-        cfg.routing = RoutingStrategy::Flat;
+        let cfg = BuildConfig {
+            routing: RoutingStrategy::Flat,
+            ..Default::default()
+        };
 
         let table = RouteTable::build(&docs, &cfg).unwrap();
         assert_eq!(table.get("30-39 Knowledge/Rust.tmt"), Some("Rust"));
@@ -441,9 +456,11 @@ mod tests {
                 meta_id: None,
             },
         ];
-        let mut cfg = BuildConfig::default();
-        cfg.routing = RoutingStrategy::Flat;
-        cfg.on_collision = CollisionStrategy::Error;
+        let cfg = BuildConfig {
+            routing: RoutingStrategy::Flat,
+            on_collision: CollisionStrategy::Error,
+            ..Default::default()
+        };
 
         let err = RouteTable::build(&docs, &cfg).unwrap_err();
         assert!(err.to_string().contains("Slug 'closures'"));
@@ -465,9 +482,11 @@ mod tests {
                 meta_id: None,
             },
         ];
-        let mut cfg = BuildConfig::default();
-        cfg.routing = RoutingStrategy::Flat;
-        cfg.on_collision = CollisionStrategy::Disambiguate;
+        let cfg = BuildConfig {
+            routing: RoutingStrategy::Flat,
+            on_collision: CollisionStrategy::Disambiguate,
+            ..Default::default()
+        };
 
         let table = RouteTable::build(&docs, &cfg).unwrap();
         assert_eq!(table.get("tech/rust/closures.tmt"), Some("rust-closures"));
@@ -488,9 +507,11 @@ mod tests {
                 meta_id: None,
             },
         ];
-        let mut cfg = BuildConfig::default();
-        cfg.routing = RoutingStrategy::Flat;
-        cfg.on_collision = CollisionStrategy::Disambiguate;
+        let cfg = BuildConfig {
+            routing: RoutingStrategy::Flat,
+            on_collision: CollisionStrategy::Disambiguate,
+            ..Default::default()
+        };
 
         let table = RouteTable::build(&docs, &cfg).unwrap();
         assert_eq!(table.get("cat1/sub/foo.tmt"), Some("cat1-sub-foo"));
@@ -506,8 +527,10 @@ mod tests {
         }];
 
         // Flat
-        let mut cfg_flat = BuildConfig::default();
-        cfg_flat.routing = RoutingStrategy::Flat;
+        let cfg_flat = BuildConfig {
+            routing: RoutingStrategy::Flat,
+            ..Default::default()
+        };
         let table_flat = RouteTable::build(&docs, &cfg_flat).unwrap();
         assert_eq!(
             table_flat.get("notes/rust/guide.tmt"),
@@ -515,8 +538,10 @@ mod tests {
         );
 
         // Id
-        let mut cfg_id = BuildConfig::default();
-        cfg_id.routing = RoutingStrategy::Id;
+        let cfg_id = BuildConfig {
+            routing: RoutingStrategy::Id,
+            ..Default::default()
+        };
         let table_id = RouteTable::build(&docs, &cfg_id).unwrap();
         assert_eq!(table_id.get("notes/rust/guide.tmt"), Some("my-super-guide"));
 
@@ -543,8 +568,10 @@ mod tests {
                 meta_id: None,
             },
         ];
-        let mut cfg = BuildConfig::default();
-        cfg.routing = RoutingStrategy::Id;
+        let cfg = BuildConfig {
+            routing: RoutingStrategy::Id,
+            ..Default::default()
+        };
 
         let table = RouteTable::build(&docs, &cfg).unwrap();
         assert_eq!(table.get("notes/rust.tmt"), Some("k3j8f9a2"));
@@ -571,11 +598,42 @@ mod tests {
                 meta_id: Some("duplicate-id"),
             },
         ];
-        let mut cfg = BuildConfig::default();
-        cfg.routing = RoutingStrategy::Id;
-        cfg.on_collision = CollisionStrategy::Error;
+        let cfg = BuildConfig {
+            routing: RoutingStrategy::Id,
+            on_collision: CollisionStrategy::Error,
+            ..Default::default()
+        };
 
         let err = RouteTable::build(&docs, &cfg).unwrap_err();
         assert!(err.to_string().contains("Slug 'duplicate-id'"));
+    }
+
+    #[test]
+    fn route_table_rel_path_for_slug_lookup() {
+        let docs = [
+            DocRouteInput {
+                rel_path: "tech/rust/closures.tmt",
+                explicit_slug: None,
+                meta_id: None,
+            },
+            DocRouteInput {
+                rel_path: "intro.tmt",
+                explicit_slug: Some("welcome"),
+                meta_id: None,
+            },
+        ];
+        let cfg = BuildConfig::default();
+        let table = RouteTable::build(&docs, &cfg).unwrap();
+
+        assert_eq!(
+            table.rel_path_for_slug("tech/rust/closures"),
+            Some("tech/rust/closures.tmt")
+        );
+        assert_eq!(
+            table.rel_path_for_slug("/tech/rust/closures/"),
+            Some("tech/rust/closures.tmt")
+        );
+        assert_eq!(table.rel_path_for_slug("welcome"), Some("intro.tmt"));
+        assert_eq!(table.rel_path_for_slug("non-existent"), None);
     }
 }

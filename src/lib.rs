@@ -37,5 +37,5 @@ pub async fn run_dev_server(
 ) -> Result<()> {
     let prefix = Some(config.build.clean_url_prefix().to_string());
     let handler = TometDevHandler::new(src_dir.clone(), out_dir.clone(), config);
-    tmtbook_serve::run_dev_server(src_dir, out_dir, host, port, prefix, handler).await
+    tmtbook_serve::run_dev_server(src_dir, None, host, port, prefix, handler).await
 }

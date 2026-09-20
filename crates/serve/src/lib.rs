@@ -1,3 +1,5 @@
+pub use axum;
+
 use anyhow::Result;
 use axum::{
     Router,
@@ -37,33 +39,40 @@ pub enum ReloadSignal {
 
 /// Handler trait for processing filesystem events and triggering rebuilds.
 /// Implementations encapsulate project-specific rebuild logic (e.g. Tomet book rendering).
-pub trait DevServerHandler: Send + 'static {
-    /// Perform initial build before server starts serving requests.
-    fn on_init(&mut self) -> Result<()> {
+pub trait DevServerHandler: Send + Sync + 'static {
+    /// Perform initial setup/build before server starts serving requests.
+    fn on_init(&self) -> Result<()> {
         Ok(())
     }
 
     /// Process a batch of filesystem events, rebuild required outputs,
     /// and return zero or more reload signals to send to connected browsers.
-    fn on_events(&mut self, events: &[Event]) -> Vec<ReloadSignal>;
+    fn on_events(&self, events: &[Event]) -> Vec<ReloadSignal>;
+
+    /// Extend or customize the Axum router with project-specific dynamic or static routes.
+    fn extend_router(&self, router: Router) -> Router {
+        router
+    }
 }
 
 /// Run a generic development server with live reload.
 pub async fn run_dev_server<H>(
     watch_dir: PathBuf,
-    serve_dir: PathBuf,
+    serve_dir: Option<PathBuf>,
     host: IpAddr,
     port: u16,
     url_prefix: Option<String>,
-    mut handler: H,
+    handler: H,
 ) -> Result<()>
 where
     H: DevServerHandler,
 {
-    // 1. Initial build
-    info!("Performing initial build...");
+    let handler = Arc::new(handler);
+
+    // 1. Initial setup
+    info!("Performing initial setup...");
     if let Err(e) = handler.on_init() {
-        error!("Initial build failed: {e}");
+        error!("Initial setup failed: {e}");
     }
 
     // 2. Broadcast channel for reload events
@@ -72,6 +81,7 @@ where
 
     // 3. Setup file watcher in a blocking thread
     let watcher_tx = Arc::clone(&reload_tx);
+    let watcher_handler = Arc::clone(&handler);
     let watch_target = watch_dir.clone();
 
     tokio::task::spawn_blocking(move || {
@@ -132,7 +142,7 @@ where
                 continue;
             }
 
-            let signals = handler.on_events(&events);
+            let signals = watcher_handler.on_events(&events);
             for signal in signals {
                 let _ = watcher_tx.send(signal);
             }
@@ -142,7 +152,7 @@ where
     // 4. Axum server
     let ws_tx = Arc::clone(&reload_tx);
     let source_root = watch_dir.clone();
-    let app = Router::new()
+    let mut app = Router::new()
         .route(
             "/live-reload",
             get(move |ws: WebSocketUpgrade| {
@@ -156,8 +166,13 @@ where
                 let root = source_root.clone();
                 async move { handle_source(root, q.path).await }
             }),
-        )
-        .fallback_service(ServeDir::new(&serve_dir));
+        );
+
+    app = handler.extend_router(app);
+
+    if let Some(ref dir) = serve_dir {
+        app = app.fallback_service(ServeDir::new(dir));
+    }
 
     let addr = SocketAddr::from((host, port));
     let display_host = if host.is_unspecified() {
@@ -199,7 +214,7 @@ async fn handle_source(root: PathBuf, path: String) -> Result<String, (StatusCod
 
 /// Resolves `rel` against `root`, rejecting anything that would land
 /// outside it -- `..` segments, an absolute path, or a symlink escape.
-fn resolve_within(root: &Path, rel: &str) -> Result<PathBuf, String> {
+pub fn resolve_within(root: &Path, rel: &str) -> Result<PathBuf, String> {
     let root = root
         .canonicalize()
         .map_err(|e| format!("watched root {}: {e}", root.display()))?;
