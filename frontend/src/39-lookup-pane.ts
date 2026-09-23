@@ -311,7 +311,7 @@
     let inputDebounceTimer = null;
     input.addEventListener('input', () => {
       clearTimeout(inputDebounceTimer);
-      inputDebounceTimer = setTimeout(() => render(true), 150);
+      inputDebounceTimer = setTimeout(() => render(true), 200);
     });
 
     input.addEventListener('search', () => {

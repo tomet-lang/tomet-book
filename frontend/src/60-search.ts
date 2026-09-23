@@ -94,6 +94,7 @@
   interface SearchCandidate {
     url: string;
     rawScore: number;
+    boost?: number;
     excerpt?: string;
     meta?: {
       title?: string;
@@ -110,14 +111,30 @@
     [key: string]: any;
   }
 
+  interface CompiledQuery {
+    qStrict: string;
+    qFuzzy: string;
+    wordPattern: RegExp | null;
+  }
+
+  function compileQuery(query: string): CompiledQuery {
+    const qStrict = normalizeStrict(query);
+    const qFuzzy = normalizeFuzzy(query);
+    let wordPattern: RegExp | null = null;
+    if (qFuzzy) {
+      const escaped = qFuzzy.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+      wordPattern = new RegExp(`(^|\\s)${escaped}($|\\s)`);
+    }
+    return { qStrict, qFuzzy, wordPattern };
+  }
+
   // Shared by the floating search box and the sidebar's lookup pane, so both
   // surfaces rank native-index results the same way Pagefind's tuned ranking
   // approximated: exact/prefix/word-boundary/substring hits on title, alias,
   // filename, URL stem and path, in that priority order.
-  function calculateSearchBoost(query: string, item: SearchCandidate): number {
-      const qStrict = normalizeStrict(query);
-      const qFuzzy = normalizeFuzzy(query);
-      if (!qStrict) return 0;
+  function calculateSearchBoost(query: string, item: SearchCandidate, compiled?: CompiledQuery): number {
+      const q = compiled || compileQuery(query);
+      if (!q.qStrict) return 0;
 
       const title = item.meta?.title || '';
       const path = item.meta?.path || '';
@@ -148,36 +165,127 @@
 
         // Tier 1: Exact match (either strict or fuzzy)
         // e.g. "@Raora-Panthera" === "@Raora-Panthera" or "Raora Panthera" === "Raora Panthera"
-        if (tStrict === qStrict || (qFuzzy && tFuzzy === qFuzzy)) {
+        if (tStrict === q.qStrict || (q.qFuzzy && tFuzzy === q.qFuzzy)) {
           maxBoost = Math.max(maxBoost, 100000 * weight);
           continue;
         }
 
         // Tier 2: Prefix match (text starts with query)
         // e.g. "Raora Panthera" starts with "Raora"
-        if (tStrict.startsWith(qStrict) || (qFuzzy && tFuzzy.startsWith(qFuzzy))) {
+        if (tStrict.startsWith(q.qStrict) || (q.qFuzzy && tFuzzy.startsWith(q.qFuzzy))) {
           maxBoost = Math.max(maxBoost, 50000 * weight);
           continue;
         }
 
         // Tier 3: Word-boundary match
-        if (qFuzzy) {
-          const escaped = qFuzzy.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
-          const wordPattern = new RegExp(`(^|\\s)${escaped}($|\\s)`);
-          if (wordPattern.test(tFuzzy)) {
-            maxBoost = Math.max(maxBoost, 20000 * weight);
-            continue;
-          }
+        if (q.wordPattern && q.wordPattern.test(tFuzzy)) {
+          maxBoost = Math.max(maxBoost, 20000 * weight);
+          continue;
         }
 
         // Tier 4: Substring match anywhere in title/filename/alias
-        if (tStrict.includes(qStrict) || (qFuzzy && tFuzzy.includes(qFuzzy))) {
+        if (tStrict.includes(q.qStrict) || (q.qFuzzy && tFuzzy.includes(q.qFuzzy))) {
           maxBoost = Math.max(maxBoost, 10000 * weight);
           continue;
         }
       }
 
       return maxBoost;
+  }
+
+  interface CachedDocTarget {
+    tStrict: string;
+    tFuzzy: string;
+    weight: number;
+  }
+
+  interface CachedSearchDocument extends NativeSearchDocument {
+    _metaHaystack?: string;
+    _textLower?: string;
+    _fullHaystack?: string;
+    _targets?: CachedDocTarget[];
+  }
+
+  function getDocTargets(doc: CachedSearchDocument): CachedDocTarget[] {
+    if (doc._targets) return doc._targets;
+
+    const title = doc.title || '';
+    const path = doc.path || '';
+    const filename = path ? path.split('/').pop()?.replace(/\.tmt$/, '') || '' : '';
+    const urlStem = (doc.url || '').replace(/\/+$/, '').split('/').pop() || '';
+    const rawAliases = doc.aliases || [];
+
+    const rawTargets: Array<{ text: string; weight: number }> = [
+      { text: title, weight: 1.0 },
+      { text: filename, weight: 1.0 },
+      { text: urlStem, weight: 0.9 },
+      { text: path, weight: 0.8 },
+      ...rawAliases.map((a) => ({ text: a, weight: 0.98 })),
+    ];
+
+    doc._targets = rawTargets
+      .filter((t) => t.text)
+      .map((t) => ({
+        tStrict: normalizeStrict(t.text),
+        tFuzzy: normalizeFuzzy(t.text),
+        weight: t.weight,
+      }));
+
+    return doc._targets;
+  }
+
+  function calculateDocBoost(compiled: CompiledQuery, doc: CachedSearchDocument): number {
+    if (!compiled.qStrict) return 0;
+    const targets = getDocTargets(doc);
+    let maxBoost = 0;
+
+    for (let i = 0; i < targets.length; i++) {
+      const { tStrict, tFuzzy, weight } = targets[i];
+
+      // Tier 1: Exact match
+      if (tStrict === compiled.qStrict || (compiled.qFuzzy && tFuzzy === compiled.qFuzzy)) {
+        maxBoost = Math.max(maxBoost, 100000 * weight);
+        continue;
+      }
+
+      // Tier 2: Prefix match
+      if (tStrict.startsWith(compiled.qStrict) || (compiled.qFuzzy && tFuzzy.startsWith(compiled.qFuzzy))) {
+        maxBoost = Math.max(maxBoost, 50000 * weight);
+        continue;
+      }
+
+      // Tier 3: Word-boundary match
+      if (compiled.wordPattern && compiled.wordPattern.test(tFuzzy)) {
+        maxBoost = Math.max(maxBoost, 20000 * weight);
+        continue;
+      }
+
+      // Tier 4: Substring match
+      if (tStrict.includes(compiled.qStrict) || (compiled.qFuzzy && tFuzzy.includes(compiled.qFuzzy))) {
+        maxBoost = Math.max(maxBoost, 10000 * weight);
+        continue;
+      }
+    }
+
+    return maxBoost;
+  }
+
+  function getDocHaystack(doc: CachedSearchDocument, includeFullText: boolean): string {
+    if (doc._metaHaystack === undefined) {
+      doc._metaHaystack = [doc.title, ...(doc.aliases || []), ...(doc.headings || []), doc.path]
+        .join(' ')
+        .toLowerCase();
+    }
+    if (!includeFullText) {
+      return doc._metaHaystack;
+    }
+    if (doc._fullHaystack === undefined) {
+      if (doc._textLower === undefined) {
+        doc._textLower = (doc.text || '').toLowerCase();
+      }
+      doc._fullHaystack = doc._metaHaystack + ' ' + doc._textLower;
+    }
+    return doc._fullHaystack;
   }
 
   function escapeHtml(s: string): string {
@@ -236,6 +344,47 @@
     };
   }
 
+  // Generates SearchCandidate with lazy excerpt creation so heavy regex highlighting
+  // only runs for the top results actually rendered, not all matching documents.
+  function toLazySearchCandidate(
+    doc: CachedSearchDocument,
+    boost: number,
+    rawScore: number,
+    tokens: string[]
+  ): SearchCandidate {
+    let cachedExcerpt: string | undefined = undefined;
+    let excerptComputed = false;
+
+    const candidate: SearchCandidate = {
+      url: doc.url,
+      boost,
+      rawScore,
+      meta: {
+        title: doc.title,
+        path: doc.path,
+        aliases: (doc.aliases || []).join(', '),
+        image: doc.image,
+      },
+      filters: {
+        kind: doc.kind,
+        section: doc.section,
+      },
+      get excerpt(): string | undefined {
+        if (!excerptComputed) {
+          excerptComputed = true;
+          cachedExcerpt = doc.text ? buildHighlightedExcerpt(doc.text, tokens) : '';
+        }
+        return cachedExcerpt;
+      },
+      set excerpt(val: string | undefined) {
+        cachedExcerpt = val;
+        excerptComputed = true;
+      },
+    };
+
+    return candidate;
+  }
+
   // Searches the in-memory native index, shared by the floating search box
   // and the sidebar's lookup pane. With a query, every token must appear
   // somewhere in the document (AND search) and results are ranked with
@@ -251,38 +400,62 @@
     const sections = opts.sections;
     const docs = sections && sections.size > 0 ? index.docs.filter((d) => d.section && sections.has(d.section)) : index.docs;
 
-    const tokens = tokenizeQuery(query);
+    const trimmedQuery = query.trim();
+    const tokens = tokenizeQuery(trimmedQuery);
     if (tokens.length === 0) {
       return docs.map((doc) => toSearchCandidate(doc, 0));
     }
 
+    // Single-character queries (or empty) search only meta (title/path/alias/heading)
+    // to prevent full-text match explosion and UI freeze in large vaults (e.g. 20k docs).
+    const searchFullText = trimmedQuery.length >= 2;
+    const compiled = compileQuery(trimmedQuery);
+
+    // Sort tokens by descending length for faster early rejection in AND matching
+    const sortedTokens = [...tokens].sort((a, b) => b.length - a.length);
+
     const matches: SearchCandidate[] = [];
-    for (const doc of docs) {
-      const haystack = [doc.title, ...(doc.aliases || []), ...(doc.headings || []), doc.path, doc.text]
-        .join(' ')
-        .toLowerCase();
+    for (let d = 0; d < docs.length; d++) {
+      const doc = docs[d] as CachedSearchDocument;
+      const haystack = getDocHaystack(doc, searchFullText);
 
-      if (!tokens.every((tok) => haystack.includes(tok))) continue;
+      let allMatch = true;
+      for (let i = 0; i < sortedTokens.length; i++) {
+        if (!haystack.includes(sortedTokens[i])) {
+          allMatch = false;
+          break;
+        }
+      }
+      if (!allMatch) continue;
 
-      const textLower = doc.text.toLowerCase();
+      const boost = calculateDocBoost(compiled, doc);
+
       let textScore = 0;
-      for (const tok of tokens) {
-        let from = 0;
-        for (;;) {
-          const idx = textLower.indexOf(tok, from);
-          if (idx === -1) break;
-          textScore += 1;
-          from = idx + tok.length;
+      if (searchFullText && doc.text) {
+        if (doc._textLower === undefined) {
+          doc._textLower = doc.text.toLowerCase();
+        }
+        const textLower = doc._textLower;
+        for (let i = 0; i < tokens.length; i++) {
+          const tok = tokens[i];
+          let from = 0;
+          for (;;) {
+            const idx = textLower.indexOf(tok, from);
+            if (idx === -1) break;
+            textScore += 1;
+            from = idx + tok.length;
+          }
         }
       }
 
-      matches.push(toSearchCandidate(doc, textScore, buildHighlightedExcerpt(doc.text, tokens)));
+      // Excerpt is lazily computed when read by the renderer
+      matches.push(toLazySearchCandidate(doc, boost, textScore, tokens));
     }
 
+    // Sort with pre-calculated boost and rawScore (pure numerical comparison)
     matches.sort((a, b) => {
-      const boostA = calculateSearchBoost(query, a);
-      const boostB = calculateSearchBoost(query, b);
-      if (boostA !== boostB) return boostB - boostA;
+      const boostDiff = (b.boost ?? 0) - (a.boost ?? 0);
+      if (boostDiff !== 0) return boostDiff;
       return b.rawScore - a.rawScore;
     });
 
@@ -478,12 +651,14 @@
           })
         );
 
+        const compiled = compileQuery(query);
+        for (let i = 0; i < candidates.length; i++) {
+          candidates[i].boost = calculateSearchBoost(query, candidates[i], compiled);
+        }
+
         candidates.sort((a, b) => {
-          const boostA = calculateSearchBoost(query, a);
-          const boostB = calculateSearchBoost(query, b);
-          if (boostA !== boostB) {
-            return boostB - boostA;
-          }
+          const boostDiff = (b.boost ?? 0) - (a.boost ?? 0);
+          if (boostDiff !== 0) return boostDiff;
           return b.rawScore - a.rawScore;
         });
 
@@ -492,7 +667,7 @@
 
         renderResults(topResults);
         showResults();
-      }, 120);
+      }, 200);
     });
 
     input.addEventListener('keydown', (e) => {
