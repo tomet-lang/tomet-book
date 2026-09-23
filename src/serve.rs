@@ -1,5 +1,6 @@
 use anyhow::Result;
 use notify::Event;
+use percent_encoding::percent_decode_str;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
@@ -162,26 +163,6 @@ impl DevServerHandler for TometDevHandler {
     }
 }
 
-fn percent_decode(s: &str) -> Option<String> {
-    let mut bytes = Vec::new();
-    let mut chars = s.bytes();
-    while let Some(b) = chars.next() {
-        if b == b'%' {
-            let h1 = chars.next()?;
-            let h2 = chars.next()?;
-            let buf = [h1, h2];
-            let hex_str = std::str::from_utf8(&buf).ok()?;
-            let val = u8::from_str_radix(hex_str, 16).ok()?;
-            bytes.push(val);
-        } else if b == b'+' {
-            bytes.push(b' ');
-        } else {
-            bytes.push(b);
-        }
-    }
-    String::from_utf8(bytes).ok()
-}
-
 pub fn handle_http_request(
     uri: &Uri,
     state: &RwLock<Option<VaultState>>,
@@ -189,7 +170,10 @@ pub fn handle_http_request(
     config: &BookConfig,
 ) -> Response {
     let raw_path = uri.path();
-    let path = percent_decode(raw_path).unwrap_or_else(|| raw_path.to_string());
+    let path = percent_decode_str(raw_path)
+        .decode_utf8()
+        .map(|c| c.into_owned())
+        .unwrap_or_else(|_| raw_path.to_string());
 
     // 1. Embedded static assets
     match path.as_str() {
@@ -864,6 +848,33 @@ mod ssr_tests {
 
         let bytes = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
         assert_eq!(&bytes[..], b"\x89PNG\r\n\x1a\nfakeimagebytes");
+
+        let _ = fs::remove_dir_all(&src);
+    }
+
+    #[tokio::test]
+    async fn test_dev_server_serves_media_with_a_literal_plus_in_the_filename() {
+        // A browser leaves a literal '+' in a URL path segment unescaped --
+        // '+' meaning space is a query-string/form-encoding convention, and
+        // must not be applied when decoding a path back to a filename.
+        let src = scratch("ssr-media-plus-src");
+        let img_dir = src.join("media");
+        fs::create_dir_all(&img_dir).unwrap();
+        fs::write(
+            img_dir.join("+771a262c.png"),
+            b"\x89PNG\r\n\x1a\nfakeimagebytes",
+        )
+        .unwrap();
+
+        let mut config = BookConfig::default();
+        config.build.asset_prefix = "/assets".to_string();
+
+        let handler = TometDevHandler::new(src.clone(), src.join("dist"), config.clone());
+        handler.on_init().unwrap();
+
+        let uri = Uri::from_static("/assets/media/+771a262c.png");
+        let resp = handle_http_request(&uri, handler.state(), &src, &config);
+        assert_eq!(resp.status(), StatusCode::OK);
 
         let _ = fs::remove_dir_all(&src);
     }

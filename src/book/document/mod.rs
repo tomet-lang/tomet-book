@@ -755,6 +755,7 @@ pub fn process_parsed_document_with_blocks(
         auto_slug_headings: true,
         lang: Some(config.book.lang.clone()),
         custom_element: Some(tomet_html::CustomElementRenderer::new(icon::render)),
+        ..Default::default()
     };
     let (raw_body_html, outline) = tomet_html::render_body_with_outline(&doc, &render_opts);
     let body_html = marker::enhance_list_markers(&raw_body_html, &config.ui.markers);
