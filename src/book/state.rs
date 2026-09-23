@@ -16,6 +16,7 @@ use super::{
     DocFailure, arrange_entries, build_backlink_index, read_written_index, write_if_changed,
 };
 use crate::config::BookConfig;
+use tracing::info;
 
 /// The vault-wide state a single page needs in order to render.
 ///
@@ -152,14 +153,27 @@ impl VaultState {
 
         let clean_url_prefix = config.build.clean_url_prefix();
         let docs: Vec<&ProcessedDoc> = processed.iter().filter_map(|r| r.as_ref().ok()).collect();
-        let (search_index, search_index_json) =
-            if config.build.search == crate::config::SearchEngine::Native {
-                let idx = super::search::build_search_index(&docs, clean_url_prefix);
-                let json = idx.to_json().ok();
-                (Some(idx), json)
-            } else {
-                (None, None)
-            };
+        let should_build_search = match config.build.search {
+            crate::config::SearchEngine::Native => true,
+            crate::config::SearchEngine::Pagefind => {
+                if is_dev {
+                    info!(
+                        "ℹ️ Pagefind is not available in dev server; falling back to in-memory native search index"
+                    );
+                    true
+                } else {
+                    false
+                }
+            }
+            crate::config::SearchEngine::None => false,
+        };
+        let (search_index, search_index_json) = if should_build_search {
+            let idx = super::search::build_search_index(&docs, clean_url_prefix);
+            let json = idx.to_json().ok();
+            (Some(idx), json)
+        } else {
+            (None, None)
+        };
         let backlinks = build_backlink_index(&docs, clean_url_prefix);
 
         let entries_by_slug: HashMap<String, EntrySummary> = docs

@@ -1002,4 +1002,66 @@ title = "Updated Title"
 
         let _ = fs::remove_dir_all(&src);
     }
+
+    #[tokio::test]
+    async fn test_dev_server_falls_back_to_native_search_when_pagefind_configured() {
+        let src = scratch("ssr-search-pagefind-fallback");
+        fs::write(
+            src.join("pagefind_doc.tmt"),
+            "#[ Pagefind Note ]\n\nTesting fallback search.\n",
+        )
+        .unwrap();
+
+        let mut config = BookConfig::default();
+        config.build.url_prefix = "/wiki".to_string();
+        config.build.search = crate::config::SearchEngine::Pagefind;
+
+        let handler = TometDevHandler::new(src.clone(), src.join("dist"), config.clone());
+        handler.on_init().unwrap();
+
+        // 1. /search-index.json is served even though search = "pagefind"
+        let uri = Uri::from_static("/search-index.json");
+        let resp = handle_http_request(&uri, handler.state(), &src, &config);
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(
+            resp.headers().get(header::CONTENT_TYPE).unwrap(),
+            "application/json; charset=utf-8"
+        );
+
+        let body_bytes = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+        let body_str = String::from_utf8_lossy(&body_bytes);
+        assert!(body_str.contains("Pagefind Note"));
+        assert!(body_str.contains("Testing fallback search."));
+
+        // 2. /wiki/search-index.json also works
+        let uri_prefixed = Uri::from_static("/wiki/search-index.json");
+        let resp_pref = handle_http_request(&uri_prefixed, handler.state(), &src, &config);
+        assert_eq!(resp_pref.status(), StatusCode::OK);
+
+        let _ = fs::remove_dir_all(&src);
+    }
+
+    #[tokio::test]
+    async fn test_dev_server_serves_no_search_index_when_none_configured() {
+        let src = scratch("ssr-search-none");
+        fs::write(
+            src.join("note.tmt"),
+            "#[ No Search Note ]\n\nSearch should be skipped.\n",
+        )
+        .unwrap();
+
+        let mut config = BookConfig::default();
+        config.build.url_prefix = "/wiki".to_string();
+        config.build.search = crate::config::SearchEngine::None;
+
+        let handler = TometDevHandler::new(src.clone(), src.join("dist"), config.clone());
+        handler.on_init().unwrap();
+
+        // /search-index.json returns 404 because search = "none"
+        let uri = Uri::from_static("/search-index.json");
+        let resp = handle_http_request(&uri, handler.state(), &src, &config);
+        assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+
+        let _ = fs::remove_dir_all(&src);
+    }
 }
