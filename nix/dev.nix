@@ -5,42 +5,44 @@
 
   tmtbook,
   tomet,
+  tomet-lsp,
   twrit,
   ...
 }:
 let
-  rust-toolchain = fenix.combine [
+  rustToolchain = fenix.combine [
     (fenix.stable.withComponents [
       "cargo"
       "clippy"
       "rustc"
       "rust-src"
+      "rustfmt"
+      "rust-analyzer"
     ])
   ];
 in
 mkShell rec {
   buildInputs = with pkgs; [
+    #= Develop
     tmtbook
     tomet
+    tomet-lsp
     twrit
-
-    #[ Develop ]
     just
-    ##[ UI ]
+    #== Build
+    pkg-config
+    pagefind
+    #== Rust
+    rustToolchain
+    cargo-edit
+    cargo-nextest
+    #== UI
     typescript
     esbuild
     tailwindcss_4
-    ##[ Rust ]
-    rust-toolchain
-    cargo-edit
-    cargo-nextest
-
-    #[ Runtime ]
-    pkg-config
-    pagefind
   ];
 
   shellHook = ''
-    echo "📖 rust tomet"
+    echo "📖 Rust Tomet Book"
   '';
 }

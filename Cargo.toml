@@ -2,6 +2,7 @@
 name = "tmtbook"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.85"
 description = "A standalone book & wiki generator for Tomet"
 
 [lib]
@@ -16,26 +17,26 @@ path = "src/main.rs"
 tmtbook-search = { path = "crates/search" }
 tmtbook-serve = { path = "crates/serve" }
 
-#[ Tomet Ecosystem ]
+#= Tomet
 tomet-ast = { git = "https://github.com/tomet-lang/tomet.git" }
 tomet-compute = { git = "https://github.com/tomet-lang/tomet.git" }
-tomet-parser = { git = "https://github.com/tomet-lang/tomet.git" }
-tomet-tree = { git = "https://github.com/tomet-lang/tomet.git" }
-tomet-semantics = { git = "https://github.com/tomet-lang/tomet.git" }
-tomet-transform = { git = "https://github.com/tomet-lang/tomet.git" }
+tomet-html = { git = "https://github.com/tomet-lang/tomet.git" }
 tomet-indexer = { git = "https://github.com/tomet-lang/tomet.git" }
 tomet-links = { git = "https://github.com/tomet-lang/tomet.git" }
-tomet-html = { git = "https://github.com/tomet-lang/tomet.git" }
+tomet-parser = { git = "https://github.com/tomet-lang/tomet.git" }
+tomet-semantics = { git = "https://github.com/tomet-lang/tomet.git" }
+tomet-transform = { git = "https://github.com/tomet-lang/tomet.git" }
+tomet-tree = { git = "https://github.com/tomet-lang/tomet.git" }
 
-#[ Crates.io ]
+#= Crates.io
 anyhow = "1.0.95"
 clap = { version = "4.5.23", features = ["derive"] }
 image = { version = "0.25", default-features = false, features = [
-  "png",
   "jpeg",
+  "png",
   "webp",
 ] }
-minijinja = { version = "2.7.0", features = ["loader", "json"] }
+minijinja = { version = "2.7.0", features = ["json", "loader"] }
 notify = "6.1.1"
 pagefind = { version = "1.5.2", default-features = false, optional = true }
 percent-encoding = "2.3"
@@ -55,4 +56,8 @@ embedded-search = ["dep:pagefind"]
 embedded-search-extended = ["embedded-search", "pagefind/extended"]
 
 [workspace]
-members = ["crates/serve", "crates/search"]
+resolver = "3"
+members = ["crates/search", "crates/serve"]
+
+[profile.dev.package."*"]
+opt-level = 3
