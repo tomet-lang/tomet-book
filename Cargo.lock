@@ -3351,7 +3351,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "image",
- "minijinja",
  "notify",
  "pagefind",
  "percent-encoding",
@@ -3359,6 +3358,9 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
+ "tmtbook-assets",
+ "tmtbook-config",
+ "tmtbook-render",
  "tmtbook-search",
  "tmtbook-serve",
  "tokio",
@@ -3379,6 +3381,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "tmtbook-assets"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "rayon",
+ "serde",
+ "serde_json",
+ "tmtbook-config",
+]
+
+[[package]]
 name = "tmtbook-cli"
 version = "0.1.0"
 dependencies = [
@@ -3388,6 +3401,42 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "tmtbook-config"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "toml 0.8.23",
+]
+
+[[package]]
+name = "tmtbook-render"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "image",
+ "minijinja",
+ "percent-encoding",
+ "regex",
+ "serde",
+ "serde_json",
+ "tmtbook-assets",
+ "tmtbook-config",
+ "tmtbook-search",
+ "tomet-ast",
+ "tomet-compute",
+ "tomet-html",
+ "tomet-indexer",
+ "tomet-links",
+ "tomet-parser",
+ "tomet-semantics",
+ "tomet-transform",
+ "tomet-tree",
+ "tracing",
+ "unicode-segmentation",
 ]
 
 [[package]]

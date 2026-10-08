@@ -7,7 +7,7 @@ use std::sync::LazyLock;
 
 use super::html::escape_html;
 use super::icon::is_lucide_icon;
-use crate::config::MarkersConfig;
+use tmtbook_config::MarkersConfig;
 
 static LI_MARKER_RE: LazyLock<Regex> = LazyLock::new(|| {
     // The trailing ` ?` swallows the one space `tomet-html` always emits
@@ -293,8 +293,8 @@ pub fn enhance_list_markers(body_html: &str, config: &MarkersConfig, base_path: 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::MarkerEntryConfig;
     use std::collections::HashMap;
+    use tmtbook_config::MarkerEntryConfig;
 
     fn enhance(html: &str, config: &MarkersConfig) -> String {
         enhance_list_markers(html, config, "")

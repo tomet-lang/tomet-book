@@ -19,7 +19,7 @@ let
     inherit root;
     fileset = lib.fileset.unions [
       (craneLib.fileset.commonCargoSources root)
-      (root + "/crates/tmtbook/frontend")
+      (root + "/crates/tmtbook-assets/frontend")
     ];
   };
 

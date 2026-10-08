@@ -1,20 +1,19 @@
-//! Library surface for the `tmtbook` package.
+//! Library surface for `tmtbook`.
 //!
-//! `tmtbook-serve` (`crates/tmtbook-serve`) is split out because it's genuinely
-//! generic dev-server infrastructure -- file watching, static serving,
-//! websocket live reload -- with zero knowledge of books or Tomet documents
-//! (see `crates/tmtbook-serve/src/lib.rs`'s `DevServerHandler` trait). Everything
-//! that actually knows how to build a book (rendering, config, i18n) lives
-//! directly in this crate instead.
-//!
-//! `TometDevHandler` is the glue between the two: it implements
-//! `DevServerHandler` using this crate's own rendering pipeline, so it has to
-//! live here, where both are available.
+//! Provides the primary API for building and serving Tomet books:
+//! - [`book::build_book`]: Builds an entire book from a vault directory.
+//! - [`run_dev_server`]: Runs a local development server with live reload.
+//! - [`config::BookConfig`]: Configuration parser and models.
 
 pub mod book;
-pub mod config;
-pub mod i18n;
 pub mod serve;
+
+// Companion subcrates re-exports
+pub use tmtbook_assets as assets;
+pub use tmtbook_assets::i18n;
+pub use tmtbook_config as config;
+pub use tmtbook_render as render;
+pub use tmtbook_search as search;
 
 pub use book::{BuildReport, DocFailure, build_book};
 pub use config::BookConfig;

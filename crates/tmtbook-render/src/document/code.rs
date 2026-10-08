@@ -26,7 +26,7 @@ fn extract_language(code_attrs: &str) -> Option<&str> {
 /// Enhances code blocks in the rendered HTML by wrapping them in a container
 /// with a language label and a copy button.
 pub fn enhance_code_blocks(body_html: &str, lang: Option<&str>, base_path: &str) -> String {
-    let copy_title = if lang.map(crate::i18n::is_english).unwrap_or(false) {
+    let copy_title = if lang.map(tmtbook_assets::i18n::is_english).unwrap_or(false) {
         "Copy code"
     } else {
         "コードをコピー"

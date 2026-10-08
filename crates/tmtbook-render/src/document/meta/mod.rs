@@ -19,7 +19,7 @@ use super::html::{color_chip_html, external_link_html, is_external_url, sanitize
 use super::links::{
     clean_ref_target, format_meta_value_to_html, resolve_meta_link, resolve_meta_media_path,
 };
-use crate::config::BookConfig;
+use tmtbook_config::BookConfig;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HeroChipItem {
@@ -64,7 +64,7 @@ struct MetaCtx<'a> {
     from_path: &'a Path,
     vault_index: &'a tomet_links::VaultLinkIndex,
     config: &'a BookConfig,
-    route_table: Option<&'a crate::book::slug::RouteTable>,
+    route_table: Option<&'a crate::slug::RouteTable>,
 }
 
 impl MetaCtx<'_> {
@@ -212,7 +212,7 @@ pub fn extract(
     from_path: &Path,
     vault_index: &tomet_links::VaultLinkIndex,
     config: &BookConfig,
-    route_table: Option<&crate::book::slug::RouteTable>,
+    route_table: Option<&crate::slug::RouteTable>,
 ) -> MetaProperties {
     let Some(meta_val) = meta_json else {
         return MetaProperties::default();
@@ -361,7 +361,7 @@ fn infobox_rows(cx: &MetaCtx, map: &Map<String, Value>, kind: Option<&str>) -> V
     {
         rows.push(InfoboxRowItem {
             label: infobox.labels.get("kind").cloned().unwrap_or_else(|| {
-                if crate::config::is_english(&cx.config.book.lang) {
+                if tmtbook_assets::i18n::is_english(&cx.config.book.lang) {
                     "Kind".to_string()
                 } else {
                     "種別".to_string()

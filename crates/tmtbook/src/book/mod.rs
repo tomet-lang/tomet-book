@@ -1,18 +1,18 @@
 //! Turning an entire vault into a published book.
 
-pub mod assets;
 pub mod catalog;
-pub mod document;
 pub mod image_opt;
 pub mod kinds;
 pub mod loader;
 pub(crate) mod manifest;
+pub mod media;
 pub mod pagefind;
 pub(crate) mod prune;
-pub mod renderer;
 pub mod search;
-pub mod slug;
 pub mod state;
+
+pub use slug::{RouteTable, clean_doc_slug, normalize_path, normalize_path_str};
+pub use tmtbook_render::{document, renderer, slug};
 
 use anyhow::{Context, Result};
 use rayon::prelude::*;
@@ -26,23 +26,16 @@ use tracing::{info, warn};
 
 pub use state::{RenderContext, VaultState, render_single_document, render_single_document_html};
 
-use crate::config::{BookConfig, SearchEngine};
-use assets::{copy_vault_media, write_static_assets};
-use document::ProcessedDoc;
+use media::copy_vault_media;
+use tmtbook_assets::write_static_assets;
+use tmtbook_config::{BookConfig, SearchEngine};
+use tmtbook_render::document::ProcessedDoc;
+use tmtbook_render::renderer::{Backlink, BookRenderer, EntrySummary, SectionSummary};
+
 use loader::{ScannedVault, scan_vault};
 use manifest::{BuildManifest, LookupManifest};
 use pagefind::run_pagefind;
 use prune::{prune_listed_media, prune_listed_pages, prune_stale_media, prune_stale_pages};
-use renderer::{Backlink, BookRenderer, EntrySummary, SectionSummary};
-
-pub fn normalize_path(path: &Path) -> String {
-    path.to_string_lossy().replace('\\', "/")
-}
-
-/// Normalize a path string to use forward slashes.
-pub fn normalize_path_str(s: &str) -> String {
-    s.replace('\\', "/")
-}
 
 /// A document that could not be turned into a page.
 #[derive(Debug, Clone)]

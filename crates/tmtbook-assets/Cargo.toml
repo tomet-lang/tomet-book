@@ -1,0 +1,15 @@
+[package]
+name = "tmtbook-assets"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Static assets, templates, and i18n dictionaries for tmtbook"
+
+[dependencies]
+tmtbook-config.workspace = true
+
+#= Crates.io
+anyhow.workspace = true
+rayon.workspace = true
+serde.workspace = true
+serde_json.workspace = true

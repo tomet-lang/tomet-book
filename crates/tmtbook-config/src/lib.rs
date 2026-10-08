@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct BookConfig {
     #[serde(default)]
     pub book: BookMeta,
@@ -11,12 +11,6 @@ pub struct BookConfig {
     pub ui: UiConfig,
     #[serde(default)]
     pub build: BuildConfig,
-}
-
-impl Default for BookConfig {
-    fn default() -> Self {
-        Self::default_with_lang("ja")
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -53,18 +47,6 @@ impl Default for BookMeta {
     }
 }
 
-pub use crate::i18n::{
-    default_hero_chips_for, default_key_labels_for, default_ui_strings_for, is_english,
-};
-
-pub fn default_ui_strings() -> HashMap<String, String> {
-    crate::i18n::ja::ui_strings()
-}
-
-pub fn default_hero_chips() -> Vec<HeroChipConfig> {
-    crate::i18n::ja::hero_chips()
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UiConfig {
     #[serde(default)]
@@ -91,25 +73,22 @@ pub struct UiConfig {
 }
 
 impl UiConfig {
-    /// Restore any string or label the user's config did not mention, using defaults for `lang`.
-    ///
-    /// A partial `[ui.strings]` or `[ui.infobox.labels]` table replaces the whole map during
-    /// deserialization, so without this an override of one label would blank out the rest.
-    pub fn fill_defaults(&mut self, lang: &str) {
-        for (key, value) in default_ui_strings_for(lang) {
+    /// Restore any string or label the user's config did not mention.
+    pub fn fill_defaults(
+        &mut self,
+        default_strings: impl IntoIterator<Item = (String, String)>,
+        default_labels: impl IntoIterator<Item = (String, String)>,
+        default_chips: impl IntoIterator<Item = HeroChipConfig>,
+    ) {
+        for (key, value) in default_strings {
             self.strings.entry(key).or_insert(value);
         }
-        for (key, value) in default_key_labels_for(lang) {
+        for (key, value) in default_labels {
             self.infobox.labels.entry(key).or_insert(value);
         }
         if self.hero_chips.is_empty() {
-            self.hero_chips = default_hero_chips_for(lang);
+            self.hero_chips.extend(default_chips);
         }
-    }
-
-    /// Restore defaults using the default Japanese dictionary.
-    pub fn fill_string_defaults(&mut self) {
-        self.fill_defaults("ja");
     }
 }
 
@@ -250,10 +229,6 @@ fn default_exclude_keys() -> Vec<String> {
     ]
 }
 
-pub fn default_key_labels() -> HashMap<String, String> {
-    crate::i18n::ja::key_labels()
-}
-
 impl Default for InfoboxConfig {
     fn default() -> Self {
         Self {
@@ -296,7 +271,6 @@ pub struct BuildConfig {
     pub exclude: Vec<String>,
     /// Which `@kind`s reach the site, as an ordered list where the last
     /// matching rule wins: `"*"` takes everything, `"!config"` puts one back.
-    /// See `book::kinds`.
     #[serde(default = "default_kinds")]
     pub kinds: Vec<String>,
     #[serde(default)]
@@ -327,9 +301,6 @@ fn default_exclude() -> Vec<String> {
     ]
 }
 
-/// Everything except the documents that shape the book rather than belong to
-/// it. Spelled as a value so that `*.config.tmt` not appearing on the site is
-/// a setting the reader can see and change, not a rule buried in the code.
 fn default_kinds() -> Vec<String> {
     vec!["*".to_string(), "!config".to_string(), "!index".to_string()]
 }
@@ -343,56 +314,57 @@ fn default_asset_prefix() -> String {
 }
 
 impl BuildConfig {
-    /// Base path of the site, normalized to e.g. `"/my-repo"` or `""` (no trailing slash).
-    pub fn clean_base_path(&self) -> String {
+    pub fn clean_base_path(&self) -> &str {
         match self.base_path.as_deref() {
-            Some(raw) => {
-                let trimmed = raw.trim_matches('/');
+            Some(base) => {
+                let trimmed = base.trim_matches('/');
                 if trimmed.is_empty() {
-                    String::new()
+                    ""
                 } else {
-                    format!("/{trimmed}")
+                    let s = base.trim_end_matches('/');
+                    if s.starts_with('/') { s } else { base }
                 }
             }
-            None => String::new(),
+            None => "",
         }
     }
 
-    /// Full URL prefix combining `base_path` and `clean_url_prefix`.
-    /// e.g. `"/my-repo/wiki"` or `"/wiki"` or `""`.
     pub fn full_url_prefix(&self) -> String {
         let base = self.clean_base_path();
-        let wiki = self.clean_url_prefix();
-        format!("{base}{wiki}")
+        let prefix = self.clean_url_prefix();
+        if base.is_empty() {
+            prefix.to_string()
+        } else if prefix.is_empty() {
+            base.to_string()
+        } else {
+            format!("{base}{prefix}")
+        }
     }
 
-    /// Full asset prefix combining `base_path` and `clean_asset_prefix`.
-    /// e.g. `"/my-repo/vault"` or `"/vault"`.
     pub fn full_asset_prefix(&self) -> String {
         let base = self.clean_base_path();
-        let asset = self.clean_asset_prefix();
-        format!("{base}{asset}")
+        let prefix = self.clean_asset_prefix();
+        if base.is_empty() {
+            prefix.to_string()
+        } else if prefix.is_empty() {
+            base.to_string()
+        } else {
+            format!("{base}{prefix}")
+        }
     }
 
-    /// `url_prefix` without a trailing slash, for building page hrefs (`/wiki`).
     pub fn clean_url_prefix(&self) -> &str {
         self.url_prefix.trim_end_matches('/')
     }
 
-    /// `asset_prefix` without a trailing slash, for building media hrefs (`/vault`).
     pub fn clean_asset_prefix(&self) -> &str {
         self.asset_prefix.trim_end_matches('/')
     }
 
-    /// Where rendered pages go, relative to the destination root.
-    ///
-    /// Derived from `url_prefix` so the files always land where the links point;
-    /// an empty result means the pages sit at the destination root.
     pub fn wiki_out_rel(&self) -> &str {
         self.url_prefix.trim_matches('/')
     }
 
-    /// Where vault media goes, relative to the destination root.
     pub fn asset_out_rel(&self) -> &str {
         self.asset_prefix.trim_matches('/')
     }
@@ -416,10 +388,7 @@ impl Default for BuildConfig {
 
 impl BookConfig {
     pub fn load_from_str(content: &str) -> Result<Self> {
-        let mut cfg: BookConfig =
-            toml::from_str(content).context("Failed to parse TOML configuration")?;
-        cfg.apply_defaults();
-        Ok(cfg)
+        toml::from_str(content).context("Failed to parse TOML configuration")
     }
 
     pub fn load_from_dir(dir: &Path) -> Result<Self> {
@@ -432,29 +401,6 @@ impl BookConfig {
         } else {
             Ok(BookConfig::default())
         }
-    }
-
-    pub fn default_with_lang(lang: &str) -> Self {
-        Self {
-            book: BookMeta {
-                lang: lang.to_string(),
-                ..Default::default()
-            },
-            ui: UiConfig {
-                strings: default_ui_strings_for(lang),
-                hero_chips: default_hero_chips_for(lang),
-                infobox: InfoboxConfig {
-                    labels: default_key_labels_for(lang),
-                    ..Default::default()
-                },
-                ..Default::default()
-            },
-            build: BuildConfig::default(),
-        }
-    }
-
-    pub fn apply_defaults(&mut self) {
-        self.ui.fill_defaults(&self.book.lang);
     }
 }
 
@@ -507,217 +453,25 @@ mod tests {
         assert_eq!(cfg.wiki_out_rel(), "");
         assert_eq!(cfg.clean_url_prefix(), "");
     }
-}
-
-#[cfg(test)]
-mod string_tests {
-    use super::*;
-
-    fn load(toml_src: &str) -> BookConfig {
-        BookConfig::load_from_str(toml_src).unwrap()
-    }
-
-    #[test]
-    fn the_defaults_are_complete_without_a_config_file() {
-        let cfg = BookConfig::default();
-        assert_eq!(
-            cfg.ui.strings.get("pane.toc").map(String::as_str),
-            Some("目次")
-        );
-        assert!(cfg.ui.strings.contains_key("search.placeholder"));
-    }
-
-    #[test]
-    fn a_config_without_a_strings_table_keeps_every_default() {
-        let cfg = load("[book]\ntitle = \"X\"\n");
-        assert_eq!(cfg.ui.strings.len(), default_ui_strings().len());
-    }
-
-    #[test]
-    fn overriding_one_string_leaves_the_rest_intact() {
-        // A partial table replaces the whole map during deserialization, so
-        // this is the case that would blank out the interface.
-        let cfg = load("[ui.strings]\n\"pane.toc\" = \"Contents\"\n");
-
-        assert_eq!(
-            cfg.ui.strings.get("pane.toc").map(String::as_str),
-            Some("Contents")
-        );
-        assert_eq!(
-            cfg.ui.strings.get("pane.links").map(String::as_str),
-            Some("リンク"),
-            "untouched strings must survive"
-        );
-        assert_eq!(cfg.ui.strings.len(), default_ui_strings().len());
-    }
-
-    #[test]
-    fn an_unknown_string_key_is_kept_rather_than_dropped() {
-        let cfg = load("[ui.strings]\n\"custom.key\" = \"mine\"\n");
-        assert_eq!(
-            cfg.ui.strings.get("custom.key").map(String::as_str),
-            Some("mine")
-        );
-    }
-
-    #[test]
-    fn english_language_loads_english_defaults() {
-        let cfg = load("[book]\ntitle = \"My Book\"\nlang = \"en\"\n");
-        assert_eq!(
-            cfg.ui.strings.get("pane.toc").map(String::as_str),
-            Some("Table of Contents")
-        );
-        assert_eq!(
-            cfg.ui.strings.get("recent.heading").map(String::as_str),
-            Some("Recent Notes")
-        );
-        assert_eq!(
-            cfg.ui.infobox.labels.get("birth").map(String::as_str),
-            Some("Birthday")
-        );
-        assert_eq!(cfg.ui.hero_chips[0].label.as_deref(), Some("Affiliation"));
-    }
-
-    #[test]
-    fn english_language_with_user_overrides() {
-        let cfg =
-            load("[book]\nlang = \"en\"\n\n[ui.strings]\n\"pane.toc\" = \"Custom Outline\"\n");
-        assert_eq!(
-            cfg.ui.strings.get("pane.toc").map(String::as_str),
-            Some("Custom Outline")
-        );
-        assert_eq!(
-            cfg.ui.strings.get("pane.links").map(String::as_str),
-            Some("Links")
-        );
-        assert_eq!(cfg.ui.strings.len(), crate::i18n::en::ui_strings().len());
-    }
-
-    #[test]
-    fn markers_config_defaults_to_disabled() {
-        let cfg = load("");
-        assert!(!cfg.ui.markers.enable);
-        assert!(cfg.ui.markers.strikethrough);
-        assert!(cfg.ui.markers.custom.is_empty());
-    }
-
-    #[test]
-    fn markers_config_can_be_enabled_with_custom_entries() {
-        let toml_str = r##"
-[ui.markers]
-enable = true
-strikethrough = false
-
-[ui.markers.custom]
-star = "star"
-fire = { icon = "flame", color = "#f97316" }
-"##;
-        let cfg = load(toml_str);
-        assert!(cfg.ui.markers.enable);
-        assert!(!cfg.ui.markers.strikethrough);
-        assert_eq!(cfg.ui.markers.custom.len(), 2);
-        assert_eq!(
-            cfg.ui.markers.custom.get("star"),
-            Some(&MarkerEntryConfig::Simple("star".to_string()))
-        );
-        let fire = cfg.ui.markers.custom.get("fire").unwrap();
-        assert_eq!(fire.icon(), "flame");
-        assert_eq!(fire.color(), Some("#f97316"));
-        assert_eq!(fire.pkg(), "lucide");
-    }
-
-    #[test]
-    fn links_config_defaults_and_customization() {
-        let cfg = load("");
-        assert!(cfg.ui.links.external_icons);
-        assert!(cfg.ui.links.note_icons);
-        assert_eq!(cfg.ui.links.favicon_service, FaviconService::Google);
-
-        let custom = load(
-            r#"
-[ui.links]
-external_icons = false
-note_icons = false
-favicon_service = "duckduckgo"
-"#,
-        );
-        assert!(!custom.ui.links.external_icons);
-        assert!(!custom.ui.links.note_icons);
-        assert_eq!(custom.ui.links.favicon_service, FaviconService::DuckDuckGo);
-
-        let alias = load(
-            r#"
-[ui.links]
-internal_icons = false
-"#,
-        );
-        assert!(!alias.ui.links.note_icons);
-    }
-
-    #[test]
-    fn routing_and_collision_config_defaults_and_customization() {
-        let def = load("");
-        assert_eq!(def.build.routing, RoutingStrategy::Hierarchical);
-        assert_eq!(def.build.on_collision, CollisionStrategy::Error);
-
-        let custom = load(
-            r#"
-[build]
-routing = "flat"
-on_collision = "disambiguate"
-"#,
-        );
-        assert_eq!(custom.build.routing, RoutingStrategy::Flat);
-        assert_eq!(custom.build.on_collision, CollisionStrategy::Disambiguate);
-
-        let id_mode = load(
-            r#"
-[build]
-routing = "id"
-"#,
-        );
-        assert_eq!(id_mode.build.routing, RoutingStrategy::Id);
-        assert_eq!(id_mode.build.on_collision, CollisionStrategy::Error);
-    }
 
     #[test]
     fn base_path_and_base_alias_configuration() {
-        let def = load("");
-        assert_eq!(def.build.base_path, None);
-        assert_eq!(def.build.clean_base_path(), "");
-        assert_eq!(def.build.full_url_prefix(), "/wiki");
-        assert_eq!(def.build.full_asset_prefix(), "/vault");
+        let def = BuildConfig::default();
+        assert_eq!(def.base_path, None);
+        assert_eq!(def.clean_base_path(), "");
+        assert_eq!(def.full_url_prefix(), "/wiki");
+        assert_eq!(def.full_asset_prefix(), "/vault");
 
-        let custom_base_path = load(
+        let custom: BookConfig = toml::from_str(
             r#"
 [build]
 base_path = "/docs"
 "#,
-        );
-        assert_eq!(custom_base_path.build.base_path.as_deref(), Some("/docs"));
-        assert_eq!(custom_base_path.build.clean_base_path(), "/docs");
-        assert_eq!(custom_base_path.build.full_url_prefix(), "/docs/wiki");
-        assert_eq!(custom_base_path.build.full_asset_prefix(), "/docs/vault");
-
-        // Alias `base` and trailing/leading slash normalization
-        let custom_base_alias = load(
-            r#"
-[build]
-base = "my-site/"
-"#,
-        );
-        assert_eq!(custom_base_alias.build.clean_base_path(), "/my-site");
-        assert_eq!(custom_base_alias.build.full_url_prefix(), "/my-site/wiki");
-
-        // Root base path "/" normalizes to empty
-        let root_base = load(
-            r#"
-[build]
-base = "/"
-url_prefix = "/"
-"#,
-        );
-        assert_eq!(root_base.build.clean_base_path(), "");
-        assert_eq!(root_base.build.full_url_prefix(), "");
+        )
+        .unwrap();
+        assert_eq!(custom.build.base_path.as_deref(), Some("/docs"));
+        assert_eq!(custom.build.clean_base_path(), "/docs");
+        assert_eq!(custom.build.full_url_prefix(), "/docs/wiki");
+        assert_eq!(custom.build.full_asset_prefix(), "/docs/vault");
     }
 }

@@ -1,5 +1,5 @@
-use crate::config::HeroChipConfig;
 use std::collections::HashMap;
+use tmtbook_config::HeroChipConfig;
 
 /// The interface's text in English.
 pub fn ui_strings() -> HashMap<String, String> {

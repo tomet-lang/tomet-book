@@ -1,0 +1,12 @@
+[package]
+name = "tmtbook-config"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Configuration data types and parser for tmtbook"
+
+[dependencies]
+#= Crates.io
+anyhow.workspace = true
+serde.workspace = true
+toml.workspace = true

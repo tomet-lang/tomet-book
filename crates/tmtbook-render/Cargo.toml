@@ -1,16 +1,14 @@
 [package]
-name = "tmtbook"
+name = "tmtbook-render"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
-description = "A standalone book & wiki generator for Tomet"
+description = "Document parsing, AST transformation, and HTML rendering for tmtbook"
 
 [dependencies]
 tmtbook-config.workspace = true
 tmtbook-assets.workspace = true
-tmtbook-render.workspace = true
 tmtbook-search.workspace = true
-tmtbook-serve.workspace = true
 
 #= Tomet
 tomet-ast.workspace = true
@@ -26,20 +24,10 @@ tomet-tree.workspace = true
 #= Crates.io
 anyhow.workspace = true
 image.workspace = true
-notify.workspace = true
-pagefind = { workspace = true, optional = true }
+minijinja.workspace = true
 percent-encoding.workspace = true
-rayon.workspace = true
 regex.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-tokio.workspace = true
-toml.workspace = true
 tracing.workspace = true
-tracing-subscriber.workspace = true
 unicode-segmentation.workspace = true
-walkdir.workspace = true
-
-[features]
-embedded-search = ["dep:pagefind"]
-embedded-search-extended = ["embedded-search", "pagefind/extended"]

@@ -6,7 +6,7 @@ use std::sync::LazyLock;
 
 use super::html::escape_html;
 use super::icon::is_simple_icon;
-use crate::config::{FaviconService, LinksConfig};
+use tmtbook_config::{FaviconService, LinksConfig};
 
 static EXTERNAL_LINK_RE: LazyLock<Regex> = LazyLock::new(|| {
     // Matches `<a ... href="https?://..." ...>...</a>`

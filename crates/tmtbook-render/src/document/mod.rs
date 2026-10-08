@@ -15,7 +15,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::path::Path;
 
-use crate::config::BookConfig;
+use crate::slug::{RouteTable, clean_doc_slug, normalize_path};
+use tmtbook_config::BookConfig;
 
 pub use internal_links::enhance_internal_links;
 pub use links::strip_doc_extension;
@@ -389,7 +390,8 @@ body
 
     #[test]
     fn a_meta_parent_and_row_written_as_link_element_resolve() {
-        let config = BookConfig::default();
+        let mut config = BookConfig::default();
+        tmtbook_assets::i18n::apply_defaults(&mut config);
         let vault = tomet_links::VaultLinkIndex::from_paths(&[
             "page.tmt".to_string(),
             "30-39 Knowledge/rust.tmt".to_string(),
@@ -635,7 +637,7 @@ pub fn process_parsed_document(
     vault_index: &tomet_links::VaultLinkIndex,
     workspace_cfg_src: Option<&str>,
     unpublished: &HashSet<String>,
-    route_table: Option<&crate::book::slug::RouteTable>,
+    route_table: Option<&RouteTable>,
 ) -> Result<ProcessedDoc> {
     let blocks = workspace_cfg_src
         .map(extract_workspace_config_blocks)
@@ -662,7 +664,7 @@ pub fn process_parsed_document_with_blocks(
     vault_index: &tomet_links::VaultLinkIndex,
     workspace_cfg_blocks: &[tomet_ast::Block],
     unpublished: &HashSet<String>,
-    route_table: Option<&crate::book::slug::RouteTable>,
+    route_table: Option<&RouteTable>,
 ) -> Result<ProcessedDoc> {
     // 1. Bring in the vault-wide config (e.g. default.config.tmt)
     inject_workspace_config_blocks(&mut doc, workspace_cfg_blocks);
@@ -703,7 +705,7 @@ pub fn process_parsed_document_with_blocks(
     let from_path = Path::new(rel_path);
     let slug = route_table
         .map(|rt| rt.get_or_clean(rel_path))
-        .unwrap_or_else(|| crate::book::slug::clean_doc_slug(rel_path));
+        .unwrap_or_else(|| clean_doc_slug(rel_path));
     let mut outgoing = links::outgoing_page_slugs(
         &doc,
         from_path,
@@ -725,13 +727,13 @@ pub fn process_parsed_document_with_blocks(
                 .resolve_ref(target, from)
                 // A page the site does not publish is not a page. Resolving
                 // it would print a link to a file that was never written.
-                .filter(|p| !unpublished.contains(&crate::book::normalize_path(p)))
+                .filter(|p| !unpublished.contains(&normalize_path(p)))
                 .map(|p| {
-                    let norm = crate::book::normalize_path(p);
+                    let norm = normalize_path(p);
                     if links::strip_doc_extension(&norm) != norm {
                         let clean_slug = route_table
                             .map(|rt| rt.get_or_clean(&norm))
-                            .unwrap_or_else(|| crate::book::slug::clean_doc_slug(&norm));
+                            .unwrap_or_else(|| clean_doc_slug(&norm));
                         std::path::PathBuf::from(format!("{clean_slug}.tmt"))
                     } else {
                         p.to_path_buf()
@@ -748,7 +750,7 @@ pub fn process_parsed_document_with_blocks(
 
     // 5. Render, and take the heading outline the renderer reports
     let base_path = config.build.clean_base_path();
-    let base_for_custom = base_path.clone();
+    let base_for_custom = base_path.to_string();
     let render_opts = tomet_html::RenderOptions {
         number_headings: true,
         auto_slug_headings: true,
@@ -759,10 +761,9 @@ pub fn process_parsed_document_with_blocks(
         ..Default::default()
     };
     let (raw_body_html, outline) = tomet_html::render_body_with_outline(&doc, &render_opts);
-    let body_html = marker::enhance_list_markers(&raw_body_html, &config.ui.markers, &base_path);
-    let body_html = code::enhance_code_blocks(&body_html, Some(&config.book.lang), &base_path);
-    let body_html =
-        external_links::enhance_external_links(&body_html, &config.ui.links, &base_path);
+    let body_html = marker::enhance_list_markers(&raw_body_html, &config.ui.markers, base_path);
+    let body_html = code::enhance_code_blocks(&body_html, Some(&config.book.lang), base_path);
+    let body_html = external_links::enhance_external_links(&body_html, &config.ui.links, base_path);
 
     // 6. Table of contents, title, and the sticky-tab tree
     let (first_h1, mut toc) = toc_from_outline(&outline);
@@ -799,10 +800,10 @@ pub fn process_parsed_document_with_blocks(
     // against the raw, pre-JSON value: `Value::Element` has no JSON form
     // (`tomet_semantics::value_to_json` degrades it to a tagged object),
     // so this is the one path that can still see it.
-    if let Some(icon_html) = icon::meta_icon_element(raw_meta.as_ref(), &base_path) {
+    if let Some(icon_html) = icon::meta_icon_element(raw_meta.as_ref(), base_path) {
         props.icon = Some(icon_html);
         props.icon_image_url = None;
-        props.link_icon = icon::meta_link_icon_element(raw_meta.as_ref(), &base_path);
+        props.link_icon = icon::meta_link_icon_element(raw_meta.as_ref(), base_path);
     }
 
     // Merge links from @meta into body links, dropping self-references and duplicates.

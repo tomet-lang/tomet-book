@@ -10,6 +10,9 @@ rust-version = "1.85"
 
 [workspace.dependencies]
 tmtbook = { path = "crates/tmtbook" }
+tmtbook-config = { path = "crates/tmtbook-config" }
+tmtbook-assets = { path = "crates/tmtbook-assets" }
+tmtbook-render = { path = "crates/tmtbook-render" }
 tmtbook-search = { path = "crates/tmtbook-search" }
 tmtbook-serve = { path = "crates/tmtbook-serve" }
 

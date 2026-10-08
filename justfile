@@ -25,11 +25,11 @@ package:
 
 # Run the test suite
 test:
-    cargo test
+    cargo test --workspace
 
 # Type-check TypeScript without producing output
 check-ui:
-    tsc --project crates/tmtbook/frontend/tsconfig.json --noEmit
+    tsc --project crates/tmtbook-assets/frontend/tsconfig.json --noEmit
 
 # Type-check without producing a binary
 check: check-ui

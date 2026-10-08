@@ -9,7 +9,19 @@
 //! - Preserving directory hierarchy (`/`).
 //! - Falling back to a deterministic hash (`doc-{hash}`) if a segment becomes empty.
 
-use super::document::strip_doc_extension;
+use std::collections::HashMap;
+use std::path::Path;
+use tmtbook_config::BuildConfig;
+
+use crate::document::strip_doc_extension;
+
+pub fn normalize_path(path: &Path) -> String {
+    path.to_string_lossy().replace('\\', "/")
+}
+
+pub fn normalize_path_str(s: &str) -> String {
+    s.replace('\\', "/")
+}
 
 /// FNV-1a 32-bit hash for deterministic fallback slugs when a segment is stripped empty.
 fn fnv1a_hash(s: &str) -> u32 {
@@ -69,9 +81,8 @@ pub fn clean_doc_slug(rel_path: &str) -> String {
         .join("/")
 }
 
-use crate::config::{BuildConfig, CollisionStrategy, RoutingStrategy};
-use std::collections::{HashMap, HashSet};
-use std::path::Path;
+use std::collections::HashSet;
+use tmtbook_config::{CollisionStrategy, RoutingStrategy};
 
 /// Metadata extracted from a document for routing resolution.
 #[derive(Debug, Clone)]
@@ -114,7 +125,7 @@ pub struct RouteTable {
 impl RouteTable {
     /// Look up the clean slug assigned to a given vault-relative path.
     pub fn get(&self, rel_path: &str) -> Option<&str> {
-        let normalized = crate::book::normalize_path_str(rel_path);
+        let normalized = normalize_path_str(rel_path);
         self.rel_to_slug.get(&normalized).map(|s| s.as_str())
     }
 
@@ -226,7 +237,7 @@ impl RouteTable {
         let mut rel_to_slug = HashMap::with_capacity(docs.len());
         let mut slug_to_rel = HashMap::with_capacity(docs.len());
         for (i, doc) in docs.iter().enumerate() {
-            let normalized = crate::book::normalize_path_str(doc.rel_path);
+            let normalized = normalize_path_str(doc.rel_path);
             let slug = candidates[i].clone();
             rel_to_slug.insert(normalized.clone(), slug.clone());
             slug_to_rel.insert(slug, normalized);

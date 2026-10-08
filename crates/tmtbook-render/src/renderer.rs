@@ -2,8 +2,8 @@ use anyhow::{Context, Result};
 use minijinja::{Environment, Value, context};
 use serde::{Deserialize, Serialize};
 
-use super::document::ProcessedDoc;
-use crate::config::BookConfig;
+use crate::document::ProcessedDoc;
+use tmtbook_config::BookConfig;
 
 pub struct BookRenderer {
     env: Environment<'static>,
@@ -39,26 +39,14 @@ impl BookRenderer {
     pub fn new(config: &BookConfig, is_dev: bool) -> Result<Self> {
         let mut env = Environment::new();
 
-        env.add_template(
-            "base.html",
-            include_str!("../../frontend/templates/base.html"),
-        )
-        .context("Failed to add base.html template")?;
-        env.add_template(
-            "page.html",
-            include_str!("../../frontend/templates/page.html"),
-        )
-        .context("Failed to add page.html template")?;
-        env.add_template(
-            "index.html",
-            include_str!("../../frontend/templates/index.html"),
-        )
-        .context("Failed to add index.html template")?;
-        env.add_template(
-            "macros.html",
-            include_str!("../../frontend/templates/macros.html"),
-        )
-        .context("Failed to add macros.html template")?;
+        env.add_template("base.html", tmtbook_assets::BASE_HTML)
+            .context("Failed to add base.html template")?;
+        env.add_template("page.html", tmtbook_assets::PAGE_HTML)
+            .context("Failed to add page.html template")?;
+        env.add_template("index.html", tmtbook_assets::INDEX_HTML)
+            .context("Failed to add index.html template")?;
+        env.add_template("macros.html", tmtbook_assets::MACROS_HTML)
+            .context("Failed to add macros.html template")?;
 
         let rail_title = config
             .ui
@@ -81,31 +69,31 @@ impl BookRenderer {
         env.add_global("t", Value::from_serialize(&config.ui.strings));
         env.add_global(
             "css_version",
-            Value::from(super::assets::CSS_VERSION.as_str()),
+            Value::from(tmtbook_assets::CSS_VERSION.as_str()),
         );
         env.add_global(
             "js_version",
-            Value::from(super::assets::JS_VERSION.as_str()),
+            Value::from(tmtbook_assets::JS_VERSION.as_str()),
         );
         env.add_global(
             "tmt_btn_css_version",
-            Value::from(super::assets::TMT_BTN_CSS_VERSION.as_str()),
+            Value::from(tmtbook_assets::TMT_BTN_CSS_VERSION.as_str()),
         );
         env.add_global(
             "tmt_badge_css_version",
-            Value::from(super::assets::TMT_BADGE_CSS_VERSION.as_str()),
+            Value::from(tmtbook_assets::TMT_BADGE_CSS_VERSION.as_str()),
         );
         env.add_global(
             "tmt_icon_css_version",
-            Value::from(super::assets::TMT_ICON_CSS_VERSION.as_str()),
+            Value::from(tmtbook_assets::TMT_ICON_CSS_VERSION.as_str()),
         );
         env.add_global(
             "tmt_swatch_css_version",
-            Value::from(super::assets::TMT_SWATCH_CSS_VERSION.as_str()),
+            Value::from(tmtbook_assets::TMT_SWATCH_CSS_VERSION.as_str()),
         );
         env.add_global(
             "tmt_switch_css_version",
-            Value::from(super::assets::TMT_SWITCH_CSS_VERSION.as_str()),
+            Value::from(tmtbook_assets::TMT_SWITCH_CSS_VERSION.as_str()),
         );
         env.add_global("is_dev", Value::from(is_dev));
         env.add_global("rail_letters", Value::from_serialize(&rail_letters));
@@ -122,7 +110,7 @@ impl BookRenderer {
             full_url_prefix.clone()
         };
 
-        env.add_global("base_path", Value::from(&base_path));
+        env.add_global("base_path", Value::from(base_path));
         env.add_global(
             "clean_url_prefix",
             Value::from(config.build.clean_url_prefix()),

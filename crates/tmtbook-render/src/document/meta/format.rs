@@ -12,7 +12,7 @@ pub fn format_chip_value(val: &str, format: Option<&str>, lang: Option<&str>) ->
         let m: u32 = caps[2].parse().unwrap_or(0);
         let d: u32 = caps[3].parse().unwrap_or(0);
         if let Some(l) = lang
-            && crate::config::is_english(l)
+            && tmtbook_assets::i18n::is_english(l)
         {
             const MONTHS_EN: [&str; 12] = [
                 "January",

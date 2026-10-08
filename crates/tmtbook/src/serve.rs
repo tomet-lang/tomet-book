@@ -179,13 +179,13 @@ pub fn handle_http_request(
         let state_lock = state.read().unwrap();
         if let Some(ref st) = *state_lock {
             (
-                st.config.build.clean_base_path(),
+                st.config.build.clean_base_path().to_string(),
                 st.config.build.full_url_prefix(),
                 st.config.build.full_asset_prefix(),
             )
         } else {
             (
-                config.build.clean_base_path(),
+                config.build.clean_base_path().to_string(),
                 config.build.full_url_prefix(),
                 config.build.full_asset_prefix(),
             )
@@ -206,7 +206,7 @@ pub fn handle_http_request(
             return (
                 StatusCode::OK,
                 [(header::CONTENT_TYPE, "text/css; charset=utf-8")],
-                crate::book::assets::BOOK_CSS,
+                tmtbook_assets::BOOK_CSS,
             )
                 .into_response();
         }
@@ -217,7 +217,7 @@ pub fn handle_http_request(
                     header::CONTENT_TYPE,
                     "application/javascript; charset=utf-8",
                 )],
-                crate::book::assets::BOOK_JS,
+                tmtbook_assets::BOOK_JS,
             )
                 .into_response();
         }
@@ -225,7 +225,7 @@ pub fn handle_http_request(
             return (
                 StatusCode::OK,
                 [(header::CONTENT_TYPE, "image/svg+xml")],
-                crate::book::assets::LUCIDE_SPRITE,
+                tmtbook_assets::LUCIDE_SPRITE,
             )
                 .into_response();
         }
@@ -233,7 +233,7 @@ pub fn handle_http_request(
             return (
                 StatusCode::OK,
                 [(header::CONTENT_TYPE, "image/svg+xml")],
-                crate::book::assets::SIMPLE_SPRITE,
+                tmtbook_assets::SIMPLE_SPRITE,
             )
                 .into_response();
         }
@@ -241,7 +241,7 @@ pub fn handle_http_request(
             return (
                 StatusCode::OK,
                 [(header::CONTENT_TYPE, "text/css; charset=utf-8")],
-                crate::book::assets::TMT_BTN_CSS,
+                tmtbook_assets::TMT_BTN_CSS,
             )
                 .into_response();
         }
@@ -249,7 +249,7 @@ pub fn handle_http_request(
             return (
                 StatusCode::OK,
                 [(header::CONTENT_TYPE, "text/css; charset=utf-8")],
-                crate::book::assets::TMT_BADGE_CSS,
+                tmtbook_assets::TMT_BADGE_CSS,
             )
                 .into_response();
         }
@@ -257,7 +257,7 @@ pub fn handle_http_request(
             return (
                 StatusCode::OK,
                 [(header::CONTENT_TYPE, "text/css; charset=utf-8")],
-                crate::book::assets::TMT_ICON_CSS,
+                tmtbook_assets::TMT_ICON_CSS,
             )
                 .into_response();
         }
@@ -265,7 +265,7 @@ pub fn handle_http_request(
             return (
                 StatusCode::OK,
                 [(header::CONTENT_TYPE, "text/css; charset=utf-8")],
-                crate::book::assets::TMT_SWATCH_CSS,
+                tmtbook_assets::TMT_SWATCH_CSS,
             )
                 .into_response();
         }
@@ -273,7 +273,7 @@ pub fn handle_http_request(
             return (
                 StatusCode::OK,
                 [(header::CONTENT_TYPE, "text/css; charset=utf-8")],
-                crate::book::assets::TMT_SWITCH_CSS,
+                tmtbook_assets::TMT_SWITCH_CSS,
             )
                 .into_response();
         }

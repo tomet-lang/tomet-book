@@ -7,6 +7,7 @@
 use std::path::Path;
 
 use super::html::escape_html;
+use crate::slug::{RouteTable, clean_doc_slug, normalize_path, normalize_path_str};
 
 /// Suffixes that mark a file as a Tomet document.
 pub const DOC_EXTENSIONS: &[&str] = &[".tmt", ".tm"];
@@ -92,7 +93,7 @@ pub fn resolve_meta_link(
     from_path: &Path,
     vault_index: &tomet_links::VaultLinkIndex,
     url_prefix: &str,
-    route_table: Option<&crate::book::slug::RouteTable>,
+    route_table: Option<&RouteTable>,
 ) -> Option<(String, String)> {
     let s = raw.trim();
     if !is_link_ref(s) {
@@ -119,10 +120,10 @@ pub fn resolve_meta_link(
         });
 
     if let Some(path) = resolved {
-        let norm = crate::book::normalize_path(path);
+        let norm = normalize_path(path);
         let slug = route_table
             .map(|rt| rt.get_or_clean(&norm))
-            .unwrap_or_else(|| crate::book::slug::clean_doc_slug(&norm));
+            .unwrap_or_else(|| clean_doc_slug(&norm));
         Some((format!("{clean_url_prefix}/{slug}"), display_label))
     } else {
         Some((String::new(), display_label))
@@ -136,7 +137,7 @@ pub fn format_meta_value_to_html(
     vault_index: &tomet_links::VaultLinkIndex,
     url_prefix: &str,
     unresolved_title: &str,
-    route_table: Option<&crate::book::slug::RouteTable>,
+    route_table: Option<&RouteTable>,
 ) -> String {
     if let Some((href, label)) =
         resolve_meta_link(raw_str, from_path, vault_index, url_prefix, route_table)
@@ -170,12 +171,9 @@ pub fn resolve_meta_media_path(
     let clean_prefix = asset_prefix.trim_end_matches('/');
 
     if let Some(resolved) = vault_index.resolve_ref(&target, Some(from_path)) {
-        format!("{clean_prefix}/{}", crate::book::normalize_path(resolved))
+        format!("{clean_prefix}/{}", normalize_path(resolved))
     } else {
-        format!(
-            "{clean_prefix}/{}",
-            crate::book::normalize_path_str(&target)
-        )
+        format!("{clean_prefix}/{}", normalize_path_str(&target))
     }
 }
 
@@ -327,7 +325,7 @@ pub fn outgoing_page_slugs(
     own_slug: &str,
     vault_index: &tomet_links::VaultLinkIndex,
     unpublished: &std::collections::HashSet<String>,
-    route_table: Option<&crate::book::slug::RouteTable>,
+    route_table: Option<&RouteTable>,
 ) -> Vec<String> {
     let mut slugs: Vec<String> = Vec::new();
 
@@ -343,7 +341,7 @@ pub fn outgoing_page_slugs(
         let Some(resolved) = vault_index.resolve_ref(&link.target, Some(from_path)) else {
             continue;
         };
-        let path = crate::book::normalize_path(resolved);
+        let path = normalize_path(resolved);
         // A page the book leaves out has nothing to show a backlink on.
         if unpublished.contains(&path) {
             continue;
@@ -356,7 +354,7 @@ pub fn outgoing_page_slugs(
         }
         let slug = route_table
             .map(|rt| rt.get_or_clean(&path))
-            .unwrap_or_else(|| crate::book::slug::clean_doc_slug(&path));
+            .unwrap_or_else(|| clean_doc_slug(&path));
         if slug == own_slug || slugs.iter().any(|s| s == &slug) {
             continue;
         }

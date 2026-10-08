@@ -3,8 +3,8 @@ use std::path::Path;
 use unicode_segmentation::UnicodeSegmentation;
 
 use super::MetaCtx;
-use crate::book::document::html::escape_html;
-use crate::book::document::icon as doc_icon;
+use crate::document::html::escape_html;
+use crate::document::icon as doc_icon;
 
 /// Extract media reference target string (file name or path) from a metadata value.
 pub(super) fn extract_media_target(val: &Value) -> Option<String> {
@@ -152,7 +152,7 @@ pub(super) fn extract_icon(
                 && doc_icon::is_lucide_icon(lucide_name)
             {
                 let link_icon =
-                    doc_icon::render_link_icon_with_base(lucide_name, "lucide", &base_path);
+                    doc_icon::render_link_icon_with_base(lucide_name, "lucide", base_path);
                 let doc_icon = format!(
                     r#"<svg class="tm-doc-icon" data-pkg="lucide" data-icon="{}" aria-hidden="true"><use href="{}/icons/lucide.svg#{}"></use></svg>"#,
                     escape_html(lucide_name),
@@ -165,7 +165,7 @@ pub(super) fn extract_icon(
                 && doc_icon::is_simple_icon(simple_name)
             {
                 let link_icon =
-                    doc_icon::render_link_icon_with_base(simple_name, "simple", &base_path);
+                    doc_icon::render_link_icon_with_base(simple_name, "simple", base_path);
                 let doc_icon = format!(
                     r#"<svg class="tm-doc-icon" data-pkg="simple" data-icon="{}" aria-hidden="true"><use href="{}/icons/simple.svg#{}"></use></svg>"#,
                     escape_html(simple_name),

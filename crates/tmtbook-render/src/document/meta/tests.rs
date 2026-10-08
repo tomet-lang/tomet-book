@@ -1,7 +1,9 @@
 use super::*;
 
 fn ctx_config() -> BookConfig {
-    BookConfig::default()
+    let mut cfg = BookConfig::default();
+    tmtbook_assets::i18n::apply_defaults(&mut cfg);
+    cfg
 }
 
 fn index() -> tomet_links::VaultLinkIndex {

@@ -17,7 +17,7 @@ use std::sync::LazyLock;
 use tomet_ast::Value;
 use tomet_html::CustomElementCtx;
 
-use crate::book::assets::{LUCIDE_SPRITE, SIMPLE_SPRITE};
+use tmtbook_assets::{LUCIDE_SPRITE, SIMPLE_SPRITE};
 
 use super::html::escape_html;
 

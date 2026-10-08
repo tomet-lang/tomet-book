@@ -3,8 +3,18 @@
 pub mod en;
 pub mod ja;
 
-use crate::config::HeroChipConfig;
 use std::collections::HashMap;
+use tmtbook_config::{BookConfig, HeroChipConfig};
+
+/// Populate missing UI strings, infobox labels, and hero chips in `config` based on `config.book.lang`.
+pub fn apply_defaults(config: &mut BookConfig) {
+    let lang = &config.book.lang;
+    config.ui.fill_defaults(
+        default_ui_strings_for(lang),
+        default_key_labels_for(lang),
+        default_hero_chips_for(lang),
+    );
+}
 
 /// Returns true if the given language code represents English (e.g. "en", "en-US").
 pub fn is_english(lang: &str) -> bool {
