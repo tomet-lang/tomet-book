@@ -25,11 +25,7 @@
 
     #= Tool
     tomet.url = "github:tomet-lang/tomet";
-    twrit = {
-      url = "github:tomet-lang/tomet-writ";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.tomet.follows = "tomet";
-    };
+    twrit.url = "github:tomet-lang/tomet-writ";
   };
 
   outputs = inputs: import ./nix inputs;
