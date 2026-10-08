@@ -1,0 +1,43 @@
+[package]
+name = "tmtbook"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "A standalone book & wiki generator for Tomet"
+
+[dependencies]
+tmtbook-search.workspace = true
+tmtbook-serve.workspace = true
+
+#= Tomet
+tomet-ast.workspace = true
+tomet-compute.workspace = true
+tomet-html.workspace = true
+tomet-indexer.workspace = true
+tomet-links.workspace = true
+tomet-parser.workspace = true
+tomet-semantics.workspace = true
+tomet-transform.workspace = true
+tomet-tree.workspace = true
+
+#= Crates.io
+anyhow.workspace = true
+image.workspace = true
+minijinja.workspace = true
+notify.workspace = true
+pagefind = { workspace = true, optional = true }
+percent-encoding.workspace = true
+rayon.workspace = true
+regex.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+toml.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+unicode-segmentation.workspace = true
+walkdir.workspace = true
+
+[features]
+embedded-search = ["dep:pagefind"]
+embedded-search-extended = ["embedded-search", "pagefind/extended"]

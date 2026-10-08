@@ -3350,7 +3350,6 @@ name = "tmtbook"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "clap",
  "image",
  "minijinja",
  "notify",
@@ -3377,6 +3376,18 @@ dependencies = [
  "tracing-subscriber",
  "unicode-segmentation",
  "walkdir",
+]
+
+[[package]]
+name = "tmtbook-cli"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "tmtbook",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

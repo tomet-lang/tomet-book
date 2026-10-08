@@ -1,9 +1,9 @@
 //! Library surface for the `tmtbook` package.
 //!
-//! `tmtbook-serve` (`crates/serve`) is split out because it's genuinely
+//! `tmtbook-serve` (`crates/tmtbook-serve`) is split out because it's genuinely
 //! generic dev-server infrastructure -- file watching, static serving,
 //! websocket live reload -- with zero knowledge of books or Tomet documents
-//! (see `crates/serve/src/lib.rs`'s `DevServerHandler` trait). Everything
+//! (see `crates/tmtbook-serve/src/lib.rs`'s `DevServerHandler` trait). Everything
 //! that actually knows how to build a book (rendering, config, i18n) lives
 //! directly in this crate instead.
 //!

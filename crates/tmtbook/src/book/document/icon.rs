@@ -100,7 +100,11 @@ pub fn render_meta_value(el: &tomet_ast::Element, inline: bool) -> Option<String
     render_meta_value_with_base(el, inline, "")
 }
 
-pub fn render_meta_value_with_base(el: &tomet_ast::Element, inline: bool, base_path: &str) -> Option<String> {
+pub fn render_meta_value_with_base(
+    el: &tomet_ast::Element,
+    inline: bool,
+    base_path: &str,
+) -> Option<String> {
     let name = el.sigil.name().map(|n| n.to_string()).unwrap_or_default();
     let bindings = tomet_semantics::Bindings::default();
     let ctx = CustomElementCtx::new(&name, el.content.as_deref(), inline, || {
@@ -125,7 +129,10 @@ pub fn meta_icon_element(raw_meta: Option<&tomet_ast::Value>, base_path: &str) -
 }
 
 /// Link prefix icon representation for `@doc.icon(...)` in `@meta`.
-pub fn meta_link_icon_element(raw_meta: Option<&tomet_ast::Value>, base_path: &str) -> Option<String> {
+pub fn meta_link_icon_element(
+    raw_meta: Option<&tomet_ast::Value>,
+    base_path: &str,
+) -> Option<String> {
     let tomet_ast::Value::Map(entries) = raw_meta? else {
         return None;
     };

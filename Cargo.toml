@@ -1,21 +1,17 @@
-[package]
-name = "tmtbook"
+[workspace]
+resolver = "3"
+members = ["app", "crates/*"]
+default-members = ["app"]
+
+[workspace.package]
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
-description = "A standalone book & wiki generator for Tomet"
 
-[lib]
-name = "tmtbook"
-path = "src/lib.rs"
-
-[[bin]]
-name = "tmtbook"
-path = "src/main.rs"
-
-[dependencies]
-tmtbook-search = { path = "crates/search" }
-tmtbook-serve = { path = "crates/serve" }
+[workspace.dependencies]
+tmtbook = { path = "crates/tmtbook" }
+tmtbook-search = { path = "crates/tmtbook-search" }
+tmtbook-serve = { path = "crates/tmtbook-serve" }
 
 #= Tomet
 tomet-ast = { git = "https://github.com/tomet-lang/tomet.git" }
@@ -38,7 +34,7 @@ image = { version = "0.25", default-features = false, features = [
 ] }
 minijinja = { version = "2.7.0", features = ["json", "loader"] }
 notify = "6.1.1"
-pagefind = { version = "1.5.2", default-features = false, optional = true }
+pagefind = { version = "1.5.2", default-features = false }
 percent-encoding = "2.3"
 rayon = "1.10"
 regex = "1.11.1"
@@ -50,14 +46,6 @@ tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
 unicode-segmentation = "1.12"
 walkdir = "2.5.0"
-
-[features]
-embedded-search = ["dep:pagefind"]
-embedded-search-extended = ["embedded-search", "pagefind/extended"]
-
-[workspace]
-resolver = "3"
-members = ["crates/search", "crates/serve"]
 
 [profile.dev.package."*"]
 opt-level = 3

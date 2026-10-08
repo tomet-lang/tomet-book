@@ -123,7 +123,10 @@ impl BookRenderer {
         };
 
         env.add_global("base_path", Value::from(&base_path));
-        env.add_global("clean_url_prefix", Value::from(config.build.clean_url_prefix()));
+        env.add_global(
+            "clean_url_prefix",
+            Value::from(config.build.clean_url_prefix()),
+        );
         env.add_global("full_url_prefix", Value::from(&full_url_prefix));
         env.add_global("home_url", Value::from(&home_url));
 

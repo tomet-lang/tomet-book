@@ -576,11 +576,7 @@ Visit @link(https://github.com/tomet-lang/tomet)[GitHub Repo] and @link(https://
         icons.insert(target_doc.slug.clone(), target_doc.link_icon.unwrap());
 
         let full_prefix = config.build.full_url_prefix();
-        source_doc.body_html = enhance_internal_links(
-            &source_doc.body_html,
-            &icons,
-            &full_prefix,
-        );
+        source_doc.body_html = enhance_internal_links(&source_doc.body_html, &icons, &full_prefix);
 
         assert!(
             source_doc.body_html.contains(
@@ -765,7 +761,8 @@ pub fn process_parsed_document_with_blocks(
     let (raw_body_html, outline) = tomet_html::render_body_with_outline(&doc, &render_opts);
     let body_html = marker::enhance_list_markers(&raw_body_html, &config.ui.markers, &base_path);
     let body_html = code::enhance_code_blocks(&body_html, Some(&config.book.lang), &base_path);
-    let body_html = external_links::enhance_external_links(&body_html, &config.ui.links, &base_path);
+    let body_html =
+        external_links::enhance_external_links(&body_html, &config.ui.links, &base_path);
 
     // 6. Table of contents, title, and the sticky-tab tree
     let (first_h1, mut toc) = toc_from_outline(&outline);

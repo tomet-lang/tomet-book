@@ -300,8 +300,10 @@ pub fn handle_http_request(
     }
 
     // 3. Root "/" or base_path root
-    let is_root = path == "/" || path.is_empty()
-        || (!clean_base_path.is_empty() && (path == clean_base_path || path == format!("{clean_base_path}/")));
+    let is_root = path == "/"
+        || path.is_empty()
+        || (!clean_base_path.is_empty()
+            && (path == clean_base_path || path == format!("{clean_base_path}/")));
 
     if is_root {
         if !clean_url_prefix.is_empty() {

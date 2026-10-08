@@ -1,0 +1,25 @@
+[package]
+name = "tmtbook-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "CLI for tmtbook - A standalone book & wiki generator for Tomet"
+
+[[bin]]
+name = "tmtbook"
+path = "src/main.rs"
+
+[dependencies]
+tmtbook.workspace = true
+
+#= Crates.io
+anyhow.workspace = true
+clap.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[features]
+default = []
+embedded-search = ["tmtbook/embedded-search"]
+embedded-search-extended = ["tmtbook/embedded-search-extended"]

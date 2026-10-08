@@ -535,7 +535,10 @@ fn build_book_with_base_path() {
     assert!(intro_html_path.is_file(), "intro HTML must exist");
 
     let root_redirect_path = out.join("index.html");
-    assert!(root_redirect_path.is_file(), "root redirect HTML must exist");
+    assert!(
+        root_redirect_path.is_file(),
+        "root redirect HTML must exist"
+    );
 
     // 2. Root redirect points to full prefix
     let redirect_html = fs::read_to_string(&root_redirect_path).unwrap();
@@ -595,4 +598,3 @@ fn build_book_with_base_path() {
     let _ = fs::remove_dir_all(&src);
     let _ = fs::remove_dir_all(&out);
 }
-

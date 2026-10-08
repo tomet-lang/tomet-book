@@ -24,7 +24,7 @@
 use std::path::Path;
 
 use rayon::prelude::*;
-use tomet_ast::{Block, Document, Paragraph};
+use tomet_ast::{Block, Document};
 
 use super::document::strip_doc_extension;
 use super::loader::DocFileInfo;
@@ -204,7 +204,6 @@ fn collect_blocks(
 /// schemes count as a link.
 fn first_page_target(blocks: &[tomet_ast::Block], span: tomet_ast::Span) -> Option<String> {
     let probe = Document::new(blocks.to_vec(), span);
-
 
     tomet_links::collect_links(&probe)
         .into_iter()

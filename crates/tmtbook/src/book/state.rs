@@ -312,11 +312,8 @@ pub fn render_single_document_html(
     )?;
     let full_url_prefix = config.build.full_url_prefix();
     if config.ui.links.note_icons && !cx.doc_icons.is_empty() {
-        processed.body_html = document::enhance_internal_links(
-            &processed.body_html,
-            cx.doc_icons,
-            &full_url_prefix,
-        );
+        processed.body_html =
+            document::enhance_internal_links(&processed.body_html, cx.doc_icons, &full_url_prefix);
     }
     let html = cx
         .renderer
@@ -354,11 +351,8 @@ pub fn render_single_document(
     image_opt::optimize_single_doc_media(&mut processed, cx.src_dir, out_dir, config);
     let full_url_prefix = config.build.full_url_prefix();
     if config.ui.links.note_icons && !cx.doc_icons.is_empty() {
-        processed.body_html = document::enhance_internal_links(
-            &processed.body_html,
-            cx.doc_icons,
-            &full_url_prefix,
-        );
+        processed.body_html =
+            document::enhance_internal_links(&processed.body_html, cx.doc_icons, &full_url_prefix);
     }
     let html = cx
         .renderer
