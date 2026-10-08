@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    name: Build · Test · Lint · Docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v15
+        with:
+          name: tomet
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
+      - name: Build tmtbook package
+        run: nix build .#tmtbook
+
+      - name: Build tmtbook-embedded-search package
+        run: nix build .#tmtbook-embedded-search
+
+      - name: Run CI checks & tests
+        run: nix develop --command just ci
+
+      - name: Check docs
+        run: nix develop --command just docs-check
