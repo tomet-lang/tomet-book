@@ -228,7 +228,7 @@ fn add_class_to_attrs(attrs: &str, new_class: &str) -> String {
 /// - Replaces checkbox/icon markers with Lucide SVGs (if `config.enable` is true)
 /// - Replaces raw bracketed text markers `[xxx]` with pill badges
 /// - Injects task item classes onto enclosing `<li>`s
-pub fn enhance_list_markers(body_html: &str, config: &MarkersConfig) -> String {
+pub fn enhance_list_markers(body_html: &str, config: &MarkersConfig, base_path: &str) -> String {
     LI_MARKER_RE
         .replace_all(body_html, |caps: &regex::Captures| {
             let li_attrs = &caps[1];
@@ -260,6 +260,7 @@ pub fn enhance_list_markers(body_html: &str, config: &MarkersConfig) -> String {
                         Some(ref c) => format!(" style=\"--marker-color: {c};\""),
                         None => String::new(),
                     };
+
                     let safe_icon = escape_html(&icon);
                     let safe_pkg = escape_html(&pkg);
                     let safe_marker_attr = if !raw_val.is_empty() {
@@ -269,7 +270,7 @@ pub fn enhance_list_markers(body_html: &str, config: &MarkersConfig) -> String {
                     };
 
                     format!(
-                        "<li{new_li_attrs}>{ws}<span class=\"tm-list-marker tm-list-marker-icon{done_marker_class}\"{safe_marker_attr}{style_attr}><svg class=\"tm-doc-icon\" aria-hidden=\"true\"><use href=\"/icons/{safe_pkg}.svg#{safe_icon}\"></use></svg></span>"
+                        "<li{new_li_attrs}>{ws}<span class=\"tm-list-marker tm-list-marker-icon{done_marker_class}\"{safe_marker_attr}{style_attr}><svg class=\"tm-doc-icon\" aria-hidden=\"true\"><use href=\"{base_path}/icons/{safe_pkg}.svg#{safe_icon}\"></use></svg></span>"
                     )
                 }
                 ResolvedMarker::Badge { html } => {
@@ -295,11 +296,27 @@ mod tests {
     use crate::config::MarkerEntryConfig;
     use std::collections::HashMap;
 
+    fn enhance(html: &str, config: &MarkersConfig) -> String {
+        enhance_list_markers(html, config, "")
+    }
+
+    #[test]
+    fn marker_renders_with_base_path() {
+        let config = MarkersConfig {
+            enable: true,
+            strikethrough: true,
+            custom: HashMap::new(),
+        };
+        let html = "<ul>\n<li><span class=\"tm-list-marker\"></span> todo item</li>\n</ul>";
+        let out = enhance_list_markers(html, &config, "/my-repo");
+        assert!(out.contains("<use href=\"/my-repo/icons/lucide.svg#square\"></use>"));
+    }
+
     #[test]
     fn disabled_by_default_renders_all_markers_as_badges_without_icons_or_strikethrough() {
         let config = MarkersConfig::default();
         let html = "<ul>\n<li><span class=\"tm-list-marker\" data-marker=\"x\">[x]</span> task</li>\n<li><span class=\"tm-list-marker\" data-marker=\"12:01\">[12:01]</span> breakfast</li>\n</ul>";
-        let out = enhance_list_markers(html, &config);
+        let out = enhance(html, &config);
 
         assert!(
             !out.contains("<svg"),
@@ -323,7 +340,7 @@ mod tests {
             custom: HashMap::new(),
         };
         let html = "<ul>\n<li><span class=\"tm-list-marker\"></span> todo item</li>\n</ul>";
-        let out = enhance_list_markers(html, &config);
+        let out = enhance(html, &config);
 
         assert!(out.contains("class=\"tm-task-item\""));
         assert!(out.contains("<use href=\"/icons/lucide.svg#square\"></use>"));
@@ -337,7 +354,7 @@ mod tests {
             custom: HashMap::new(),
         };
         let html = "<ul>\n<li><span class=\"tm-list-marker\" data-marker=\"x\">[x]</span> completed task</li>\n</ul>";
-        let out = enhance_list_markers(html, &config);
+        let out = enhance(html, &config);
 
         assert!(out.contains("class=\"tm-task-item tm-task-done tm-strikethrough\""));
         assert!(out.contains("<use href=\"/icons/lucide.svg#square-check\"></use>"));
@@ -352,7 +369,7 @@ mod tests {
             custom: HashMap::new(),
         };
         let html = "<ul>\n<li><span class=\"tm-list-marker\" data-marker=\"x\">[x]</span> completed task</li>\n</ul>";
-        let out = enhance_list_markers(html, &config);
+        let out = enhance(html, &config);
 
         assert!(out.contains("class=\"tm-task-item tm-task-done\""));
         assert!(!out.contains("tm-strikethrough"));
@@ -373,7 +390,7 @@ mod tests {
 <li><span class="tm-list-marker" data-marker="?">[?]</span> question</li>
 <li><span class="tm-list-marker" data-marker="*">[*]</span> star</li>
 </ul>"#;
-        let out = enhance_list_markers(html, &config);
+        let out = enhance(html, &config);
 
         assert!(out.contains("<use href=\"/icons/lucide.svg#clock\"></use>"));
         assert!(out.contains("<use href=\"/icons/lucide.svg#circle-minus\"></use>"));
@@ -393,7 +410,7 @@ mod tests {
 <li><span class="tm-list-marker" data-marker="flame">[flame]</span> hot</li>
 <li><span class="tm-list-marker" data-marker="lucide.bug">[lucide.bug]</span> bug</li>
 </ul>"#;
-        let out = enhance_list_markers(html, &config);
+        let out = enhance(html, &config);
 
         assert!(out.contains("<use href=\"/icons/lucide.svg#flame\"></use>"));
         assert!(out.contains("<use href=\"/icons/lucide.svg#bug\"></use>"));
@@ -407,7 +424,7 @@ mod tests {
             custom: HashMap::new(),
         };
         let html = "<ul>\n<li><span class=\"tm-list-marker\" data-marker=\"12:01\">[12:01]</span> breakfast</li>\n</ul>";
-        let out = enhance_list_markers(html, &config);
+        let out = enhance(html, &config);
 
         assert!(!out.contains("<svg"));
         assert!(out.contains("<li class=\"tm-list-item-with-badge\">"));
@@ -433,7 +450,7 @@ mod tests {
             custom,
         };
         let html = "<ul>\n<li><span class=\"tm-list-marker\" data-marker=\"fire\">[fire]</span> fire item</li>\n</ul>";
-        let out = enhance_list_markers(html, &config);
+        let out = enhance(html, &config);
 
         assert!(out.contains("<use href=\"/icons/lucide.svg#flame\"></use>"));
         assert!(out.contains("style=\"--marker-color: #f97316;\""));
@@ -462,7 +479,7 @@ mod tests {
             custom,
         };
         let html = "<ul>\n<li><span class=\"tm-list-marker\" data-marker=\"idea\">[idea]</span> content</li>\n</ul>";
-        let out = enhance_list_markers(html, &config);
+        let out = enhance(html, &config);
         assert!(
             out.contains("</span>content"),
             "expected no literal space between marker span and content, got: {out}"
@@ -473,7 +490,7 @@ mod tests {
     fn renders_badge_with_inline_elements() {
         let config = MarkersConfig::default();
         let html = "<ul>\n<li><span class=\"tm-list-marker\"><em>Important</em></span> content</li>\n<li><span class=\"tm-list-marker\"><a class=\"tm-url\" href=\"https://example.com\">Wiki</a></span> docs</li>\n</ul>";
-        let out = enhance_list_markers(html, &config);
+        let out = enhance(html, &config);
 
         assert!(out.contains(
             "<li class=\"tm-list-item-with-badge\"><span class=\"tm-list-marker tm-list-marker-badge\"><em>Important</em></span>content</li>"
@@ -491,7 +508,7 @@ mod tests {
             custom: HashMap::new(),
         };
         let html = "<ul>\n<li><span class=\"tm-list-marker\"><em>Important</em></span> content</li>\n<li><span class=\"tm-list-marker\"><a class=\"tm-url\" href=\"https://example.com\">Wiki</a></span> docs</li>\n</ul>";
-        let out = enhance_list_markers(html, &config);
+        let out = enhance(html, &config);
 
         assert!(out.contains(
             "<li class=\"tm-list-item-with-badge\"><span class=\"tm-list-marker tm-list-marker-badge\"><em>Important</em></span>content</li>"

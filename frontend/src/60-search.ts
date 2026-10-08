@@ -9,7 +9,8 @@
   async function getPagefind() {
     if (!pagefindInstance) {
       try {
-        const pagefindUrl = '/pagefind/pagefind.js';
+        const base = (window as any).tmtBasePath || '';
+        const pagefindUrl = `${base}/pagefind/pagefind.js`;
         const pf = await import(/* @vite-ignore */ pagefindUrl);
         await pf.options({
           ranking: {
@@ -47,7 +48,8 @@
 
   async function getNativeIndex(): Promise<NativeSearchIndex | null> {
     if (!nativeIndexPromise) {
-      nativeIndexPromise = fetch('/search-index.json')
+      const base = (window as any).tmtBasePath || '';
+      nativeIndexPromise = fetch(`${base}/search-index.json`)
         .then((res) => (res.ok ? res.json() : null))
         .catch((e) => {
           console.warn('Native search index not found or error loading:', e);
@@ -537,8 +539,10 @@
         }
 
         const pathEl = item.querySelector<HTMLElement>('.search-result-path');
+        const prefix = (window as any).tmtFullUrlPrefix || (window as any).tmtUrlPrefix || '/wiki';
+        const cleanPrefixRegex = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/?`);
         const displayPath =
-          res.meta?.path || (res.url ? res.url.replace(/^\/wiki\//, '').replace(/\/+$/, '') : '');
+          res.meta?.path || (res.url ? res.url.replace(cleanPrefixRegex, '').replace(/\/+$/, '') : '');
         if (displayPath && pathEl) {
           pathEl.textContent = displayPath;
           pathEl.hidden = false;

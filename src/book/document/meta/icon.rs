@@ -147,13 +147,15 @@ pub(super) fn extract_icon(
     match val {
         Value::String(s) => {
             let s_trimmed = s.trim();
+            let base_path = cx.config.build.clean_base_path();
             if let Some(lucide_name) = s_trimmed.strip_prefix("lucide:")
                 && doc_icon::is_lucide_icon(lucide_name)
             {
-                let link_icon = doc_icon::render_link_icon(lucide_name, "lucide");
+                let link_icon = doc_icon::render_link_icon_with_base(lucide_name, "lucide", &base_path);
                 let doc_icon = format!(
-                    r#"<svg class="tm-doc-icon" data-pkg="lucide" data-icon="{}" aria-hidden="true"><use href="/icons/lucide.svg#{}"></use></svg>"#,
+                    r#"<svg class="tm-doc-icon" data-pkg="lucide" data-icon="{}" aria-hidden="true"><use href="{}/icons/lucide.svg#{}"></use></svg>"#,
                     escape_html(lucide_name),
+                    base_path,
                     escape_html(lucide_name),
                 );
                 return (Some(doc_icon), None, link_icon);
@@ -161,10 +163,11 @@ pub(super) fn extract_icon(
             if let Some(simple_name) = s_trimmed.strip_prefix("simple:")
                 && doc_icon::is_simple_icon(simple_name)
             {
-                let link_icon = doc_icon::render_link_icon(simple_name, "simple");
+                let link_icon = doc_icon::render_link_icon_with_base(simple_name, "simple", &base_path);
                 let doc_icon = format!(
-                    r#"<svg class="tm-doc-icon" data-pkg="simple" data-icon="{}" aria-hidden="true"><use href="/icons/simple.svg#{}"></use></svg>"#,
+                    r#"<svg class="tm-doc-icon" data-pkg="simple" data-icon="{}" aria-hidden="true"><use href="{}/icons/simple.svg#{}"></use></svg>"#,
                     escape_html(simple_name),
+                    base_path,
                     escape_html(simple_name),
                 );
                 return (Some(doc_icon), None, link_icon);

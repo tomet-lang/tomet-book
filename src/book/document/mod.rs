@@ -575,10 +575,11 @@ Visit @link(https://github.com/tomet-lang/tomet)[GitHub Repo] and @link(https://
         let mut icons = std::collections::HashMap::new();
         icons.insert(target_doc.slug.clone(), target_doc.link_icon.unwrap());
 
+        let full_prefix = config.build.full_url_prefix();
         source_doc.body_html = enhance_internal_links(
             &source_doc.body_html,
             &icons,
-            config.build.clean_url_prefix(),
+            &full_prefix,
         );
 
         assert!(
@@ -717,8 +718,8 @@ pub fn process_parsed_document_with_blocks(
     );
 
     let mode = tomet_transform::TargetMode::WebSlug {
-        url_prefix: config.build.clean_url_prefix().to_string(),
-        asset_prefix: config.build.clean_asset_prefix().to_string(),
+        url_prefix: config.build.full_url_prefix(),
+        asset_prefix: config.build.full_asset_prefix(),
     };
     tomet_transform::resolve_document_links(
         &mut doc,
@@ -750,17 +751,21 @@ pub fn process_parsed_document_with_blocks(
     let meta_json = raw_meta.as_ref().map(tomet_semantics::value_to_json);
 
     // 5. Render, and take the heading outline the renderer reports
+    let base_path = config.build.clean_base_path();
+    let base_for_custom = base_path.clone();
     let render_opts = tomet_html::RenderOptions {
         number_headings: true,
         auto_slug_headings: true,
         lang: Some(config.book.lang.clone()),
-        custom_element: Some(tomet_html::CustomElementRenderer::new(icon::render)),
+        custom_element: Some(tomet_html::CustomElementRenderer::new(move |ctx| {
+            icon::render_with_base(ctx, &base_for_custom)
+        })),
         ..Default::default()
     };
     let (raw_body_html, outline) = tomet_html::render_body_with_outline(&doc, &render_opts);
-    let body_html = marker::enhance_list_markers(&raw_body_html, &config.ui.markers);
-    let body_html = code::enhance_code_blocks(&body_html, Some(&config.book.lang));
-    let body_html = external_links::enhance_external_links(&body_html, &config.ui.links);
+    let body_html = marker::enhance_list_markers(&raw_body_html, &config.ui.markers, &base_path);
+    let body_html = code::enhance_code_blocks(&body_html, Some(&config.book.lang), &base_path);
+    let body_html = external_links::enhance_external_links(&body_html, &config.ui.links, &base_path);
 
     // 6. Table of contents, title, and the sticky-tab tree
     let (first_h1, mut toc) = toc_from_outline(&outline);
@@ -797,10 +802,10 @@ pub fn process_parsed_document_with_blocks(
     // against the raw, pre-JSON value: `Value::Element` has no JSON form
     // (`tomet_semantics::value_to_json` degrades it to a tagged object),
     // so this is the one path that can still see it.
-    if let Some(icon_html) = icon::meta_icon_element(raw_meta.as_ref()) {
+    if let Some(icon_html) = icon::meta_icon_element(raw_meta.as_ref(), &base_path) {
         props.icon = Some(icon_html);
         props.icon_image_url = None;
-        props.link_icon = icon::meta_link_icon_element(raw_meta.as_ref());
+        props.link_icon = icon::meta_link_icon_element(raw_meta.as_ref(), &base_path);
     }
 
     // Merge links from @meta into body links, dropping self-references and duplicates.

@@ -505,3 +505,94 @@ fn build_book_emits_native_search_index_json() {
     let _ = fs::remove_dir_all(&out);
     let _ = fs::remove_dir_all(&out_none);
 }
+
+#[test]
+fn build_book_with_base_path() {
+    let src = scratch("test-base-path-src");
+    let out = scratch("test-base-path-out");
+
+    fs::write(
+        src.join("intro.tmt"),
+        "@meta{ title: \"Getting Started\", icon: @doc.icon(\"book-open\", pkg: \"lucide\") }\n\n#[ Getting Started ]\n\nSee @link(ref:\"outro\")[Outro].\n",
+    )
+    .unwrap();
+
+    fs::write(
+        src.join("outro.tmt"),
+        "@meta{ title: \"Conclusion\" }\n\n#[ Conclusion ]\n\nDone.\n",
+    )
+    .unwrap();
+
+    let mut config = BookConfig::default();
+    config.build.base_path = Some("/my-book".to_string());
+    config.build.search = SearchEngine::Native;
+
+    let report = build_book(&src, &out, &config, false).unwrap();
+    assert_eq!(report.rendered, 2);
+
+    // 1. Files are placed directly under `out`, without nesting under /my-book physically
+    let intro_html_path = out.join("wiki/intro/index.html");
+    assert!(intro_html_path.is_file(), "intro HTML must exist");
+
+    let root_redirect_path = out.join("index.html");
+    assert!(root_redirect_path.is_file(), "root redirect HTML must exist");
+
+    // 2. Root redirect points to full prefix
+    let redirect_html = fs::read_to_string(&root_redirect_path).unwrap();
+    assert!(
+        redirect_html.contains(r#"url=/my-book/wiki""#),
+        "Redirect target must include base_path: {redirect_html}"
+    );
+
+    // 3. Rendered HTML uses base_path in assets and links
+    let intro_html = fs::read_to_string(&intro_html_path).unwrap();
+    assert!(
+        intro_html.contains(r#"href="/my-book/tmtbook.css"#),
+        "CSS must be prefixed with base_path"
+    );
+    assert!(
+        intro_html.contains(r#"src="/my-book/tmtbook.js"#),
+        "JS must be prefixed with base_path"
+    );
+    assert!(
+        intro_html.contains(r#"href="/my-book/components/tmt-btn.css"#),
+        "Component CSS must be prefixed with base_path"
+    );
+    assert!(
+        intro_html.contains(r#"href="/my-book/icons/lucide.svg#book-open""#),
+        "Lucide sprite must be prefixed with base_path"
+    );
+    assert!(
+        intro_html.contains(r#"href="/my-book/wiki/outro""#),
+        "Internal link must be prefixed with base_path and url_prefix"
+    );
+    assert!(
+        intro_html.contains(r#"href="/my-book/wiki""#),
+        "Home link must point to home_url"
+    );
+    assert!(
+        intro_html.contains(r#"window.tmtBasePath = "/my-book";"#),
+        "window.tmtBasePath must match"
+    );
+    assert!(
+        intro_html.contains(r#"window.tmtFullUrlPrefix = "/my-book/wiki";"#),
+        "window.tmtFullUrlPrefix must match"
+    );
+    assert!(
+        intro_html.contains(r#"window.tmtHomeUrl = "/my-book/wiki";"#),
+        "window.tmtHomeUrl must match"
+    );
+
+    // 4. Search index contains full url
+    let index_file = out.join("search-index.json");
+    assert!(index_file.is_file(), "search-index.json must exist");
+    let search_json = fs::read_to_string(&index_file).unwrap();
+    assert!(
+        search_json.contains(r#""url":"/my-book/wiki/intro""#),
+        "Search index URLs must include base_path: {search_json}"
+    );
+
+    let _ = fs::remove_dir_all(&src);
+    let _ = fs::remove_dir_all(&out);
+}
+

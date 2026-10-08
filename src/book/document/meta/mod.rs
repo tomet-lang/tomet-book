@@ -73,7 +73,7 @@ impl MetaCtx<'_> {
             raw,
             self.from_path,
             self.vault_index,
-            self.config.build.clean_asset_prefix(),
+            &self.config.build.full_asset_prefix(),
         )
     }
 
@@ -83,7 +83,7 @@ impl MetaCtx<'_> {
             raw,
             self.from_path,
             self.vault_index,
-            self.config.build.clean_url_prefix(),
+            &self.config.build.full_url_prefix(),
             self.route_table,
         ) {
             Some((href, label)) => (if href.is_empty() { None } else { Some(href) }, label),
@@ -103,7 +103,7 @@ impl MetaCtx<'_> {
             raw,
             self.from_path,
             self.vault_index,
-            self.config.build.clean_url_prefix(),
+            &self.config.build.full_url_prefix(),
             unresolved_title,
             self.route_table,
         )
@@ -236,7 +236,8 @@ pub fn extract(
         };
         for item in items {
             let Some(href) = item.href else { continue };
-            if let Some(slug) = super::links::slug_from_href(&href, config.build.clean_url_prefix())
+            let full_prefix = config.build.full_url_prefix();
+            if let Some(slug) = super::links::slug_from_href(&href, &full_prefix)
                 && !linked_slugs.contains(&slug)
             {
                 linked_slugs.push(slug);

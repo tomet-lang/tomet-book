@@ -332,7 +332,14 @@
       }
 
       // Only handle in-app wiki note links
-      if (!href.startsWith('/wiki') && !href.startsWith('wiki')) {
+      const prefix = (window as any).tmtFullUrlPrefix || (window as any).tmtUrlPrefix || '/wiki';
+      const cleanPrefix = prefix.replace(/^\/+/, '');
+      const isWikiLink =
+        href.startsWith(prefix) ||
+        (cleanPrefix && href.startsWith(cleanPrefix)) ||
+        href.startsWith('/wiki') ||
+        href.startsWith('wiki');
+      if (!isWikiLink) {
         return;
       }
 

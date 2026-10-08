@@ -6,7 +6,7 @@
 <ul class="book-index-items">
   {% for entry in items %}
   <li class="book-index-item">
-    <a href="{{ entry.url }}" class="book-index-link{% if entry.url == here %} is-here{% endif %}"{% if entry.url == here %} aria-current="page"{% endif %}>
+    <a href="{{ entry.url | safe }}" class="book-index-link{% if entry.url == here %} is-here{% endif %}"{% if entry.url == here %} aria-current="page"{% endif %}>
       <span class="book-index-title">{{ entry.title }}</span>
     </a>
     {% if entry.children %}{{ index_list(entry.children, here) }}{% endif %}
@@ -23,7 +23,7 @@
   <nav class="book-rail-nav w-[38px] min-w-[38px] max-w-[38px] h-screen flex flex-col items-center shrink-0 box-border p-0 z-50 select-none" id="book-rail-nav" data-pagefind-ignore aria-label="{{ t["nav.bar"] }}">
     <!-- Brand / Home Header -->
     <div class="rail-brand w-full flex flex-col items-center border-b border-shell-border box-border">
-      <a href="/wiki" class="rail-tab rail-tab-title flex flex-col items-center justify-center w-full py-3.5 bg-transparent border-0 box-border text-shell-text font-bold no-underline! cursor-pointer" id="btn-rail-home" title="{{ site_title }} {{ t["nav.home_title"] }}">
+      <a href="{{ home_url | safe }}" class="rail-tab rail-tab-title flex flex-col items-center justify-center w-full py-3.5 bg-transparent border-0 box-border text-shell-text font-bold no-underline! cursor-pointer" id="btn-rail-home" title="{{ site_title }} {{ t["nav.home_title"] }}">
         <span class="rail-letters rail-letters-brand flex flex-col items-center text-[0.72rem] leading-[1.15] tracking-[0.08em] font-bold lowercase">
           {% for ch in rail_letters %}
           <span>{{ ch }}</span>
@@ -201,7 +201,7 @@
       <!-- 1. TOC Panel View -->
       <div class="pane-panel-view is-active" id="pane-panel-toc">
         <nav class="nav-breadcrumbs py-[10px] px-3.5 border-b border-border-subtle shadow-[0_2px_3px_-2px_rgba(0,0,0,0.12)] relative flex flex-col gap-1 text-xs">
-          <a href="/wiki" class="nav-crumb-home text-link font-bold">{{ t["nav.home"] }}</a>
+          <a href="{{ home_url | safe }}" class="nav-crumb-home text-link font-bold">{{ t["nav.home"] }}</a>
           {% if section %}
           <div class="nav-crumb-section flex gap-1 text-text-muted">
             <span class="crumb-label">{{ t["nav.section"] }}</span>
@@ -481,7 +481,7 @@
   {% endif %}
   <nav class="breadcrumb breadcrumb-classic text-[0.875rem] text-text-muted mb-4 pb-2 border-b border-border-subtle flex justify-between items-center">
     <div>
-      <a href="/wiki">← Home</a>{% if section %} / <span class="breadcrumb-section text-text-muted">{{ section }}</span>{% endif %} / <span>{{ page_title }}</span>
+      <a href="{{ home_url | safe }}">← Home</a>{% if section %} / <span class="breadcrumb-section text-text-muted">{{ section }}</span>{% endif %} / <span>{{ page_title }}</span>
     </div>
     <tmt-btn variant="ghost" size="sm" shape="square" class="theme-toggle-btn" title="{{ t["theme.toggle"] }}" aria-label="{{ t["theme.toggle_label"] }}">
       {{ ui.dsd_btn_shadow(title=t["theme.toggle"], aria_label=t["theme.toggle_label"]) }}

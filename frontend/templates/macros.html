@@ -216,7 +216,7 @@
 #}
 {% macro dsd_btn_shadow(title="", aria_label="", disabled=false, type="button") %}
   <template shadowrootmode="open">
-    <link rel="stylesheet" href="/components/tmt-btn.css?v={{ tmt_btn_css_version }}">
+    <link rel="stylesheet" href="{{ base_path | safe }}/components/tmt-btn.css?v={{ tmt_btn_css_version }}">
     <button type="{{ type }}" class="tmt-btn-inner" part="button"{% if title %} title="{{ title }}"{% endif %}{% if aria_label %} aria-label="{{ aria_label }}"{% endif %}{% if disabled %} disabled{% endif %}>
       <slot></slot>
     </button>
@@ -250,7 +250,7 @@
 #}
 {% macro dsd_badge_shadow(href="") %}
   <template shadowrootmode="open">
-    <link rel="stylesheet" href="/components/tmt-badge.css?v={{ tmt_badge_css_version }}">
+    <link rel="stylesheet" href="{{ base_path | safe }}/components/tmt-badge.css?v={{ tmt_badge_css_version }}">
     {% if href %}
     <a href="{{ href }}" class="tmt-badge-inner" part="badge">
       <slot></slot>
@@ -288,10 +288,10 @@
 #}
 {% macro dsd_icon_shadow(name="", size="sm", pkg="lucide") %}
   <template shadowrootmode="open">
-    <link rel="stylesheet" href="/components/tmt-icon.css?v={{ tmt_icon_css_version }}">
+    <link rel="stylesheet" href="{{ base_path | safe }}/components/tmt-icon.css?v={{ tmt_icon_css_version }}">
     {% if name %}
     <svg aria-hidden="true">
-      <use href="/icons/{{ pkg }}.svg#{{ name }}"></use>
+      <use href="{{ base_path | safe }}/icons/{{ pkg }}.svg#{{ name }}"></use>
     </svg>
     {% else %}
     <slot></slot>
@@ -321,7 +321,7 @@
 #}
 {% macro dsd_swatch_shadow() %}
   <template shadowrootmode="open">
-    <link rel="stylesheet" href="/components/tmt-swatch.css?v={{ tmt_swatch_css_version }}">
+    <link rel="stylesheet" href="{{ base_path | safe }}/components/tmt-swatch.css?v={{ tmt_swatch_css_version }}">
     <slot name="preview"></slot>
     <slot></slot>
   </template>
@@ -334,7 +334,7 @@
 #}
 {% macro dsd_switch_shadow() %}
   <template shadowrootmode="open">
-    <link rel="stylesheet" href="/components/tmt-switch.css?v={{ tmt_switch_css_version }}">
+    <link rel="stylesheet" href="{{ base_path | safe }}/components/tmt-switch.css?v={{ tmt_switch_css_version }}">
     <slot></slot>
     <span class="tmt-switch-track" part="track">
       <span class="tmt-switch-knob" part="knob"></span>

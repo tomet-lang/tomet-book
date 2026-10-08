@@ -25,7 +25,7 @@ fn extract_language(code_attrs: &str) -> Option<&str> {
 
 /// Enhances code blocks in the rendered HTML by wrapping them in a container
 /// with a language label and a copy button.
-pub fn enhance_code_blocks(body_html: &str, lang: Option<&str>) -> String {
+pub fn enhance_code_blocks(body_html: &str, lang: Option<&str>, base_path: &str) -> String {
     let copy_title = if lang.map(crate::i18n::is_english).unwrap_or(false) {
         "Copy code"
     } else {
@@ -48,7 +48,7 @@ pub fn enhance_code_blocks(body_html: &str, lang: Option<&str>) -> String {
             };
 
             let copy_btn = format!(
-                r#"<button type="button" class="code-copy-btn" title="{copy_title}" aria-label="{copy_title}"><svg class="tm-doc-icon" aria-hidden="true"><use href="/icons/lucide.svg#copy"></use></svg></button>"#
+                r#"<button type="button" class="code-copy-btn" title="{copy_title}" aria-label="{copy_title}"><svg class="tm-doc-icon" aria-hidden="true"><use href="{base_path}/icons/lucide.svg#copy"></use></svg></button>"#
             );
 
             format!(
@@ -62,11 +62,22 @@ pub fn enhance_code_blocks(body_html: &str, lang: Option<&str>) -> String {
 mod tests {
     use super::*;
 
+    fn enhance(html: &str, lang: Option<&str>) -> String {
+        enhance_code_blocks(html, lang, "")
+    }
+
+    #[test]
+    fn wraps_code_block_with_base_path() {
+        let html = r#"<pre><code class="language-toml">foo = 1</code></pre>"#;
+        let out = enhance_code_blocks(html, None, "/my-repo");
+        assert!(out.contains("<use href=\"/my-repo/icons/lucide.svg#copy\"></use>"));
+    }
+
     #[test]
     fn wraps_code_block_with_language_label_and_copy_button() {
         let html = r#"<pre><code class="language-toml">[ui.markers]
 enable = true</code></pre>"#;
-        let out = enhance_code_blocks(html, None);
+        let out = enhance(html, None);
 
         assert!(out.contains("<div class=\"code-block-wrapper\">"));
         assert!(out.contains("<span class=\"code-lang\">toml</span>"));
@@ -82,7 +93,7 @@ enable = true</code></pre>"#
     #[test]
     fn wraps_code_block_without_language_label() {
         let html = "<pre><code>plain code</code></pre>";
-        let out = enhance_code_blocks(html, None);
+        let out = enhance(html, None);
 
         assert!(out.contains("<div class=\"code-block-wrapper\">"));
         assert!(!out.contains("code-lang"));
@@ -93,7 +104,7 @@ enable = true</code></pre>"#
     #[test]
     fn preserves_pre_and_code_attributes() {
         let html = r#"<pre id="snippet1" class="custom-pre"><code class="language-rust custom-code">fn main() {}</code></pre>"#;
-        let out = enhance_code_blocks(html, None);
+        let out = enhance(html, None);
 
         assert!(out.contains("<span class=\"code-lang\">rust</span>"));
         assert!(out.contains(r#"<pre id="snippet1" class="custom-pre"><code class="language-rust custom-code">fn main() {}</code></pre>"#));
@@ -102,7 +113,7 @@ enable = true</code></pre>"#
     #[test]
     fn supports_english_copy_title() {
         let html = r#"<pre><code class="language-rust">fn main() {}</code></pre>"#;
-        let out = enhance_code_blocks(html, Some("en"));
+        let out = enhance(html, Some("en"));
 
         assert!(out.contains("title=\"Copy code\""));
         assert!(out.contains("aria-label=\"Copy code\""));

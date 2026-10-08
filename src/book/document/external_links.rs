@@ -95,7 +95,7 @@ fn normalize_host(raw_host: &str) -> String {
 }
 
 /// Resolves the HTML string for an external link's prefix icon.
-fn resolve_link_icon(host: &str, config: &LinksConfig) -> Option<String> {
+fn resolve_link_icon(host: &str, config: &LinksConfig, base_path: &str) -> Option<String> {
     let norm = normalize_host(host);
 
     // 1. Check known domains for Simple Icons
@@ -104,7 +104,7 @@ fn resolve_link_icon(host: &str, config: &LinksConfig) -> Option<String> {
     {
         let safe_name = escape_html(icon_name);
         return Some(format!(
-            "<svg class=\"tm-link-icon\" aria-hidden=\"true\"><use href=\"/icons/simple.svg#{safe_name}\"></use></svg>"
+            "<svg class=\"tm-link-icon\" aria-hidden=\"true\"><use href=\"{base_path}/icons/simple.svg#{safe_name}\"></use></svg>"
         ));
     }
 
@@ -127,7 +127,7 @@ fn resolve_link_icon(host: &str, config: &LinksConfig) -> Option<String> {
 }
 
 /// Enhances external links in rendered HTML by inserting a site/brand icon prefix.
-pub fn enhance_external_links(body_html: &str, config: &LinksConfig) -> String {
+pub fn enhance_external_links(body_html: &str, config: &LinksConfig, base_path: &str) -> String {
     if !config.external_icons {
         return body_html.to_string();
     }
@@ -148,7 +148,7 @@ pub fn enhance_external_links(body_html: &str, config: &LinksConfig) -> String {
                 return caps[0].to_string();
             }
 
-            if let Some(icon_html) = resolve_link_icon(raw_host, config) {
+            if let Some(icon_html) = resolve_link_icon(raw_host, config, base_path) {
                 format!("<a{attrs}>{icon_html}{inner_content}</a>")
             } else {
                 caps[0].to_string()
@@ -161,12 +161,25 @@ pub fn enhance_external_links(body_html: &str, config: &LinksConfig) -> String {
 mod tests {
     use super::*;
 
+    fn enhance(html: &str, config: &LinksConfig) -> String {
+        enhance_external_links(html, config, "")
+    }
+
+    #[test]
+    fn enhances_link_with_base_path() {
+        let config = LinksConfig::default();
+        let html =
+            r#"<p><a class="tm-url" href="https://github.com/tomet-lang/tomet">GitHub</a></p>"#;
+        let out = enhance_external_links(html, &config, "/my-repo");
+        assert!(out.contains("<use href=\"/my-repo/icons/simple.svg#github\"></use>"));
+    }
+
     #[test]
     fn enhances_github_link_with_simple_icon() {
         let config = LinksConfig::default();
         let html =
             r#"<p><a class="tm-url" href="https://github.com/tomet-lang/tomet">GitHub</a></p>"#;
-        let out = enhance_external_links(html, &config);
+        let out = enhance(html, &config);
         assert_eq!(
             out,
             r#"<p><a class="tm-url" href="https://github.com/tomet-lang/tomet"><svg class="tm-link-icon" aria-hidden="true"><use href="/icons/simple.svg#github"></use></svg>GitHub</a></p>"#
@@ -178,7 +191,7 @@ mod tests {
         let config = LinksConfig::default();
         let html =
             r#"<p><a class="tm-url" href="https://zenn.dev/articles/123">Zenn Article</a></p>"#;
-        let out = enhance_external_links(html, &config);
+        let out = enhance(html, &config);
         assert!(out.contains("/icons/simple.svg#zenn"));
     }
 
@@ -186,7 +199,7 @@ mod tests {
     fn enhances_unknown_domain_with_google_favicon() {
         let config = LinksConfig::default();
         let html = r#"<p><a class="tm-url" href="https://example.com/blog">My Blog</a></p>"#;
-        let out = enhance_external_links(html, &config);
+        let out = enhance(html, &config);
         assert!(out.contains(
             r#"<img class="tm-link-icon tm-link-favicon" src="https://www.google.com/s2/favicons?domain=example.com&amp;sz=32""#
         ));
@@ -200,7 +213,7 @@ mod tests {
             favicon_service: FaviconService::DuckDuckGo,
         };
         let html = r#"<p><a class="tm-url" href="https://example.com/blog">My Blog</a></p>"#;
-        let out = enhance_external_links(html, &config);
+        let out = enhance(html, &config);
         assert!(out.contains(
             r#"<img class="tm-link-icon tm-link-favicon" src="https://icons.duckduckgo.com/ip3/example.com.ico""#
         ));
@@ -214,7 +227,7 @@ mod tests {
             favicon_service: FaviconService::Google,
         };
         let html = r#"<p><a class="tm-url" href="https://github.com/">GitHub</a></p>"#;
-        let out = enhance_external_links(html, &config);
+        let out = enhance(html, &config);
         assert_eq!(out, html);
     }
 
@@ -222,7 +235,7 @@ mod tests {
     fn does_not_add_icon_to_links_already_containing_images() {
         let config = LinksConfig::default();
         let html = r#"<p><a href="https://github.com/"><img src="badge.png" alt="badge"></a></p>"#;
-        let out = enhance_external_links(html, &config);
+        let out = enhance(html, &config);
         assert_eq!(out, html);
     }
 
@@ -234,7 +247,7 @@ mod tests {
             favicon_service: FaviconService::None,
         };
         let html = r#"<p><a href="https://unknown-domain-123.com/">Link</a></p>"#;
-        let out = enhance_external_links(html, &config);
+        let out = enhance(html, &config);
         assert_eq!(out, html);
     }
 }

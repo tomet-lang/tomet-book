@@ -29,6 +29,7 @@ mkShell rec {
     tomet-lsp
     twrit
     just
+    deno
     #== Build
     pkg-config
     pagefind

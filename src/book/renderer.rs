@@ -110,9 +110,26 @@ impl BookRenderer {
         env.add_global("is_dev", Value::from(is_dev));
         env.add_global("rail_letters", Value::from_serialize(&rail_letters));
 
+        let base_path = config.build.clean_base_path();
+        let full_url_prefix = config.build.full_url_prefix();
+        let home_url = if full_url_prefix.is_empty() {
+            if base_path.is_empty() {
+                "/".to_string()
+            } else {
+                format!("{base_path}/")
+            }
+        } else {
+            full_url_prefix.clone()
+        };
+
+        env.add_global("base_path", Value::from(&base_path));
+        env.add_global("clean_url_prefix", Value::from(config.build.clean_url_prefix()));
+        env.add_global("full_url_prefix", Value::from(&full_url_prefix));
+        env.add_global("home_url", Value::from(&home_url));
+
         Ok(Self {
             env,
-            clean_url_prefix: config.build.clean_url_prefix().to_string(),
+            clean_url_prefix: full_url_prefix,
         })
     }
 

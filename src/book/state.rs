@@ -151,7 +151,8 @@ impl VaultState {
             HashMap::new()
         };
 
-        let clean_url_prefix = config.build.clean_url_prefix();
+        let full_url_prefix = config.build.full_url_prefix();
+        let clean_url_prefix = full_url_prefix.as_str();
         let docs: Vec<&ProcessedDoc> = processed.iter().filter_map(|r| r.as_ref().ok()).collect();
         let should_build_search = match config.build.search {
             crate::config::SearchEngine::Native => true,
@@ -309,17 +310,18 @@ pub fn render_single_document_html(
         cx.unpublished,
         Some(cx.route_table),
     )?;
+    let full_url_prefix = config.build.full_url_prefix();
     if config.ui.links.note_icons && !cx.doc_icons.is_empty() {
         processed.body_html = document::enhance_internal_links(
             &processed.body_html,
             cx.doc_icons,
-            config.build.clean_url_prefix(),
+            &full_url_prefix,
         );
     }
     let html = cx
         .renderer
         .render_page(&processed, backlinks, cx.book_index)?;
-    let url = format!("{}/{}", config.build.clean_url_prefix(), processed.slug);
+    let url = format!("{}/{}", full_url_prefix, processed.slug);
     Ok(Some((html, url)))
 }
 
@@ -350,11 +352,12 @@ pub fn render_single_document(
         Some(cx.route_table),
     )?;
     image_opt::optimize_single_doc_media(&mut processed, cx.src_dir, out_dir, config);
+    let full_url_prefix = config.build.full_url_prefix();
     if config.ui.links.note_icons && !cx.doc_icons.is_empty() {
         processed.body_html = document::enhance_internal_links(
             &processed.body_html,
             cx.doc_icons,
-            config.build.clean_url_prefix(),
+            &full_url_prefix,
         );
     }
     let html = cx
@@ -365,6 +368,6 @@ pub fn render_single_document(
         .join(&processed.slug)
         .join("index.html");
     let written = write_if_changed(&out_html_path, &html)?;
-    let url = format!("{}/{}", config.build.clean_url_prefix(), processed.slug);
+    let url = format!("{}/{}", full_url_prefix, processed.slug);
     Ok(Some((written, url)))
 }

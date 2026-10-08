@@ -17,7 +17,8 @@
   let manifestPromise = null;
   function loadManifest() {
     if (!manifestPromise) {
-      manifestPromise = fetch('/lookup/manifest.json')
+      const base = (window as any).tmtBasePath || '';
+      manifestPromise = fetch(`${base}/lookup/manifest.json`)
         .then((res) => (res.ok ? res.json() : { sections: [] }))
         .catch(() => ({ sections: [] }));
     }

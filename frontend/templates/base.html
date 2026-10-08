@@ -63,7 +63,7 @@
         }
       } catch {}
     </script>
-    <link rel="stylesheet" href="/tmtbook.css?v={{ css_version }}" />
+    <link rel="stylesheet" href="{{ base_path | safe }}/tmtbook.css?v={{ css_version }}" />
     {% for css in custom_css %}
     <link rel="stylesheet" href="{{ css }}" />
     {% endfor %}
@@ -228,7 +228,13 @@
       </div>
     </div>
 
-    <script>window.tmtStrings = {{ t | tojson | safe }};</script>
-    <script src="/tmtbook.js?v={{ js_version }}"></script>
+    <script>
+      window.tmtBasePath = {{ base_path | tojson }};
+      window.tmtUrlPrefix = {{ clean_url_prefix | tojson }};
+      window.tmtFullUrlPrefix = {{ full_url_prefix | tojson }};
+      window.tmtHomeUrl = {{ home_url | tojson }};
+      window.tmtStrings = {{ t | tojson | safe }};
+    </script>
+    <script src="{{ base_path | safe }}/tmtbook.js?v={{ js_version }}"></script>
   </body>
 </html>

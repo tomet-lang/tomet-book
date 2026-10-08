@@ -175,8 +175,33 @@ pub fn handle_http_request(
         .map(|c| c.into_owned())
         .unwrap_or_else(|_| raw_path.to_string());
 
+    let (clean_base_path, clean_url_prefix, clean_asset_prefix) = {
+        let state_lock = state.read().unwrap();
+        if let Some(ref st) = *state_lock {
+            (
+                st.config.build.clean_base_path(),
+                st.config.build.full_url_prefix(),
+                st.config.build.full_asset_prefix(),
+            )
+        } else {
+            (
+                config.build.clean_base_path(),
+                config.build.full_url_prefix(),
+                config.build.full_asset_prefix(),
+            )
+        }
+    };
+    let clean_url_prefix = clean_url_prefix.as_str();
+    let clean_asset_prefix = clean_asset_prefix.as_str();
+
+    let unbased_path = if !clean_base_path.is_empty() {
+        path.strip_prefix(&clean_base_path).unwrap_or(&path)
+    } else {
+        path.as_str()
+    };
+
     // 1. Embedded static assets
-    match path.as_str() {
+    match unbased_path {
         "/tmtbook.css" => {
             return (
                 StatusCode::OK,
@@ -255,25 +280,8 @@ pub fn handle_http_request(
         _ => {}
     }
 
-    let (clean_url_prefix, clean_asset_prefix) = {
-        let state_lock = state.read().unwrap();
-        if let Some(ref st) = *state_lock {
-            (
-                st.config.build.clean_url_prefix().to_string(),
-                st.config.build.clean_asset_prefix().to_string(),
-            )
-        } else {
-            (
-                config.build.clean_url_prefix().to_string(),
-                config.build.clean_asset_prefix().to_string(),
-            )
-        }
-    };
-    let clean_url_prefix = clean_url_prefix.as_str();
-    let clean_asset_prefix = clean_asset_prefix.as_str();
-
     // 2. Search index (in-memory)
-    let is_search_index = path == "/search-index.json"
+    let is_search_index = unbased_path == "/search-index.json"
         || (!clean_url_prefix.is_empty()
             && path == format!("{clean_url_prefix}/search-index.json"));
 
@@ -291,8 +299,11 @@ pub fn handle_http_request(
         }
     }
 
-    // 3. Root "/"
-    if path == "/" || path.is_empty() {
+    // 3. Root "/" or base_path root
+    let is_root = path == "/" || path.is_empty()
+        || (!clean_base_path.is_empty() && (path == clean_base_path || path == format!("{clean_base_path}/")));
+
+    if is_root {
         if !clean_url_prefix.is_empty() {
             let redirect_target = format!("{clean_url_prefix}/");
             return (StatusCode::FOUND, [(header::LOCATION, redirect_target)], "").into_response();
@@ -319,7 +330,7 @@ pub fn handle_http_request(
             || path == format!("{clean_url_prefix}/")
             || path == format!("{clean_url_prefix}/index.html")
     } else {
-        path == "/" || path == "/index.html"
+        unbased_path == "/" || unbased_path == "/index.html"
     };
 
     if is_catalog_index {
@@ -343,7 +354,7 @@ pub fn handle_http_request(
         path.strip_prefix(clean_url_prefix)
             .map(|s| s.trim_matches('/'))
     } else {
-        Some(path.trim_matches('/'))
+        Some(unbased_path.trim_matches('/'))
     };
 
     if let Some(sub) = wiki_subpath
@@ -374,8 +385,10 @@ pub fn handle_http_request(
         && let Some(rel) = path.strip_prefix(clean_asset_prefix)
     {
         Some(rel.trim_matches('/'))
+    } else if let Some(rel) = unbased_path.strip_prefix("/vault") {
+        Some(rel.trim_matches('/'))
     } else {
-        Some(path.trim_matches('/'))
+        Some(unbased_path.trim_matches('/'))
     };
 
     if let Some(rel) = media_rel

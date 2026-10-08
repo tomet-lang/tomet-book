@@ -16,7 +16,9 @@
 
   function markVisited(path) {
     const p = normalizePath(path);
-    if (!p || p === '/wiki' || p === '/') return;
+    const homeUrl = (window as any).tmtHomeUrl || '/wiki';
+    const basePath = (window as any).tmtBasePath || '';
+    if (!p || p === '/wiki' || p === '/' || p === homeUrl || p === basePath || p === `${basePath}/`) return;
     try {
       const set = new Set(JSON.parse(T.storage.get('wiki-visited-notes') || '[]'));
       set.add(p);
@@ -52,7 +54,15 @@
   document.addEventListener('click', (e) => {
     const a = e.target.closest('a');
     const href = a?.getAttribute('href');
-    if (href && (href.startsWith('/wiki/') || href.startsWith('wiki/'))) {
+    const prefix = (window as any).tmtFullUrlPrefix || (window as any).tmtUrlPrefix || '/wiki';
+    const cleanPrefix = prefix.replace(/^\/+/, '');
+    const isWikiLink =
+      href &&
+      (href.startsWith(`${prefix}/`) ||
+        (cleanPrefix && href.startsWith(`${cleanPrefix}/`)) ||
+        href.startsWith('/wiki/') ||
+        href.startsWith('wiki/'));
+    if (isWikiLink) {
       markVisited(href);
       a.classList.add('is-visited');
     }
@@ -86,8 +96,19 @@
     const currentPath = normalizePath(window.location.pathname);
     const titleEl = document.querySelector('.content-title') || document.querySelector('.article-header h1');
     const currentTitle = titleEl?.textContent?.trim() || document.title.replace(/\s*\|.*$/, '');
+    const homeUrl = (window as any).tmtHomeUrl || '/wiki';
+    const basePath = (window as any).tmtBasePath || '';
 
-    if (!currentPath || !currentTitle || currentPath === '/wiki' || currentPath === '/') return;
+    if (
+      !currentPath ||
+      !currentTitle ||
+      currentPath === '/wiki' ||
+      currentPath === '/' ||
+      currentPath === homeUrl ||
+      currentPath === basePath ||
+      currentPath === `${basePath}/`
+    )
+      return;
 
     markVisited(currentPath);
 

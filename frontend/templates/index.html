@@ -10,7 +10,7 @@
 <ul class="book-index-items{% if top %} is-shelf{% endif %}">
   {% for entry in items %}
   <li class="book-index-item">
-    <a href="{{ entry.url }}" class="book-index-link">
+    <a href="{{ entry.url | safe }}" class="book-index-link">
       <span class="book-index-title">{{ entry.title }}</span>
       {% if entry.section %}<span class="book-index-meta">{{ entry.section }}</span>{% endif %}
     </a>

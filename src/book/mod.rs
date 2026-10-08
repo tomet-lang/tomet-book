@@ -272,7 +272,8 @@ pub fn build_book(
     // Pages live where the links point, so both come from `url_prefix`.
     let wiki_rel = config.build.wiki_out_rel();
     let wiki_root = out_dir.join(wiki_rel);
-    let clean_url_prefix = config.build.clean_url_prefix();
+    let full_url_prefix = config.build.full_url_prefix();
+    let clean_url_prefix = full_url_prefix.as_str();
 
     // 5. Process every document.
     //
@@ -384,13 +385,13 @@ pub fn build_book(
             .collect();
 
         if !note_icons.is_empty() {
-            let clean_url_prefix = config.build.clean_url_prefix();
+            let note_link_prefix = config.build.full_url_prefix();
             processed.par_iter_mut().for_each(|res| {
                 if let Ok(doc) = res {
                     doc.body_html = document::enhance_internal_links(
                         &doc.body_html,
                         &note_icons,
-                        clean_url_prefix,
+                        &note_link_prefix,
                     );
                 }
             });
@@ -596,10 +597,15 @@ pub fn build_book(
     // 7. Write root /index.html redirecting to the book, unless the book is already there
     let mut redirect_written = false;
     if !wiki_rel.is_empty() {
+        let redirect_target = if clean_url_prefix.is_empty() {
+            "/".to_string()
+        } else {
+            clean_url_prefix.to_string()
+        };
         let redirect_html = format!(
             r#"<!doctype html><html lang="{lang}" data-pagefind-ignore><head><meta charset="utf-8"><title>Redirecting to: {prefix}</title><meta http-equiv="refresh" content="0;url={prefix}"><link rel="canonical" href="{prefix}"></head><body><a href="{prefix}">Redirecting to {prefix}</a></body></html>"#,
             lang = config.book.lang,
-            prefix = clean_url_prefix
+            prefix = redirect_target
         );
         redirect_written = write_if_changed(&out_dir.join("index.html"), &redirect_html)?;
     }

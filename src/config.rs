@@ -301,6 +301,8 @@ pub struct BuildConfig {
     pub kinds: Vec<String>,
     #[serde(default)]
     pub search: SearchEngine,
+    #[serde(default, alias = "base")]
+    pub base_path: Option<String>,
     #[serde(default = "default_url_prefix")]
     pub url_prefix: String,
     #[serde(default = "default_asset_prefix")]
@@ -341,6 +343,37 @@ fn default_asset_prefix() -> String {
 }
 
 impl BuildConfig {
+    /// Base path of the site, normalized to e.g. `"/my-repo"` or `""` (no trailing slash).
+    pub fn clean_base_path(&self) -> String {
+        match self.base_path.as_deref() {
+            Some(raw) => {
+                let trimmed = raw.trim_matches('/');
+                if trimmed.is_empty() {
+                    String::new()
+                } else {
+                    format!("/{trimmed}")
+                }
+            }
+            None => String::new(),
+        }
+    }
+
+    /// Full URL prefix combining `base_path` and `clean_url_prefix`.
+    /// e.g. `"/my-repo/wiki"` or `"/wiki"` or `""`.
+    pub fn full_url_prefix(&self) -> String {
+        let base = self.clean_base_path();
+        let wiki = self.clean_url_prefix();
+        format!("{base}{wiki}")
+    }
+
+    /// Full asset prefix combining `base_path` and `clean_asset_prefix`.
+    /// e.g. `"/my-repo/vault"` or `"/vault"`.
+    pub fn full_asset_prefix(&self) -> String {
+        let base = self.clean_base_path();
+        let asset = self.clean_asset_prefix();
+        format!("{base}{asset}")
+    }
+
     /// `url_prefix` without a trailing slash, for building page hrefs (`/wiki`).
     pub fn clean_url_prefix(&self) -> &str {
         self.url_prefix.trim_end_matches('/')
@@ -371,6 +404,7 @@ impl Default for BuildConfig {
             exclude: default_exclude(),
             kinds: default_kinds(),
             search: SearchEngine::default(),
+            base_path: None,
             url_prefix: default_url_prefix(),
             asset_prefix: default_asset_prefix(),
             routing: RoutingStrategy::default(),
@@ -644,5 +678,46 @@ routing = "id"
         );
         assert_eq!(id_mode.build.routing, RoutingStrategy::Id);
         assert_eq!(id_mode.build.on_collision, CollisionStrategy::Error);
+    }
+
+    #[test]
+    fn base_path_and_base_alias_configuration() {
+        let def = load("");
+        assert_eq!(def.build.base_path, None);
+        assert_eq!(def.build.clean_base_path(), "");
+        assert_eq!(def.build.full_url_prefix(), "/wiki");
+        assert_eq!(def.build.full_asset_prefix(), "/vault");
+
+        let custom_base_path = load(
+            r#"
+[build]
+base_path = "/docs"
+"#,
+        );
+        assert_eq!(custom_base_path.build.base_path.as_deref(), Some("/docs"));
+        assert_eq!(custom_base_path.build.clean_base_path(), "/docs");
+        assert_eq!(custom_base_path.build.full_url_prefix(), "/docs/wiki");
+        assert_eq!(custom_base_path.build.full_asset_prefix(), "/docs/vault");
+
+        // Alias `base` and trailing/leading slash normalization
+        let custom_base_alias = load(
+            r#"
+[build]
+base = "my-site/"
+"#,
+        );
+        assert_eq!(custom_base_alias.build.clean_base_path(), "/my-site");
+        assert_eq!(custom_base_alias.build.full_url_prefix(), "/my-site/wiki");
+
+        // Root base path "/" normalizes to empty
+        let root_base = load(
+            r#"
+[build]
+base = "/"
+url_prefix = "/"
+"#,
+        );
+        assert_eq!(root_base.build.clean_base_path(), "");
+        assert_eq!(root_base.build.full_url_prefix(), "");
     }
 }
