@@ -167,7 +167,7 @@ fn collect_blocks(
             let target = item
                 .content
                 .as_ref()
-                .and_then(|inlines| first_page_target(inlines, item.span));
+                .and_then(|blocks| first_page_target(blocks, item.span));
 
             let children = item
                 .children
@@ -199,14 +199,12 @@ fn collect_blocks(
 
 /// The first link in a list item that could point at a page.
 ///
-/// Wrapping the item's inlines in a throwaway document is what lets this
+/// Wrapping the item's blocks in a throwaway document is what lets this
 /// reuse `collect_links` rather than re-deriving which elements and which
 /// schemes count as a link.
-fn first_page_target(inlines: &[tomet_ast::Inline], span: tomet_ast::Span) -> Option<String> {
-    let probe = Document::new(
-        vec![Block::Paragraph(Paragraph::new(inlines.to_vec(), span))],
-        span,
-    );
+fn first_page_target(blocks: &[tomet_ast::Block], span: tomet_ast::Span) -> Option<String> {
+    let probe = Document::new(blocks.to_vec(), span);
+
 
     tomet_links::collect_links(&probe)
         .into_iter()
