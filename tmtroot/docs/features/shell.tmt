@@ -1,5 +1,5 @@
 @meta{
-  aliases: ["大理石装丁", "Marble Shell"]
+  aliases: list("大理石装丁", "Marble Shell")
 }
 
 =[ シェル外装と大理石装丁 ]
