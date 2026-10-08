@@ -1,9 +1,10 @@
 [book]
 title = "tmtbook docs"
-lang = "ja"
+lang = "en"
 dest = "dist"
 
 [build]
+base = "/tomet-book"
 kinds = ["*", "!config", "!index"]
 routing = "id"                     # "hierarchical" (default) | "flat" | "id"
 
